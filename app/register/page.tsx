@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
@@ -10,12 +11,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { DocumentUploader } from "@/components/document-uploader";
 
 export default function RegisterPage() {
   const [step, setStep] = useState(1);
   const [role, setRole] = useState<"family" | "nurse" | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [email, setEmail] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const supabase = createClient();
 
   const authForm = useForm({
@@ -31,62 +34,120 @@ export default function RegisterPage() {
   const familyForm = useForm({
     resolver: zodResolver(familyProfileSchema),
     defaultValues: {
-      fullName: "",
+      firstName: "",
+      middleName: "",
+      lastName: "",
       phone: "",
+      region: "",
       city: "",
       barangay: "",
+      address: "",
       patientName: "",
       patientAge: 0,
-      patientCondition: "",
-      address: ""
+      patientCondition: ""
     }
   });
 
   const nurseForm = useForm({
     resolver: zodResolver(nurseProfileSchema),
     defaultValues: {
-      fullName: "",
+      firstName: "",
+      middleName: "",
+      lastName: "",
       phone: "",
+      region: "",
       city: "",
       barangay: "",
+      address: "",
+      prcLicenseNo: "",
       specializations: [""],
       yearsExperience: 0,
       bio: "",
       hourlyRate: 0,
-      dailyRate12hr: 0
+      dailyRate12hr: 0,
+      profilePhotoUrl: "",
+      nbiDocumentUrl: ""
     }
   });
 
   async function handleAuthSubmit(values: any) {
     setStatus(null);
+    setIsSubmitting(true);
     if (step === 1) {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: values.email,
-        options: { shouldCreateUser: true }
-      });
-      if (error) {
-        setStatus(error.message);
+      try {
+        const { data, error } = await supabase.auth.signInWithOtp({
+          email: values.email,
+          options: { shouldCreateUser: true }
+        });
+        if (error) {
+          console.error("signup.send_code.error", error);
+          setStatus(error.message);
+          setIsSubmitting(false);
+          return;
+        }
+        console.info("signup.send_code.success", data);
+      } catch (error) {
+        console.error("signup.send_code.exception", error);
+        setStatus("Unexpected error sending code.");
+        setIsSubmitting(false);
         return;
       }
       setEmail(values.email);
       setStep(2);
       setStatus("Check your email for the 6-digit code.");
+      setIsSubmitting(false);
       return;
     }
 
     if (step === 2 && values.token) {
-      const { error } = await supabase.auth.verifyOtp({
-        email,
-        token: values.token,
-        type: "email"
-      });
-      if (error) {
-        setStatus(error.message);
+      try {
+        const { data, error } = await supabase.auth.verifyOtp({
+          email,
+          token: values.token,
+          type: "email"
+        });
+        if (error) {
+          console.error("signup.verify_code.error", error);
+          setStatus(error.message);
+          setIsSubmitting(false);
+          return;
+        }
+        console.info("signup.verify_code.success", data);
+      } catch (error) {
+        console.error("signup.verify_code.exception", error);
+        setStatus("Unexpected error verifying code.");
+        setIsSubmitting(false);
         return;
       }
       setStep(3);
       setStatus(null);
+      setIsSubmitting(false);
+      return;
     }
+
+    setIsSubmitting(false);
+  }
+
+  async function handleResend() {
+    if (!email) return;
+    setStatus(null);
+    setIsSubmitting(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: true }
+      });
+      if (error) {
+        console.error("signup.resend_code.error", error);
+      } else {
+        console.info("signup.resend_code.success", data);
+      }
+      setStatus(error ? error.message : "Code resent. Check your email.");
+    } catch (error) {
+      console.error("signup.resend_code.exception", error);
+      setStatus("Unexpected error resending code.");
+    }
+    setIsSubmitting(false);
   }
 
   async function handleRoleSubmit(values: any) {
@@ -103,13 +164,22 @@ export default function RegisterPage() {
       return;
     }
 
+    const fullName = [values.firstName, values.middleName, values.lastName]
+      .filter((item: string) => item && item.trim().length > 0)
+      .join(" ");
+
     const profilePayload = {
       id: user.id,
       role,
-      full_name: values.fullName,
+      full_name: fullName,
+      first_name: values.firstName,
+      middle_name: values.middleName || null,
+      last_name: values.lastName,
       phone: values.phone,
+      region: values.region,
       city: values.city,
-      barangay: values.barangay
+      barangay: values.barangay,
+      address: values.address
     };
 
     await supabase.from("profiles").upsert(profilePayload);
@@ -127,6 +197,9 @@ export default function RegisterPage() {
     if (role === "nurse") {
       await supabase.from("nurses").upsert({
         id: user.id,
+        prc_license_no: values.prcLicenseNo,
+        profile_photo_url: values.profilePhotoUrl,
+        nbi_document_url: values.nbiDocumentUrl,
         specializations: values.specializations.filter(Boolean),
         years_experience: values.yearsExperience,
         bio: values.bio,
@@ -143,17 +216,39 @@ export default function RegisterPage() {
       <div className="mx-auto flex max-w-md flex-col gap-6">
         <div>
           <h1 className="text-2xl font-semibold">Create account</h1>
-          <p className="text-sm text-slate-600">Step {step} of 3</p>
+          <p className="text-sm text-slate-600">Step {step} of 4</p>
         </div>
 
         {step <= 2 ? (
           <form onSubmit={authForm.handleSubmit(handleAuthSubmit)} className="space-y-4">
             {step === 1 ? (
-              <Input placeholder="you@email.com" {...authForm.register("email")} />
+              <div className="space-y-2">
+                <Input placeholder="you@email.com" {...authForm.register("email")} />
+                {authForm.formState.errors.email ? (
+                  <p className="text-xs text-rose-600">Enter a valid email address.</p>
+                ) : null}
+              </div>
             ) : (
-              <Input placeholder="6-digit code" maxLength={6} {...authForm.register("token")} />
+              <div className="space-y-2">
+                <Input placeholder="6-digit code" maxLength={6} {...authForm.register("token")} />
+                {authForm.formState.errors.token ? (
+                  <p className="text-xs text-rose-600">Enter the 6-digit code.</p>
+                ) : null}
+              </div>
             )}
-            <Button type="submit">{step === 1 ? "Send code" : "Verify code"}</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Sending..." : step === 1 ? "Send code" : "Verify code"}
+            </Button>
+            {step === 2 ? (
+              <button
+                type="button"
+                onClick={handleResend}
+                className="text-xs text-brand-700 underline"
+                disabled={isSubmitting}
+              >
+                Resend code
+              </button>
+            ) : null}
           </form>
         ) : null}
 
@@ -169,24 +264,42 @@ export default function RegisterPage() {
 
         {step === 4 && role === "family" ? (
           <form onSubmit={familyForm.handleSubmit(handleProfileSubmit)} className="space-y-3">
-            <Input placeholder="Full name" {...familyForm.register("fullName")} />
+            <Input placeholder="First name" {...familyForm.register("firstName")} />
+            <Input placeholder="Middle name (optional)" {...familyForm.register("middleName")} />
+            <Input placeholder="Last name" {...familyForm.register("lastName")} />
             <Input placeholder="Phone" {...familyForm.register("phone")} />
+            <Input placeholder="Region" {...familyForm.register("region")} />
             <Input placeholder="City" {...familyForm.register("city")} />
             <Input placeholder="Barangay" {...familyForm.register("barangay")} />
+            <Textarea placeholder="Home address" {...familyForm.register("address")} />
             <Input placeholder="Patient name" {...familyForm.register("patientName")} />
             <Input type="number" placeholder="Patient age" {...familyForm.register("patientAge", { valueAsNumber: true })} />
             <Input placeholder="Patient condition" {...familyForm.register("patientCondition")} />
-            <Textarea placeholder="Address" {...familyForm.register("address")} />
             <Button type="submit">Finish</Button>
           </form>
         ) : null}
 
         {step === 4 && role === "nurse" ? (
           <form onSubmit={nurseForm.handleSubmit(handleProfileSubmit)} className="space-y-3">
-            <Input placeholder="Full name" {...nurseForm.register("fullName")} />
+            <Input placeholder="First name" {...nurseForm.register("firstName")} />
+            <Input placeholder="Middle name (optional)" {...nurseForm.register("middleName")} />
+            <Input placeholder="Last name" {...nurseForm.register("lastName")} />
             <Input placeholder="Phone" {...nurseForm.register("phone")} />
+            <Input placeholder="Region" {...nurseForm.register("region")} />
             <Input placeholder="City" {...nurseForm.register("city")} />
             <Input placeholder="Barangay" {...nurseForm.register("barangay")} />
+            <Textarea placeholder="Home address" {...nurseForm.register("address")} />
+            <Input placeholder="PRC license number" {...nurseForm.register("prcLicenseNo")} />
+            <DocumentUploader
+              label="Profile photo"
+              pathPrefix="profile-photo"
+              onUploaded={(url) => nurseForm.setValue("profilePhotoUrl", url)}
+            />
+            <DocumentUploader
+              label="NBI clearance"
+              pathPrefix="nbi"
+              onUploaded={(url) => nurseForm.setValue("nbiDocumentUrl", url)}
+            />
             <Input
               placeholder="Specializations (comma separated)"
               onChange={(event) =>
@@ -205,6 +318,10 @@ export default function RegisterPage() {
         ) : null}
 
         {status ? <p className="text-sm text-slate-600">{status}</p> : null}
+        <p className="text-xs text-slate-500">
+          By continuing, you agree to the <Link href="/terms" className="underline">Terms of Service</Link> and
+          <Link href="/privacy" className="underline"> Privacy Policy</Link>.
+        </p>
       </div>
     </main>
   );

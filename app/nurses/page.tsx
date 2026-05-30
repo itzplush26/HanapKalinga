@@ -5,7 +5,7 @@ export default async function NursesPage() {
   const supabase = createClient();
   const { data: nurses } = await supabase
     .from("nurses")
-    .select("id, specializations, years_experience, daily_rate_12hr, profiles(full_name, city)")
+    .select("id, specializations, years_experience, daily_rate_12hr, profile_photo_url, profiles(full_name, city)")
     .eq("verification_status", "verified");
 
   return (
@@ -29,6 +29,7 @@ export default async function NursesPage() {
               dailyRate={nurse.daily_rate_12hr ?? 0}
               rating={4.7}
               verified
+              imageUrl={nurse.profile_photo_url ?? undefined}
             />
             );
           })}

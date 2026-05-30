@@ -25,6 +25,10 @@ export default function HomePage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
           NurseLink PH is a neutral marketplace. We do not take payments or commissions.
         </div>
+        <div className="flex flex-wrap gap-4 text-xs text-slate-500">
+          <Link href="/privacy" className="underline">Privacy Policy</Link>
+          <Link href="/terms" className="underline">Terms of Service</Link>
+        </div>
       </div>
     </main>
   );
