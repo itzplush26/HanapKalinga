@@ -1,0 +1,106 @@
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+
+interface NurseProfilePageProps {
+  params: { id: string };
+}
+
+export default async function NurseProfilePage({ params }: NurseProfilePageProps) {
+  const supabase = createClient();
+  const { data: nurse } = await supabase
+    .from("nurses")
+    .select(
+      "id, specializations, years_experience, bio, hourly_rate, daily_rate_12hr, profiles(full_name, city, barangay)"
+    )
+    .eq("id", params.id)
+    .single();
+
+  const { data: availability } = await supabase
+    .from("availability")
+    .select("date, shift, is_open")
+    .eq("nurse_id", params.id);
+
+  const { data: reviews } = await supabase
+    .from("reviews")
+    .select("rating, comment, created_at")
+    .eq("reviewee_id", params.id)
+    .order("created_at", { ascending: false });
+
+  if (!nurse) {
+    return (
+      <main className="px-5 py-8">
+        <p className="text-sm text-slate-600">Nurse not found.</p>
+      </main>
+    );
+  }
+
+  const profile = Array.isArray(nurse.profiles) ? nurse.profiles[0] : nurse.profiles;
+
+  return (
+    <main className="px-5 py-8">
+      <div className="mx-auto flex max-w-md flex-col gap-6">
+        <div className="space-y-3">
+          <h1 className="text-2xl font-semibold">{profile?.full_name ?? "Nurse"}</h1>
+          <p className="text-sm text-slate-600">
+            {profile?.city ?? ""} {profile?.barangay ?? ""}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {(nurse.specializations ?? []).map((item: string) => (
+              <Badge key={item} className="bg-slate-100 text-slate-700">
+                {item}
+              </Badge>
+            ))}
+          </div>
+          <p className="text-sm text-slate-600">{nurse.bio}</p>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="rounded-xl border border-slate-200 bg-white p-3">
+              <p className="text-xs text-slate-500">Hourly</p>
+              <p className="font-semibold">PHP {nurse.hourly_rate ?? 0}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-3">
+              <p className="text-xs text-slate-500">12-hr</p>
+              <p className="font-semibold">PHP {nurse.daily_rate_12hr ?? 0}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold">Availability</h2>
+          <div className="space-y-2 text-sm text-slate-600">
+            {(availability ?? []).map((slot) => (
+              <div key={`${slot.date}-${slot.shift}`} className="rounded-xl border border-slate-200 bg-white p-3">
+                {slot.date} • {slot.shift} • {slot.is_open ? "Open" : "Closed"}
+              </div>
+            ))}
+            {availability?.length === 0 ? (
+              <p className="rounded-xl border border-slate-200 bg-white p-3">No availability posted.</p>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold">Reviews</h2>
+          <div className="space-y-3 text-sm">
+            {(reviews ?? []).map((review) => (
+              <div key={review.created_at} className="rounded-xl border border-slate-200 bg-white p-3">
+                <p className="font-semibold">Rating {review.rating} / 5</p>
+                <p className="text-slate-600">{review.comment}</p>
+              </div>
+            ))}
+            {reviews?.length === 0 ? (
+              <p className="rounded-xl border border-slate-200 bg-white p-3 text-slate-600">
+                No reviews yet.
+              </p>
+            ) : null}
+          </div>
+        </div>
+
+        <Button asChild>
+          <Link href={`/dashboard/family/bookings/new?nurse=${nurse.id}`}>Request Booking</Link>
+        </Button>
+      </div>
+    </main>
+  );
+}
