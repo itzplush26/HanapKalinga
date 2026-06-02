@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { DocumentUploader } from "@/components/document-uploader";
+import { PH_CITIES } from "@/lib/ph-locations";
 
 export default function RegisterPage() {
   const [step, setStep] = useState(1);
@@ -19,7 +21,19 @@ export default function RegisterPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [email, setEmail] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const searchParams = useSearchParams();
   const supabase = createClient();
+
+  const requiredLabel = (label: string, hasError?: boolean) => (
+    <span className={hasError ? "text-sm font-medium text-rose-600" : "text-sm font-medium text-slate-700"}>
+      {label} <span className="text-rose-600">*</span>
+      {hasError ? <span className="ml-2 text-xs text-rose-600">Required</span> : null}
+    </span>
+  );
+
+  const optionalLabel = (label: string) => (
+    <span className="text-sm font-medium text-slate-700">{label}</span>
+  );
 
   const authForm = useForm({
     resolver: zodResolver(authSchema),
@@ -34,38 +48,29 @@ export default function RegisterPage() {
   const familyForm = useForm({
     resolver: zodResolver(familyProfileSchema),
     defaultValues: {
-      firstName: "",
-      middleName: "",
-      lastName: "",
-      phone: "",
-      region: "",
+      fullName: "",
       city: "",
       barangay: "",
-      address: "",
+      contactPersonName: "",
+      relationshipToPatient: "",
       patientName: "",
       patientAge: 0,
-      patientCondition: ""
+      careNeeded: ""
     }
   });
 
   const nurseForm = useForm({
     resolver: zodResolver(nurseProfileSchema),
     defaultValues: {
-      firstName: "",
-      middleName: "",
-      lastName: "",
-      phone: "",
-      region: "",
+      fullName: "",
+      providerType: "nurse",
       city: "",
       barangay: "",
-      address: "",
-      prcLicenseNo: "",
-      specializations: [""],
-      yearsExperience: 0,
       bio: "",
-      hourlyRate: 0,
-      dailyRate12hr: 0,
-      profilePhotoUrl: "",
+      hourlyRate: undefined,
+      dailyRate12hr: undefined,
+      prcDocumentUrl: "",
+      tesdaDocumentUrl: "",
       nbiDocumentUrl: ""
     }
   });
@@ -113,6 +118,22 @@ export default function RegisterPage() {
           return;
         }
         console.info("signup.verify_code.success", data);
+        const userId = data?.user?.id;
+        if (userId) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", userId)
+            .maybeSingle();
+          if (profile?.role === "family") {
+            window.location.href = "/dashboard/family";
+            return;
+          }
+          if (profile?.role === "nurse") {
+            window.location.href = "/dashboard/nurse";
+            return;
+          }
+        }
       } catch (error) {
         console.error("signup.verify_code.exception", error);
         setStatus("Unexpected error verifying code.");
@@ -164,22 +185,18 @@ export default function RegisterPage() {
       return;
     }
 
-    const fullName = [values.firstName, values.middleName, values.lastName]
-      .filter((item: string) => item && item.trim().length > 0)
-      .join(" ");
-
     const profilePayload = {
       id: user.id,
       role,
-      full_name: fullName,
-      first_name: values.firstName,
-      middle_name: values.middleName || null,
-      last_name: values.lastName,
-      phone: values.phone,
-      region: values.region,
+      full_name: values.fullName,
+      first_name: null,
+      middle_name: null,
+      last_name: null,
+      phone: null,
+      region: null,
       city: values.city,
       barangay: values.barangay,
-      address: values.address
+      address: null
     };
 
     await supabase.from("profiles").upsert(profilePayload);
@@ -187,29 +204,101 @@ export default function RegisterPage() {
     if (role === "family") {
       await supabase.from("families").upsert({
         id: user.id,
+        contact_person_name: values.contactPersonName,
+        relationship_to_patient: values.relationshipToPatient,
         patient_name: values.patientName,
         patient_age: values.patientAge,
-        patient_condition: values.patientCondition,
-        address: values.address
+        patient_condition: null,
+        care_needed: values.careNeeded ?? null,
+        address: null
       });
+      window.location.href = "/dashboard/family";
+      return;
     }
 
     if (role === "nurse") {
+      const credentialField = values.providerType === "nurse" ? "prc_document_url" : "tesda_document_url";
       await supabase.from("nurses").upsert({
         id: user.id,
-        prc_license_no: values.prcLicenseNo,
-        profile_photo_url: values.profilePhotoUrl,
+        provider_type: values.providerType,
+        bio: values.bio ?? null,
+        hourly_rate: values.hourlyRate ?? null,
+        daily_rate_12hr: values.dailyRate12hr ?? null,
         nbi_document_url: values.nbiDocumentUrl,
-        specializations: values.specializations.filter(Boolean),
-        years_experience: values.yearsExperience,
-        bio: values.bio,
-        hourly_rate: values.hourlyRate,
-        daily_rate_12hr: values.dailyRate12hr
+        [credentialField]: values.providerType === "nurse" ? values.prcDocumentUrl : values.tesdaDocumentUrl,
+        verification_status: "pending"
       });
+      window.location.href = "/dashboard/nurse";
+      return;
     }
 
-    setStatus("Profile created. You can now log in.");
+    setStatus("Profile created.");
   }
+
+  useEffect(() => {
+    const storedStep = window.sessionStorage.getItem("nurselink.signup.step");
+    const storedRole = window.sessionStorage.getItem("nurselink.signup.role");
+    const storedEmail = window.sessionStorage.getItem("nurselink.signup.email");
+    const queryRole = searchParams.get("role");
+    if (storedStep) {
+      const nextStep = Number(storedStep);
+      if (!Number.isNaN(nextStep)) setStep(nextStep);
+    }
+    const normalizedQueryRole = queryRole === "provider" ? "nurse" : queryRole;
+    const nextRole =
+      normalizedQueryRole === "family" || normalizedQueryRole === "nurse"
+        ? normalizedQueryRole
+        : storedRole;
+    if (nextRole === "family" || nextRole === "nurse") {
+      setRole(nextRole);
+      roleForm.setValue("role", nextRole);
+    }
+    if (storedEmail) {
+      setEmail(storedEmail);
+    }
+  }, [roleForm, searchParams]);
+
+  useEffect(() => {
+    window.sessionStorage.setItem("nurselink.signup.step", String(step));
+  }, [step]);
+
+  useEffect(() => {
+    if (role) window.sessionStorage.setItem("nurselink.signup.role", role);
+  }, [role]);
+
+  useEffect(() => {
+    if (email) window.sessionStorage.setItem("nurselink.signup.email", email);
+  }, [email]);
+
+  const familyValues = familyForm.watch();
+  const nurseValues = nurseForm.watch();
+
+  useEffect(() => {
+    window.sessionStorage.setItem("nurselink.signup.family", JSON.stringify(familyValues));
+  }, [familyValues]);
+
+  useEffect(() => {
+    window.sessionStorage.setItem("nurselink.signup.nurse", JSON.stringify(nurseValues));
+  }, [nurseValues]);
+
+  useEffect(() => {
+    const storedFamily = window.sessionStorage.getItem("nurselink.signup.family");
+    const storedNurse = window.sessionStorage.getItem("nurselink.signup.nurse");
+    if (storedFamily) {
+      try {
+        familyForm.reset(JSON.parse(storedFamily));
+      } catch {
+        // Ignore bad data
+      }
+    }
+    if (storedNurse) {
+      try {
+        nurseForm.reset(JSON.parse(storedNurse));
+      } catch {
+        // Ignore bad data
+      }
+    }
+  }, [familyForm, nurseForm]);
 
   return (
     <main className="px-5 py-8">
@@ -223,14 +312,25 @@ export default function RegisterPage() {
           <form onSubmit={authForm.handleSubmit(handleAuthSubmit)} className="space-y-4">
             {step === 1 ? (
               <div className="space-y-2">
-                <Input placeholder="you@email.com" {...authForm.register("email")} />
+                {requiredLabel("Email", !!authForm.formState.errors.email)}
+                <Input
+                  placeholder="you@email.com"
+                  {...authForm.register("email")}
+                  className={authForm.formState.errors.email ? "border-rose-500 focus:ring-rose-500" : undefined}
+                />
                 {authForm.formState.errors.email ? (
                   <p className="text-xs text-rose-600">Enter a valid email address.</p>
                 ) : null}
               </div>
             ) : (
               <div className="space-y-2">
-                <Input placeholder="6-digit code" maxLength={6} {...authForm.register("token")} />
+                {requiredLabel("6-digit code", !!authForm.formState.errors.token)}
+                <Input
+                  placeholder="6-digit code"
+                  maxLength={6}
+                  {...authForm.register("token")}
+                  className={authForm.formState.errors.token ? "border-rose-500 focus:ring-rose-500" : undefined}
+                />
                 {authForm.formState.errors.token ? (
                   <p className="text-xs text-rose-600">Enter the 6-digit code.</p>
                 ) : null}
@@ -254,72 +354,176 @@ export default function RegisterPage() {
 
         {step === 3 ? (
           <form onSubmit={roleForm.handleSubmit(handleRoleSubmit)} className="space-y-4">
-            <Select {...roleForm.register("role")}>
-              <option value="family">Family</option>
-              <option value="nurse">Nurse</option>
-            </Select>
+            <div className="grid gap-3">
+              <button
+                type="button"
+                onClick={() => roleForm.setValue("role", "family")}
+                className={
+                  roleForm.watch("role") === "family"
+                    ? "rounded-2xl border border-brand-300 bg-brand-50 p-4 text-left"
+                    : "rounded-2xl border border-slate-200 bg-white p-4 text-left"
+                }
+              >
+                <p className="text-base font-semibold">🏠 I need a nurse or caregiver</p>
+                <p className="text-sm text-slate-600">For families and patients</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => roleForm.setValue("role", "nurse")}
+                className={
+                  roleForm.watch("role") === "nurse"
+                    ? "rounded-2xl border border-brand-300 bg-brand-50 p-4 text-left"
+                    : "rounded-2xl border border-slate-200 bg-white p-4 text-left"
+                }
+              >
+                <p className="text-base font-semibold">👩‍⚕️ I am a nurse or caregiver</p>
+                <p className="text-sm text-slate-600">RN, PDN, or TESDA NC II caregiver</p>
+              </button>
+            </div>
             <Button type="submit">Continue</Button>
           </form>
         ) : null}
 
         {step === 4 && role === "family" ? (
           <form onSubmit={familyForm.handleSubmit(handleProfileSubmit)} className="space-y-3">
-            <Input placeholder="First name" {...familyForm.register("firstName")} />
-            <Input placeholder="Middle name (optional)" {...familyForm.register("middleName")} />
-            <Input placeholder="Last name" {...familyForm.register("lastName")} />
-            <Input placeholder="Phone" {...familyForm.register("phone")} />
-            <Input placeholder="Region" {...familyForm.register("region")} />
-            <Input placeholder="City" {...familyForm.register("city")} />
-            <Input placeholder="Barangay" {...familyForm.register("barangay")} />
-            <Textarea placeholder="Home address" {...familyForm.register("address")} />
-            <Input placeholder="Patient name" {...familyForm.register("patientName")} />
-            <Input type="number" placeholder="Patient age" {...familyForm.register("patientAge", { valueAsNumber: true })} />
-            <Input placeholder="Patient condition" {...familyForm.register("patientCondition")} />
+            {requiredLabel("Full name", !!familyForm.formState.errors.fullName)}
+            <Input
+              placeholder="Full name"
+              {...familyForm.register("fullName")}
+              className={familyForm.formState.errors.fullName ? "border-rose-500 focus:ring-rose-500" : undefined}
+            />
+            {requiredLabel("City", !!familyForm.formState.errors.city)}
+            <Select
+              {...familyForm.register("city")}
+              className={familyForm.formState.errors.city ? "border-rose-500 focus:ring-rose-500" : undefined}
+            >
+              <option value="">Select city</option>
+              {PH_CITIES.map((city) => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </Select>
+            {requiredLabel("Barangay", !!familyForm.formState.errors.barangay)}
+            <Input
+              placeholder="Barangay"
+              {...familyForm.register("barangay")}
+              className={familyForm.formState.errors.barangay ? "border-rose-500 focus:ring-rose-500" : undefined}
+            />
+            {requiredLabel("Family contact person", !!familyForm.formState.errors.contactPersonName)}
+            <Input
+              placeholder="Family contact person"
+              {...familyForm.register("contactPersonName")}
+              className={familyForm.formState.errors.contactPersonName ? "border-rose-500 focus:ring-rose-500" : undefined}
+            />
+            {requiredLabel("Relationship to patient", !!familyForm.formState.errors.relationshipToPatient)}
+            <Input
+              placeholder="e.g. son, daughter, spouse"
+              {...familyForm.register("relationshipToPatient")}
+              className={familyForm.formState.errors.relationshipToPatient ? "border-rose-500 focus:ring-rose-500" : undefined}
+            />
+            {requiredLabel("Patient name", !!familyForm.formState.errors.patientName)}
+            <Input
+              placeholder="Patient name"
+              {...familyForm.register("patientName")}
+              className={familyForm.formState.errors.patientName ? "border-rose-500 focus:ring-rose-500" : undefined}
+            />
+            {requiredLabel("Patient age", !!familyForm.formState.errors.patientAge)}
+            <Input
+              type="number"
+              placeholder="Patient age"
+              {...familyForm.register("patientAge", { valueAsNumber: true })}
+              className={familyForm.formState.errors.patientAge ? "border-rose-500 focus:ring-rose-500" : undefined}
+            />
+            {optionalLabel("Care needed (optional)")}
+            <Textarea placeholder="Care needed" {...familyForm.register("careNeeded")} />
             <Button type="submit">Finish</Button>
           </form>
         ) : null}
 
         {step === 4 && role === "nurse" ? (
           <form onSubmit={nurseForm.handleSubmit(handleProfileSubmit)} className="space-y-3">
-            <Input placeholder="First name" {...nurseForm.register("firstName")} />
-            <Input placeholder="Middle name (optional)" {...nurseForm.register("middleName")} />
-            <Input placeholder="Last name" {...nurseForm.register("lastName")} />
-            <Input placeholder="Phone" {...nurseForm.register("phone")} />
-            <Input placeholder="Region" {...nurseForm.register("region")} />
-            <Input placeholder="City" {...nurseForm.register("city")} />
-            <Input placeholder="Barangay" {...nurseForm.register("barangay")} />
-            <Textarea placeholder="Home address" {...nurseForm.register("address")} />
-            <Input placeholder="PRC license number" {...nurseForm.register("prcLicenseNo")} />
-            <DocumentUploader
-              label="Profile photo"
-              pathPrefix="profile-photo"
-              onUploaded={(url) => nurseForm.setValue("profilePhotoUrl", url)}
+            {requiredLabel("Full name", !!nurseForm.formState.errors.fullName)}
+            <Input
+              placeholder="Full name"
+              {...nurseForm.register("fullName")}
+              className={nurseForm.formState.errors.fullName ? "border-rose-500 focus:ring-rose-500" : undefined}
             />
+            {requiredLabel("Provider type", !!nurseForm.formState.errors.providerType)}
+            <Select
+              {...nurseForm.register("providerType")}
+              className={nurseForm.formState.errors.providerType ? "border-rose-500 focus:ring-rose-500" : undefined}
+            >
+              <option value="nurse">Nurse (PRC)</option>
+              <option value="caregiver">Caregiver (TESDA NC II)</option>
+            </Select>
+            {requiredLabel("City", !!nurseForm.formState.errors.city)}
+            <Select
+              {...nurseForm.register("city")}
+              className={nurseForm.formState.errors.city ? "border-rose-500 focus:ring-rose-500" : undefined}
+            >
+              <option value="">Select city</option>
+              {PH_CITIES.map((city) => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </Select>
+            {requiredLabel("Barangay", !!nurseForm.formState.errors.barangay)}
+            <Input
+              placeholder="Barangay"
+              {...nurseForm.register("barangay")}
+              className={nurseForm.formState.errors.barangay ? "border-rose-500 focus:ring-rose-500" : undefined}
+            />
+            {optionalLabel("Bio (optional)")}
+            <Textarea placeholder="Bio" {...nurseForm.register("bio")} />
+            {optionalLabel("Hourly rate (optional)")}
+            <Input type="number" placeholder="Hourly rate" {...nurseForm.register("hourlyRate", { valueAsNumber: true })} />
+            {optionalLabel("Daily rate (optional)")}
+            <Input type="number" placeholder="Daily rate" {...nurseForm.register("dailyRate12hr", { valueAsNumber: true })} />
+            {requiredLabel(
+              nurseForm.watch("providerType") === "caregiver"
+                ? "TESDA NC II certificate"
+                : "PRC license scan",
+              nurseForm.watch("providerType") === "caregiver"
+                ? !!nurseForm.formState.errors.tesdaDocumentUrl
+                : !!nurseForm.formState.errors.prcDocumentUrl
+            )}
+            {nurseForm.watch("providerType") === "caregiver" ? (
+              <DocumentUploader
+                label="TESDA NC II certificate"
+                pathPrefix="tesda"
+                onUploaded={(url) => nurseForm.setValue("tesdaDocumentUrl", url, { shouldValidate: true })}
+              />
+            ) : (
+              <DocumentUploader
+                label="PRC license scan"
+                pathPrefix="prc"
+                onUploaded={(url) => nurseForm.setValue("prcDocumentUrl", url, { shouldValidate: true })}
+              />
+            )}
+            {nurseForm.watch("providerType") === "caregiver" && nurseForm.formState.errors.tesdaDocumentUrl ? (
+              <p className="text-xs text-rose-600">Required</p>
+            ) : null}
+            {nurseForm.watch("providerType") !== "caregiver" && nurseForm.formState.errors.prcDocumentUrl ? (
+              <p className="text-xs text-rose-600">Required</p>
+            ) : null}
+            {requiredLabel("NBI clearance", !!nurseForm.formState.errors.nbiDocumentUrl)}
             <DocumentUploader
               label="NBI clearance"
               pathPrefix="nbi"
-              onUploaded={(url) => nurseForm.setValue("nbiDocumentUrl", url)}
+              onUploaded={(url) => nurseForm.setValue("nbiDocumentUrl", url, { shouldValidate: true })}
             />
-            <Input
-              placeholder="Specializations (comma separated)"
-              onChange={(event) =>
-                nurseForm.setValue(
-                  "specializations",
-                  event.target.value.split(",").map((value) => value.trim())
-                )
-              }
-            />
-            <Input type="number" placeholder="Years experience" {...nurseForm.register("yearsExperience", { valueAsNumber: true })} />
-            <Textarea placeholder="Bio" {...nurseForm.register("bio")} />
-            <Input type="number" placeholder="Hourly rate" {...nurseForm.register("hourlyRate", { valueAsNumber: true })} />
-            <Input type="number" placeholder="Daily rate (12 hr)" {...nurseForm.register("dailyRate12hr", { valueAsNumber: true })} />
+            {nurseForm.formState.errors.nbiDocumentUrl ? (
+              <p className="text-xs text-rose-600">Required</p>
+            ) : null}
             <Button type="submit">Finish</Button>
           </form>
         ) : null}
 
         {status ? <p className="text-sm text-slate-600">{status}</p> : null}
         <p className="text-xs text-slate-500">
-          By continuing, you agree to the <Link href="/terms" className="underline">Terms of Service</Link> and
+          By continuing you agree to <Link href="/terms" className="underline">Terms</Link> and
           <Link href="/privacy" className="underline"> Privacy Policy</Link>.
         </p>
       </div>

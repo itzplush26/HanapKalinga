@@ -98,7 +98,9 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
         </div>
 
         <Button asChild>
-          <Link href={`/dashboard/family/bookings/new?nurse=${nurse.id}`}>Request Booking</Link>
+          <Link href={`/register?role=family&next=/dashboard/family/bookings/new?nurse=${nurse.id}`}>
+            Request Booking
+          </Link>
         </Button>
       </div>
     </main>

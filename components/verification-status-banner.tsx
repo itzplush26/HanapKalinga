@@ -19,7 +19,7 @@ export function VerificationStatusBanner({
 }: VerificationStatusBannerProps) {
   return (
     <div className={cn("rounded-2xl border p-4 text-sm", statusStyles[status])}>
-      {status === "pending" && "Your profile is under review."}
+      {status === "pending" && "Your documents are under review. This usually takes 1-3 days."}
       {status === "verified" && "You are verified."}
       {status === "rejected" && (
         <div className="space-y-2">

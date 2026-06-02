@@ -36,7 +36,7 @@ export default function LoginPage() {
       try {
         const { data, error } = await supabase.auth.signInWithOtp({
           email: values.email,
-          options: { shouldCreateUser: false }
+          options: { shouldCreateUser: true }
         });
         if (error) {
           console.error("login.send_code.error", error);
@@ -72,9 +72,25 @@ export default function LoginPage() {
           return;
         }
         console.info("login.verify_code.success", data);
-        setMessage("Signed in. Redirecting...");
+        const userId = data?.user?.id;
+        if (userId) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", userId)
+            .maybeSingle();
+          if (profile?.role === "family") {
+            window.location.href = "/dashboard/family";
+            return;
+          }
+          if (profile?.role === "nurse") {
+            window.location.href = "/dashboard/nurse";
+            return;
+          }
+        }
+        setMessage("No profile yet. Redirecting to registration...");
         setIsSubmitting(false);
-        window.location.href = "/dashboard";
+        window.location.href = "/register";
       } catch (error) {
         console.error("login.verify_code.exception", error);
         setMessage("Unexpected error verifying code.");
@@ -93,7 +109,7 @@ export default function LoginPage() {
     try {
       const { data, error } = await supabase.auth.signInWithOtp({
         email,
-        options: { shouldCreateUser: false }
+        options: { shouldCreateUser: true }
       });
       if (error) {
         console.error("login.resend_code.error", error);

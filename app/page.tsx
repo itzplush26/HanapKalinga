@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export default function HomePage() {
   return (
@@ -8,24 +9,31 @@ export default function HomePage() {
         <div className="space-y-4">
           <p className="text-xs uppercase tracking-[0.3em] text-brand-600">NurseLink PH</p>
           <h1 className="text-3xl font-semibold text-slate-900">
-            Verified private duty nurses, ready when your family needs them.
+            Trusted nurses and caregivers, ready when your family needs them.
           </h1>
           <p className="text-base text-slate-600">
-            Browse trusted caregivers across the Philippines. Book directly, coordinate simply, and keep care personal.
+            Find trusted nurses and caregivers across the Philippines. Book directly, coordinate simply, and keep care
+            personal.
           </p>
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Badge className="bg-slate-100 text-slate-700">Private Duty Nurse</Badge>
+            <Badge className="bg-slate-100 text-slate-700">Elderly Care</Badge>
+            <Badge className="bg-slate-100 text-slate-700">Newborn Care</Badge>
+            <Badge className="bg-slate-100 text-slate-700">Special Needs Care</Badge>
+          </div>
+          {/* TODO: Verified Badge / Subscription upsell - Phase 2 */}
         </div>
         <div className="flex flex-col gap-3">
           <Button asChild>
-            <Link href="/nurses">Find a Nurse</Link>
+            <Link href="/register?role=family">Find Care</Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/register">I am a Nurse</Link>
+            <Link href="/register?role=provider">Join as a Nurse or Caregiver</Link>
           </Button>
+          <p className="text-xs text-slate-500">Free to use. We connect you directly - no fees, no middlemen.</p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
-          NurseLink PH is a neutral marketplace. We do not take payments or commissions.
-        </div>
-        <div className="flex flex-wrap gap-4 text-xs text-slate-500">
+        <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-slate-500">
+          <span>NurseLink PH is a neutral marketplace. We do not take payments or commissions.</span>
           <Link href="/privacy" className="underline">Privacy Policy</Link>
           <Link href="/terms" className="underline">Terms of Service</Link>
         </div>

@@ -1,5 +1,8 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { NurseCard } from "@/components/nurse-card";
+import { NurseFilters } from "@/components/nurse-filters";
+import { Button } from "@/components/ui/button";
 
 export default async function NursesPage() {
   const supabase = createClient();
@@ -15,6 +18,7 @@ export default async function NursesPage() {
           <h1 className="text-2xl font-semibold">Browse verified nurses</h1>
           <p className="text-sm text-slate-600">Search by city or specialization.</p>
         </div>
+        <NurseFilters />
         <div className="space-y-4">
           {(nurses ?? []).map((nurse) => {
             const profile = Array.isArray(nurse.profiles) ? nurse.profiles[0] : nurse.profiles;
@@ -34,9 +38,13 @@ export default async function NursesPage() {
             );
           })}
           {nurses?.length === 0 ? (
-            <p className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
-              No verified nurses yet. Check back soon.
-            </p>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+              <p className="font-semibold text-slate-900">No verified nurses yet</p>
+              <p className="mt-1">Be the first to sign up and get verified.</p>
+              <Button asChild className="mt-3">
+                <Link href="/register?role=nurse">Create nurse profile</Link>
+              </Button>
+            </div>
           ) : null}
         </div>
       </div>

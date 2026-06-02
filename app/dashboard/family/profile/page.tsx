@@ -18,6 +18,8 @@ export default function FamilyProfilePage() {
       city: "",
       barangay: "",
       address: "",
+      contactPersonName: "",
+      relationshipToPatient: "",
       patientName: "",
       patientAge: 0,
       patientCondition: ""
@@ -49,6 +51,8 @@ export default function FamilyProfilePage() {
 
     await supabase.from("families").upsert({
       id: user.id,
+      contact_person_name: values.contactPersonName,
+      relationship_to_patient: values.relationshipToPatient,
       patient_name: values.patientName,
       patient_age: values.patientAge,
       patient_condition: values.patientCondition,
@@ -69,6 +73,8 @@ export default function FamilyProfilePage() {
           <Input placeholder="City" {...form.register("city")} />
           <Input placeholder="Barangay" {...form.register("barangay")} />
           <Textarea placeholder="Home address" {...form.register("address")} />
+          <Input placeholder="Family contact person" {...form.register("contactPersonName")} />
+          <Input placeholder="Relationship to patient (e.g. son, daughter, spouse)" {...form.register("relationshipToPatient")} />
           <Input placeholder="Patient name" {...form.register("patientName")} />
           <Input type="number" placeholder="Patient age" {...form.register("patientAge", { valueAsNumber: true })} />
           <Input placeholder="Patient condition" {...form.register("patientCondition")} />
