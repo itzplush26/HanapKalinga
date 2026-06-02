@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,7 +20,6 @@ export default function RegisterPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [email, setEmail] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const searchParams = useSearchParams();
   const supabase = createClient();
 
   const requiredLabel = (label: string, hasError?: boolean) => (
@@ -239,7 +237,7 @@ export default function RegisterPage() {
     const storedStep = window.sessionStorage.getItem("nurselink.signup.step");
     const storedRole = window.sessionStorage.getItem("nurselink.signup.role");
     const storedEmail = window.sessionStorage.getItem("nurselink.signup.email");
-    const queryRole = searchParams.get("role");
+    const queryRole = new URLSearchParams(window.location.search).get("role");
     if (storedStep) {
       const nextStep = Number(storedStep);
       if (!Number.isNaN(nextStep)) setStep(nextStep);
@@ -256,7 +254,7 @@ export default function RegisterPage() {
     if (storedEmail) {
       setEmail(storedEmail);
     }
-  }, [roleForm, searchParams]);
+  }, [roleForm]);
 
   useEffect(() => {
     window.sessionStorage.setItem("nurselink.signup.step", String(step));
