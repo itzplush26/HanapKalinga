@@ -6,7 +6,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
 import { loginSchema } from "@/lib/validations/auth";
-import { getPostLoginPath, parseSafeRedirect } from "@/lib/auth-redirect";
+import { parseSafeRedirect } from "@/lib/auth-redirect";
+import { fetchProfileRole, resolvePostLoginDestination } from "@/lib/post-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { z } from "zod";
@@ -35,6 +36,11 @@ export default function LoginPage() {
     if (params.get("error") === "auth_callback") {
       setMessage("Sign-in link expired or invalid. Try again or log in with your password.");
     }
+    if (params.get("error") === "no_profile") {
+      setMessage(
+        "You are signed in but no profile was found. Complete registration or ask an admin to link your account."
+      );
+    }
   }, []);
 
   async function handleSubmit(values: LoginFormValues) {
@@ -58,17 +64,31 @@ export default function LoginPage() {
       }
 
       const userId = data.user?.id;
-      let role: string | null = null;
-      if (userId) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", userId)
-          .maybeSingle();
-        role = profile?.role ?? null;
+      if (!userId) {
+        setMessage("Sign-in succeeded but no user id was returned. Try again.");
+        setIsSubmitting(false);
+        return;
       }
 
-      window.location.href = getPostLoginPath(role, safeRedirect);
+      const { role, error: profileError } = await fetchProfileRole(supabase, userId);
+
+      if (profileError) {
+        setMessage(`Could not load your profile: ${profileError}`);
+        setIsSubmitting(false);
+        return;
+      }
+
+      const destination = resolvePostLoginDestination(role, safeRedirect);
+
+      if (!destination) {
+        setMessage(
+          "Your account is signed in but has no NurseLink profile yet. If you are the admin, run supabase/seed.sql in your Supabase project. Otherwise create an account below."
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
+      window.location.href = destination;
     } catch {
       setMessage("Unexpected error signing in.");
       setIsSubmitting(false);

@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
 import { signupOtpSchema, roleSchema, passwordSetupSchema } from "@/lib/validations/auth";
+import { fetchProfileRole, resolvePostLoginDestination } from "@/lib/post-auth";
 import { familyProfileSchema, nurseProfileSchema } from "@/lib/validations/profile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -138,20 +139,14 @@ export default function RegisterPage() {
         console.info("signup.verify_code.success", data);
         const userId = data?.user?.id;
         if (userId) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("role")
-            .eq("id", userId)
-            .maybeSingle();
-          if (profile?.role === "family") {
+          const { role: existingRole } = await fetchProfileRole(supabase, userId);
+          if (existingRole) {
             clearSignupStage();
-            window.location.href = "/dashboard/family";
-            return;
-          }
-          if (profile?.role === "nurse") {
-            clearSignupStage();
-            window.location.href = "/dashboard/nurse";
-            return;
+            const destination = resolvePostLoginDestination(existingRole, null);
+            if (destination) {
+              window.location.href = destination;
+              return;
+            }
           }
         }
       } catch (error) {
@@ -281,6 +276,24 @@ export default function RegisterPage() {
 
     window.location.href = "/dashboard/nurse";
   }
+
+  useEffect(() => {
+    async function redirectIfProfileComplete() {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return;
+
+      const { role: existingRole } = await fetchProfileRole(supabase, auth.user.id);
+      if (!existingRole) return;
+
+      const destination = resolvePostLoginDestination(existingRole, null);
+      if (destination) {
+        clearSignupStage();
+        window.location.href = destination;
+      }
+    }
+
+    redirectIfProfileComplete();
+  }, [supabase]);
 
   useEffect(() => {
     const storedStep = window.sessionStorage.getItem(SIGNUP_STAGE_KEYS.step);

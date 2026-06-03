@@ -42,7 +42,13 @@ export async function middleware(request: NextRequest) {
       .single();
 
     if (profile?.role !== "admin") {
-      return NextResponse.redirect(new URL("/", request.url));
+      if (profile?.role === "family") {
+        return NextResponse.redirect(new URL("/dashboard/family", request.url));
+      }
+      if (profile?.role === "nurse") {
+        return NextResponse.redirect(new URL("/dashboard/nurse", request.url));
+      }
+      return NextResponse.redirect(new URL("/login?error=no_profile", request.url));
     }
   }
 

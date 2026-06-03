@@ -5,15 +5,26 @@ export function parseSafeRedirect(value: string | null | undefined): string | nu
   return value;
 }
 
-export function getPostLoginPath(
-  role: string | undefined | null,
-  safeRedirect: string | null
-): string {
-  if (safeRedirect) return safeRedirect;
+export type AuthRole = "family" | "nurse" | "admin";
+
+export function getPostLoginPath(role: AuthRole, safeRedirect: string | null): string {
+  if (safeRedirect) {
+    if (safeRedirect.startsWith("/admin") && role !== "admin") {
+      return role === "family" ? "/dashboard/family" : "/dashboard/nurse";
+    }
+    if (safeRedirect.startsWith("/dashboard/family") && role !== "family") {
+      if (role === "admin") return "/admin";
+      return "/dashboard/nurse";
+    }
+    if (safeRedirect.startsWith("/dashboard/nurse") && role !== "nurse") {
+      if (role === "admin") return "/admin";
+      return "/dashboard/family";
+    }
+    return safeRedirect;
+  }
   if (role === "family") return "/dashboard/family";
   if (role === "nurse") return "/dashboard/nurse";
-  if (role === "admin") return "/admin";
-  return "/register";
+  return "/admin";
 }
 
 export function getAppOrigin(): string {
