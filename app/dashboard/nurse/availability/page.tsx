@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { AvailabilityCalendar, AvailabilitySlot } from "@/components/availability-calendar";
 
@@ -17,6 +17,39 @@ export default function NurseAvailabilityPage() {
   const supabase = createClient();
   const weekDates = useMemo(() => getWeekDates(), []);
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadExisting() {
+      const { data: auth } = await supabase.auth.getUser();
+      const user = auth.user;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      const startDate = weekDates[0];
+      const endDate = weekDates[weekDates.length - 1];
+
+      const { data: existingSlots } = await supabase
+        .from("availability")
+        .select("date, shift, is_open")
+        .eq("nurse_id", user.id)
+        .gte("date", startDate)
+        .lte("date", endDate);
+
+      setSlots(
+        (existingSlots ?? []).map((row) => ({
+          date: row.date as string,
+          shift: row.shift as AvailabilitySlot["shift"],
+          isOpen: Boolean(row.is_open)
+        }))
+      );
+      setLoading(false);
+    }
+
+    loadExisting();
+  }, [supabase, weekDates]);
 
   async function handleToggle(slot: AvailabilitySlot) {
     setSlots((prev) => {
@@ -40,7 +73,11 @@ export default function NurseAvailabilityPage() {
     <main className="px-5 py-8">
       <div className="mx-auto flex max-w-md flex-col gap-5">
         <h1 className="text-2xl font-semibold">Set availability</h1>
-        <AvailabilityCalendar weekDates={weekDates} slots={slots} onToggle={handleToggle} />
+        {loading ? (
+          <p className="text-sm text-slate-600">Loading availability...</p>
+        ) : (
+          <AvailabilityCalendar weekDates={weekDates} slots={slots} onToggle={handleToggle} />
+        )}
       </div>
     </main>
   );

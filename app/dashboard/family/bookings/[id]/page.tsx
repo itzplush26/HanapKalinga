@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { BookingStatusBadge } from "@/components/booking-status-badge";
+import { BookingDetailsCard } from "@/components/booking-details-card";
 import { MessageThread } from "@/components/message-thread";
 
 interface BookingDetailPageProps {
@@ -10,7 +11,7 @@ export default async function FamilyBookingDetailPage({ params }: BookingDetailP
   const supabase = createClient();
   const { data: booking } = await supabase
     .from("bookings")
-    .select("id, status, requested_date, shift")
+    .select("id, status, requested_date, shift, notes, nurse_id")
     .eq("id", params.id)
     .single();
 
@@ -30,6 +31,16 @@ export default async function FamilyBookingDetailPage({ params }: BookingDetailP
     );
   }
 
+  const participantIds = [auth.user?.id, booking.nurse_id].filter(Boolean) as string[];
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .in("id", participantIds);
+
+  const senderNames = Object.fromEntries(
+    (profiles ?? []).map((p) => [p.id as string, (p.full_name as string) ?? "User"])
+  );
+
   return (
     <main className="px-5 py-8">
       <div className="mx-auto flex max-w-md flex-col gap-5">
@@ -40,10 +51,12 @@ export default async function FamilyBookingDetailPage({ params }: BookingDetailP
           </div>
           <BookingStatusBadge status={booking.status} />
         </div>
+        <BookingDetailsCard notes={booking.notes} />
         <MessageThread
           bookingId={booking.id}
           currentUserId={auth.user?.id ?? ""}
           initialMessages={messages ?? []}
+          senderNames={senderNames}
         />
       </div>
     </main>

@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { BookingStatusBadge } from "@/components/booking-status-badge";
+
+type BookingStatus = "pending" | "accepted" | "declined" | "completed" | "cancelled";
+import { BookingDetailsCard } from "@/components/booking-details-card";
 import { Button } from "@/components/ui/button";
 import { MessageThread } from "@/components/message-thread";
 
@@ -12,14 +15,26 @@ interface AdminBookingDetailPageProps {
 
 export default function AdminBookingDetailPage({ params }: AdminBookingDetailPageProps) {
   const supabase = createClient();
-  const [booking, setBooking] = useState<any>(null);
+  const [booking, setBooking] = useState<{
+    id: string;
+    status: BookingStatus;
+    requested_date: string;
+    shift: string;
+    notes: string | null;
+    family_id: string;
+    nurse_id: string;
+  } | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
+  const [userId, setUserId] = useState<string>("");
+  const [senderNames, setSenderNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     async function load() {
+      const { data: auth } = await supabase.auth.getUser();
+      setUserId(auth.user?.id ?? "");
       const { data: bookingData } = await supabase
         .from("bookings")
-        .select("id, status, requested_date, shift")
+        .select("id, status, requested_date, shift, notes, family_id, nurse_id")
         .eq("id", params.id)
         .single();
       setBooking(bookingData);
@@ -29,13 +44,25 @@ export default function AdminBookingDetailPage({ params }: AdminBookingDetailPag
         .eq("booking_id", params.id)
         .order("created_at", { ascending: true });
       setMessages(messageData ?? []);
+
+      if (bookingData) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", [bookingData.family_id, bookingData.nurse_id]);
+        setSenderNames(
+          Object.fromEntries(
+            (profiles ?? []).map((p) => [p.id as string, (p.full_name as string) ?? "User"])
+          )
+        );
+      }
     }
     load();
   }, [params.id, supabase]);
 
   async function markCompleted() {
     await supabase.from("bookings").update({ status: "completed" }).eq("id", params.id);
-    setBooking((prev: any) => ({ ...prev, status: "completed" }));
+    setBooking((prev) => (prev ? { ...prev, status: "completed" } : prev));
   }
 
   if (!booking) {
@@ -56,10 +83,17 @@ export default function AdminBookingDetailPage({ params }: AdminBookingDetailPag
           </div>
           <BookingStatusBadge status={booking.status} />
         </div>
+        <BookingDetailsCard notes={booking.notes} />
         <Button type="button" variant="outline" onClick={markCompleted}>
           Mark completed
         </Button>
-        <MessageThread bookingId={booking.id} currentUserId="admin" initialMessages={messages} />
+        <MessageThread
+          bookingId={booking.id}
+          currentUserId={userId}
+          initialMessages={messages}
+          senderNames={senderNames}
+          readOnly
+        />
       </div>
     </main>
   );

@@ -18,6 +18,16 @@ export default async function FamilyDashboardPage() {
           <h1 className="text-2xl font-semibold">Family dashboard</h1>
           <p className="text-sm text-slate-600">Your latest booking activity.</p>
         </div>
+        <Link
+          href="/nurses"
+          className="block rounded-2xl border border-brand-200 bg-brand-50 p-4 transition hover:bg-brand-100"
+        >
+          <h3 className="text-base font-semibold text-brand-900">Find a nurse or caregiver</h3>
+          <p className="mt-1 text-sm text-brand-800">
+            Browse verified professionals available in your area
+          </p>
+          <span className="mt-2 inline-block text-sm font-medium text-brand-700">Browse now →</span>
+        </Link>
         <div className="space-y-3">
           {(bookings ?? []).map((booking) => (
             <Link
