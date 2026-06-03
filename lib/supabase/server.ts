@@ -11,10 +11,18 @@ export function createClient() {
       cookies: {
         get: (name) => cookieStore.get(name)?.value,
         set: (name, value, options) => {
-          cookieStore.set({ name, value, ...options });
+          try {
+            cookieStore.set({ name, value, ...options });
+          } catch {
+            // Server Components cannot mutate cookies; middleware handles refresh.
+          }
         },
         remove: (name, options) => {
-          cookieStore.set({ name, value: "", ...options });
+          try {
+            cookieStore.set({ name, value: "", ...options });
+          } catch {
+            // Server Components cannot mutate cookies; middleware handles refresh.
+          }
         }
       }
     }

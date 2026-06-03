@@ -25,10 +25,13 @@ NEXT_PUBLIC_APP_URL=
 ## Supabase setup steps
 
 1. Create a new Supabase project.
-2. Enable email OTP auth in Supabase (no SMS in MVP).
-3. Create a private storage bucket named `nurse-docs`.
-4. Run the SQL files in `supabase/migrations` in order.
-5. Run `supabase/seed.sql` to insert the admin user and profile.
+2. Enable Email auth in Supabase: confirm email via OTP for signup, and enable password sign-in.
+3. Add your site URL and redirect URLs in Supabase Auth settings:
+   - Site URL: your production URL (e.g. `https://your-app.vercel.app`)
+   - Redirect URLs: `http://localhost:3000/auth/callback`, `https://your-app.vercel.app/auth/callback`
+4. Create a private storage bucket named `nurse-docs`.
+5. Run the SQL files in `supabase/migrations` in order.
+6. Run `supabase/seed.sql` to insert the admin user and profile.
 
 SMTP note: Supabase can send auth emails via its own SMTP on free tier, but this project is configured to use your Gmail SMTP sender.
 

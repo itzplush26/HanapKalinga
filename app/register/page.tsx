@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
-import { authSchema, roleSchema } from "@/lib/validations/auth";
+import { signupOtpSchema, roleSchema, passwordSetupSchema } from "@/lib/validations/auth";
 import { familyProfileSchema, nurseProfileSchema } from "@/lib/validations/profile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,8 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { DocumentUploader } from "@/components/document-uploader";
 import { PH_CITIES } from "@/lib/ph-locations";
+
+const SIGNUP_TOTAL_STEPS = 5;
 
 const SIGNUP_STAGE_KEYS = {
   step: "nurselink.signup.step",
@@ -43,8 +45,13 @@ export default function RegisterPage() {
   );
 
   const authForm = useForm({
-    resolver: zodResolver(authSchema),
+    resolver: zodResolver(signupOtpSchema),
     defaultValues: { email: "", token: "" }
+  });
+
+  const passwordForm = useForm({
+    resolver: zodResolver(passwordSetupSchema),
+    defaultValues: { password: "", confirmPassword: "" }
   });
 
   const roleForm = useForm({
@@ -225,12 +232,7 @@ export default function RegisterPage() {
         care_needed: values.careNeeded ?? null,
         address: null
       });
-      clearSignupStage();
-      window.location.href = "/nurses?welcome=1";
-      return;
-    }
-
-    if (role === "nurse") {
+    } else if (role === "nurse") {
       const credentialField = values.providerType === "nurse" ? "prc_document_url" : "tesda_document_url";
       await supabase.from("nurses").upsert({
         id: user.id,
@@ -242,12 +244,42 @@ export default function RegisterPage() {
         [credentialField]: values.providerType === "nurse" ? values.prcDocumentUrl : values.tesdaDocumentUrl,
         verification_status: "pending"
       });
-      clearSignupStage();
-      window.location.href = "/dashboard/nurse";
+    }
+
+    setStep(5);
+    setStatus(null);
+  }
+
+  async function handlePasswordSubmit(values: { password: string; confirmPassword: string }) {
+    setStatus(null);
+    setIsSubmitting(true);
+
+    const { data } = await supabase.auth.getUser();
+    const user = data.user;
+
+    if (!user || !role) {
+      setStatus("Session expired. Please start registration again.");
+      setIsSubmitting(false);
       return;
     }
 
-    setStatus("Profile created.");
+    const { error } = await supabase.auth.updateUser({ password: values.password });
+
+    if (error) {
+      setStatus(error.message);
+      setIsSubmitting(false);
+      return;
+    }
+
+    clearSignupStage();
+    setIsSubmitting(false);
+
+    if (role === "family") {
+      window.location.href = "/nurses?welcome=1";
+      return;
+    }
+
+    window.location.href = "/dashboard/nurse";
   }
 
   useEffect(() => {
@@ -336,7 +368,7 @@ export default function RegisterPage() {
       <div className="mx-auto flex max-w-md flex-col gap-6">
         <div>
           <h1 className="text-2xl font-semibold">Create account</h1>
-          <p className="text-sm text-slate-600">Step {step} of 4</p>
+          <p className="text-sm text-slate-600">Step {step} of {SIGNUP_TOTAL_STEPS}</p>
         </div>
 
         {step <= 2 ? (
@@ -468,7 +500,7 @@ export default function RegisterPage() {
             />
             {optionalLabel("Care needed (optional)")}
             <Textarea placeholder="Care needed" {...familyForm.register("careNeeded")} />
-            <Button type="submit">Finish</Button>
+            <Button type="submit">Continue</Button>
           </form>
         ) : null}
 
@@ -548,7 +580,48 @@ export default function RegisterPage() {
             {nurseForm.formState.errors.nbiDocumentUrl ? (
               <p className="text-xs text-rose-600">Required</p>
             ) : null}
-            <Button type="submit">Finish</Button>
+            <Button type="submit">Continue</Button>
+          </form>
+        ) : null}
+
+        {step === 5 ? (
+          <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)} className="space-y-4">
+            <p className="text-sm text-slate-600">
+              Create a password to sign in next time. You will not need an email code for login.
+            </p>
+            {requiredLabel("Password", !!passwordForm.formState.errors.password)}
+            <Input
+              type="password"
+              placeholder="At least 8 characters"
+              autoComplete="new-password"
+              {...passwordForm.register("password")}
+              className={
+                passwordForm.formState.errors.password ? "border-rose-500 focus:ring-rose-500" : undefined
+              }
+            />
+            {passwordForm.formState.errors.password ? (
+              <p className="text-xs text-rose-600">{passwordForm.formState.errors.password.message}</p>
+            ) : null}
+            {requiredLabel("Confirm password", !!passwordForm.formState.errors.confirmPassword)}
+            <Input
+              type="password"
+              placeholder="Confirm password"
+              autoComplete="new-password"
+              {...passwordForm.register("confirmPassword")}
+              className={
+                passwordForm.formState.errors.confirmPassword
+                  ? "border-rose-500 focus:ring-rose-500"
+                  : undefined
+              }
+            />
+            {passwordForm.formState.errors.confirmPassword ? (
+              <p className="text-xs text-rose-600">
+                {passwordForm.formState.errors.confirmPassword.message}
+              </p>
+            ) : null}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Create account"}
+            </Button>
           </form>
         ) : null}
 

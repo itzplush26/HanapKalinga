@@ -1,22 +1,8 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { createClient } from "@/lib/supabase/server";
 
-export default async function HomePage() {
-  const supabase = createClient();
-  const { data: auth } = await supabase.auth.getUser();
-  let findCareHref = "/nurses";
-  if (auth.user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", auth.user.id)
-      .maybeSingle();
-    if (profile?.role === "family") {
-      findCareHref = "/nurses";
-    }
-  }
+export default function HomePage() {
   return (
     <main className="px-5 py-10">
       <div className="mx-auto flex max-w-md flex-col gap-8">
@@ -37,20 +23,16 @@ export default async function HomePage() {
           </div>
           {/* TODO: Verified Badge / Subscription upsell - Phase 2 */}
         </div>
-        <div className="flex flex-col gap-3">
-          <Button asChild>
-            <Link href={findCareHref}>Find a Nurse or Caregiver</Link>
+        <div className="flex flex-col items-center gap-3">
+          <Button asChild className="w-full">
+            <Link href="/register?role=family">I need a nurse or caregiver</Link>
           </Button>
-          <Button asChild variant="outline">
-            <Link href="/register?role=family">Create family account</Link>
+          <Button asChild variant="outline" className="w-full">
+            <Link href="/register?role=provider">I am a nurse or caregiver</Link>
           </Button>
-          <Button asChild variant="outline">
-            <Link href="/register?role=provider">Join as a Nurse or Caregiver</Link>
-          </Button>
-          <Button asChild variant="ghost">
-            <Link href="/login">Sign In</Link>
-          </Button>
-          <p className="text-xs text-slate-500">Free to use. We connect you directly - no fees, no middlemen.</p>
+          <Link href="/login" className="text-xs text-slate-500 underline">
+            Log in
+          </Link>
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-slate-500">
           <span>NurseLink PH is a neutral marketplace. We do not take payments or commissions.</span>
