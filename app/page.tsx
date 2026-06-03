@@ -1,8 +1,22 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { createClient } from "@/lib/supabase/server";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const supabase = createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  let findCareHref = "/nurses";
+  if (auth.user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", auth.user.id)
+      .maybeSingle();
+    if (profile?.role === "family") {
+      findCareHref = "/nurses";
+    }
+  }
   return (
     <main className="px-5 py-10">
       <div className="mx-auto flex max-w-md flex-col gap-8">
@@ -25,10 +39,16 @@ export default function HomePage() {
         </div>
         <div className="flex flex-col gap-3">
           <Button asChild>
-            <Link href="/register?role=family">Find Care</Link>
+            <Link href={findCareHref}>Find a Nurse or Caregiver</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/register?role=family">Create family account</Link>
           </Button>
           <Button asChild variant="outline">
             <Link href="/register?role=provider">Join as a Nurse or Caregiver</Link>
+          </Button>
+          <Button asChild variant="ghost">
+            <Link href="/login">Sign In</Link>
           </Button>
           <p className="text-xs text-slate-500">Free to use. We connect you directly - no fees, no middlemen.</p>
         </div>

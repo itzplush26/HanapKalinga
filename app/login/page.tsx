@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
@@ -13,12 +13,22 @@ type AuthFormValues = {
   token?: string;
 };
 
+const LOGIN_STEP_KEY = "nurselink.login.step";
+const LOGIN_EMAIL_KEY = "nurselink.login.email";
+
 export default function LoginPage() {
   const [step, setStep] = useState<"send" | "verify">("send");
   const [message, setMessage] = useState<string | null>(null);
   const [email, setEmail] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [redirectTarget, setRedirectTarget] = useState<string | null>(null);
   const supabase = createClient();
+  const safeRedirect = useMemo(() => {
+    if (!redirectTarget) return null;
+    if (!redirectTarget.startsWith("/")) return null;
+    if (redirectTarget.startsWith("//")) return null;
+    return redirectTarget;
+  }, [redirectTarget]);
 
   const form = useForm<AuthFormValues>({
     resolver: zodResolver(authSchema),
@@ -27,6 +37,34 @@ export default function LoginPage() {
       token: ""
     }
   });
+
+  useEffect(() => {
+    const queryRedirect = new URLSearchParams(window.location.search).get("redirect");
+    setRedirectTarget(queryRedirect);
+
+    const storedStep = window.sessionStorage.getItem(LOGIN_STEP_KEY);
+    const storedEmail = window.sessionStorage.getItem(LOGIN_EMAIL_KEY);
+    if (storedStep === "send" || storedStep === "verify") {
+      setStep(storedStep);
+    }
+    if (storedEmail) {
+      setEmail(storedEmail);
+      form.setValue("email", storedEmail);
+    }
+  }, [form]);
+
+  useEffect(() => {
+    window.sessionStorage.setItem(LOGIN_STEP_KEY, step);
+  }, [step]);
+
+  useEffect(() => {
+    if (email) window.sessionStorage.setItem(LOGIN_EMAIL_KEY, email);
+  }, [email]);
+
+  function clearLoginStage() {
+    window.sessionStorage.removeItem(LOGIN_STEP_KEY);
+    window.sessionStorage.removeItem(LOGIN_EMAIL_KEY);
+  }
 
   async function handleSubmit(values: AuthFormValues) {
     setMessage(null);
@@ -72,6 +110,11 @@ export default function LoginPage() {
           return;
         }
         console.info("login.verify_code.success", data);
+        clearLoginStage();
+        if (safeRedirect) {
+          window.location.href = safeRedirect;
+          return;
+        }
         const userId = data?.user?.id;
         if (userId) {
           const { data: profile } = await supabase
@@ -130,6 +173,9 @@ export default function LoginPage() {
         <div>
           <h1 className="text-2xl font-semibold">Log in</h1>
           <p className="text-sm text-slate-600">Email OTP (6-digit code).</p>
+          {safeRedirect ? (
+            <p className="mt-1 text-xs text-slate-500">Sign in to continue to your requested page.</p>
+          ) : null}
         </div>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
           {step === "send" ? (

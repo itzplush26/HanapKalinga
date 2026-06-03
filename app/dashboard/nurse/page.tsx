@@ -45,9 +45,14 @@ export default async function NurseDashboardPage() {
             </p>
           ) : null}
         </div>
-        <Button asChild>
-          <Link href="/dashboard/nurse/profile">Edit profile</Link>
-        </Button>
+        <div className="grid grid-cols-2 gap-3">
+          <Button asChild>
+            <Link href="/dashboard/nurse/profile">Edit profile</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/dashboard/nurse/availability">Set availability</Link>
+          </Button>
+        </div>
       </div>
     </main>
   );

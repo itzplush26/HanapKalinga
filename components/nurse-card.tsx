@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { AvailabilityStatus } from "@/lib/availability-status";
 
 interface NurseCardProps {
   id: string;
@@ -10,8 +11,10 @@ interface NurseCardProps {
   specializations: string[];
   yearsExperience: number;
   dailyRate: number;
-  rating: number;
+  averageRating?: number | null;
+  reviewCount?: number;
   verified: boolean;
+  availabilityStatus: AvailabilityStatus;
   imageUrl?: string;
 }
 
@@ -22,8 +25,10 @@ export function NurseCard({
   specializations,
   yearsExperience,
   dailyRate,
-  rating,
+  averageRating,
+  reviewCount = 0,
   verified,
+  availabilityStatus,
   imageUrl
 }: NurseCardProps) {
   const initials = name
@@ -32,6 +37,19 @@ export function NurseCard({
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join("") || "NL";
+  const availabilityLabel =
+    availabilityStatus === "available_now"
+      ? "Available now"
+      : availabilityStatus === "available_next_week"
+        ? "Available next week"
+        : "Not accepting clients";
+
+  const availabilityStyle =
+    availabilityStatus === "available_now"
+      ? "bg-emerald-100 text-emerald-700"
+      : availabilityStatus === "available_next_week"
+        ? "bg-amber-100 text-amber-700"
+        : "bg-rose-100 text-rose-700";
 
   return (
     <Link href={`/nurses/${id}`} className="block">
@@ -56,6 +74,7 @@ export function NurseCard({
               {verified ? (
                 <Badge className="bg-emerald-100 text-emerald-700">Verified</Badge>
               ) : null}
+              <Badge className={availabilityStyle}>{availabilityLabel}</Badge>
             </div>
             <p className="text-sm text-slate-600">
               {city} • {yearsExperience} yrs exp
@@ -71,7 +90,15 @@ export function NurseCard({
               <span className="text-slate-600">Daily rate</span>
               <span className="font-semibold text-slate-900">PHP {dailyRate}</span>
             </div>
-            <div className="text-sm text-slate-600">Rating {rating.toFixed(1)} / 5</div>
+            <div className="text-sm text-slate-600">
+              {averageRating != null && reviewCount > 0 ? (
+                <span>
+                  ★ {Number(averageRating).toFixed(1)} ({reviewCount})
+                </span>
+              ) : (
+                <span className="text-slate-400">No reviews yet</span>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>

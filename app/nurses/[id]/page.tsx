@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { deriveAvailabilityStatus } from "@/lib/availability-status";
 
 interface NurseProfilePageProps {
   params: { id: string };
@@ -37,6 +38,21 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
   }
 
   const profile = Array.isArray(nurse.profiles) ? nurse.profiles[0] : nurse.profiles;
+  const availabilityStatus = deriveAvailabilityStatus(
+    (availability ?? []).map((slot) => ({ date: slot.date, is_open: slot.is_open }))
+  );
+  const availabilityText =
+    availabilityStatus === "available_now"
+      ? "Available now"
+      : availabilityStatus === "available_next_week"
+        ? "Available next week"
+        : "Not accepting new clients";
+  const availabilityClass =
+    availabilityStatus === "available_now"
+      ? "bg-emerald-100 text-emerald-700"
+      : availabilityStatus === "available_next_week"
+        ? "bg-amber-100 text-amber-700"
+        : "bg-rose-100 text-rose-700";
 
   return (
     <main className="px-5 py-8">
@@ -46,6 +62,7 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
           <p className="text-sm text-slate-600">
             {profile?.city ?? ""} {profile?.barangay ?? ""}
           </p>
+          <Badge className={availabilityClass}>{availabilityText}</Badge>
           <div className="flex flex-wrap gap-2">
             {(nurse.specializations ?? []).map((item: string) => (
               <Badge key={item} className="bg-slate-100 text-slate-700">
@@ -97,11 +114,15 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
           </div>
         </div>
 
-        <Button asChild>
-          <Link href={`/register?role=family&next=/dashboard/family/bookings/new?nurse=${nurse.id}`}>
-            Request Booking
-          </Link>
-        </Button>
+        {availabilityStatus === "not_accepting" ? (
+          <Button disabled>Request Booking</Button>
+        ) : (
+          <Button asChild>
+            <Link href={`/register?role=family&next=/dashboard/family/bookings/new?nurse=${nurse.id}`}>
+              Request Booking
+            </Link>
+          </Button>
+        )}
       </div>
     </main>
   );

@@ -14,6 +14,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { DocumentUploader } from "@/components/document-uploader";
 import { PH_CITIES } from "@/lib/ph-locations";
 
+const SIGNUP_STAGE_KEYS = {
+  step: "nurselink.signup.step",
+  role: "nurselink.signup.role",
+  email: "nurselink.signup.email",
+  family: "nurselink.signup.family",
+  nurse: "nurselink.signup.nurse",
+  auth: "nurselink.signup.auth"
+} as const;
+
 export default function RegisterPage() {
   const [step, setStep] = useState(1);
   const [role, setRole] = useState<"family" | "nurse" | null>(null);
@@ -73,6 +82,10 @@ export default function RegisterPage() {
     }
   });
 
+  function clearSignupStage() {
+    Object.values(SIGNUP_STAGE_KEYS).forEach((key) => window.sessionStorage.removeItem(key));
+  }
+
   async function handleAuthSubmit(values: any) {
     setStatus(null);
     setIsSubmitting(true);
@@ -124,10 +137,12 @@ export default function RegisterPage() {
             .eq("id", userId)
             .maybeSingle();
           if (profile?.role === "family") {
+            clearSignupStage();
             window.location.href = "/dashboard/family";
             return;
           }
           if (profile?.role === "nurse") {
+            clearSignupStage();
             window.location.href = "/dashboard/nurse";
             return;
           }
@@ -210,7 +225,8 @@ export default function RegisterPage() {
         care_needed: values.careNeeded ?? null,
         address: null
       });
-      window.location.href = "/dashboard/family";
+      clearSignupStage();
+      window.location.href = "/nurses?welcome=1";
       return;
     }
 
@@ -226,6 +242,7 @@ export default function RegisterPage() {
         [credentialField]: values.providerType === "nurse" ? values.prcDocumentUrl : values.tesdaDocumentUrl,
         verification_status: "pending"
       });
+      clearSignupStage();
       window.location.href = "/dashboard/nurse";
       return;
     }
@@ -234,9 +251,10 @@ export default function RegisterPage() {
   }
 
   useEffect(() => {
-    const storedStep = window.sessionStorage.getItem("nurselink.signup.step");
-    const storedRole = window.sessionStorage.getItem("nurselink.signup.role");
-    const storedEmail = window.sessionStorage.getItem("nurselink.signup.email");
+    const storedStep = window.sessionStorage.getItem(SIGNUP_STAGE_KEYS.step);
+    const storedRole = window.sessionStorage.getItem(SIGNUP_STAGE_KEYS.role);
+    const storedEmail = window.sessionStorage.getItem(SIGNUP_STAGE_KEYS.email);
+    const storedAuth = window.sessionStorage.getItem(SIGNUP_STAGE_KEYS.auth);
     const queryRole = new URLSearchParams(window.location.search).get("role");
     if (storedStep) {
       const nextStep = Number(storedStep);
@@ -253,35 +271,50 @@ export default function RegisterPage() {
     }
     if (storedEmail) {
       setEmail(storedEmail);
+      authForm.setValue("email", storedEmail);
     }
-  }, [roleForm]);
+    if (storedAuth) {
+      try {
+        const parsed = JSON.parse(storedAuth);
+        if (typeof parsed.email === "string") authForm.setValue("email", parsed.email);
+        if (typeof parsed.token === "string") authForm.setValue("token", parsed.token);
+      } catch {
+        // Ignore malformed auth cache.
+      }
+    }
+  }, [authForm, roleForm]);
 
   useEffect(() => {
-    window.sessionStorage.setItem("nurselink.signup.step", String(step));
+    window.sessionStorage.setItem(SIGNUP_STAGE_KEYS.step, String(step));
   }, [step]);
 
   useEffect(() => {
-    if (role) window.sessionStorage.setItem("nurselink.signup.role", role);
+    if (role) window.sessionStorage.setItem(SIGNUP_STAGE_KEYS.role, role);
   }, [role]);
 
   useEffect(() => {
-    if (email) window.sessionStorage.setItem("nurselink.signup.email", email);
+    if (email) window.sessionStorage.setItem(SIGNUP_STAGE_KEYS.email, email);
   }, [email]);
 
+  const authValues = authForm.watch();
   const familyValues = familyForm.watch();
   const nurseValues = nurseForm.watch();
 
   useEffect(() => {
-    window.sessionStorage.setItem("nurselink.signup.family", JSON.stringify(familyValues));
+    window.sessionStorage.setItem(SIGNUP_STAGE_KEYS.auth, JSON.stringify(authValues));
+  }, [authValues]);
+
+  useEffect(() => {
+    window.sessionStorage.setItem(SIGNUP_STAGE_KEYS.family, JSON.stringify(familyValues));
   }, [familyValues]);
 
   useEffect(() => {
-    window.sessionStorage.setItem("nurselink.signup.nurse", JSON.stringify(nurseValues));
+    window.sessionStorage.setItem(SIGNUP_STAGE_KEYS.nurse, JSON.stringify(nurseValues));
   }, [nurseValues]);
 
   useEffect(() => {
-    const storedFamily = window.sessionStorage.getItem("nurselink.signup.family");
-    const storedNurse = window.sessionStorage.getItem("nurselink.signup.nurse");
+    const storedFamily = window.sessionStorage.getItem(SIGNUP_STAGE_KEYS.family);
+    const storedNurse = window.sessionStorage.getItem(SIGNUP_STAGE_KEYS.nurse);
     if (storedFamily) {
       try {
         familyForm.reset(JSON.parse(storedFamily));
