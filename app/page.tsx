@@ -1,8 +1,27 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { createClient } from "@/lib/supabase/server";
+import { getPostLoginPath } from "@/lib/auth-redirect";
+import type { AuthRole } from "@/lib/auth-redirect";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const supabase = createClient();
+  const { data: auth } = await supabase.auth.getUser();
+
+  if (auth.user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", auth.user.id)
+      .maybeSingle();
+
+    const role = profile?.role as AuthRole | undefined;
+    if (role === "family" || role === "nurse" || role === "admin") {
+      redirect(getPostLoginPath(role, null));
+    }
+  }
+
   return (
     <main className="px-5 py-10">
       <div className="mx-auto flex max-w-md flex-col gap-8">
@@ -15,13 +34,6 @@ export default function HomePage() {
             Find trusted nurses and caregivers across the Philippines. Book directly, coordinate simply, and keep care
             personal.
           </p>
-          <div className="flex flex-wrap gap-2 pt-1">
-            <Badge className="bg-slate-100 text-slate-700">Private Duty Nurse</Badge>
-            <Badge className="bg-slate-100 text-slate-700">Elderly Care</Badge>
-            <Badge className="bg-slate-100 text-slate-700">Newborn Care</Badge>
-            <Badge className="bg-slate-100 text-slate-700">Special Needs Care</Badge>
-          </div>
-          {/* TODO: Verified Badge / Subscription upsell - Phase 2 */}
         </div>
         <div className="flex flex-col items-center gap-3">
           <Button asChild className="w-full">
@@ -33,11 +45,6 @@ export default function HomePage() {
           <Link href="/login" className="text-xs text-slate-500 underline">
             Log in
           </Link>
-        </div>
-        <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-slate-500">
-          <span>HanapKalinga is a neutral marketplace. We do not take payments or commissions.</span>
-          <Link href="/privacy" className="underline">Privacy Policy</Link>
-          <Link href="/terms" className="underline">Terms of Service</Link>
         </div>
       </div>
     </main>

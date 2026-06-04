@@ -31,7 +31,10 @@ export function AvailabilityCalendar({
   return (
     <div className="overflow-x-auto">
       <div className="min-w-[520px] rounded-2xl border border-slate-200 bg-white">
-        <div className="grid grid-cols-5 gap-2 border-b border-slate-200 p-3 text-xs font-semibold text-slate-600">
+        <div
+          className="grid gap-2 border-b border-slate-200 p-3 text-xs font-semibold text-slate-600"
+          style={{ gridTemplateColumns: `minmax(5rem,1fr) repeat(${weekDates.length}, minmax(4rem,1fr))` }}
+        >
           <div>Shift</div>
           {weekDates.map((date) => (
             <div key={date}>{date}</div>
@@ -39,7 +42,11 @@ export function AvailabilityCalendar({
         </div>
         <div className="divide-y divide-slate-200">
           {shifts.map((shift) => (
-            <div key={shift} className="grid grid-cols-5 gap-2 p-3 text-sm">
+            <div
+              key={shift}
+              className="grid gap-2 p-3 text-sm"
+              style={{ gridTemplateColumns: `minmax(5rem,1fr) repeat(${weekDates.length}, minmax(4rem,1fr))` }}
+            >
               <div className="text-slate-600">{shift.replace("_", " ")}</div>
               {weekDates.map((date) => {
                 const slot = slotMap.get(`${date}-${shift}`) ?? {

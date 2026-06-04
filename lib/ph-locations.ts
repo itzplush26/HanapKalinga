@@ -41,15 +41,6 @@ export const PH_CITIES = [
   "Butuan"
 ];
 
-export const PH_SPECIALIZATIONS = [
-  "Elderly care",
-  "Post-op",
-  "Pediatric",
-  "Home care",
-  "Wound care",
-  "Chronic care",
-  "Stroke rehab",
-  "Palliative care",
-  "ICU home",
-  "Hospice"
-];
+import { PROVIDER_SPECIALIZATIONS } from "@/lib/constants";
+
+export const PH_SPECIALIZATIONS = [...PROVIDER_SPECIALIZATIONS];

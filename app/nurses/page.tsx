@@ -30,12 +30,13 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
   const minDailyRateFilter = parseNumber(searchParams?.minDailyRate);
   const maxDailyRateFilter = parseNumber(searchParams?.maxDailyRate);
   const availabilityFilter = parseString(searchParams?.availability) as AvailabilityStatus | "";
+  const providerTypeFilter = parseString(searchParams?.providerType);
   const showWelcome = parseString(searchParams?.welcome) === "1";
 
   const supabase = createClient();
   const { data: nurses } = await supabase
     .from("nurses")
-    .select("id, specializations, years_experience, daily_rate_12hr, hourly_rate, profile_photo_url, profiles(full_name, city)")
+    .select("id, provider_type, specializations, years_experience, daily_rate_12hr, hourly_rate, profile_photo_url, profiles(full_name, city)")
     .eq("verification_status", "verified");
   const nurseIds = (nurses ?? []).map((nurse) => nurse.id);
 
@@ -90,6 +91,7 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
     })
     .filter(({ nurse, profile, availabilityStatus }) => {
       if (cityFilter && profile?.city !== cityFilter) return false;
+      if (providerTypeFilter && nurse.provider_type !== providerTypeFilter) return false;
       if (
         specializationsFilter.length &&
         !specializationsFilter.every((value) => (nurse.specializations ?? []).includes(value))
@@ -137,6 +139,7 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
               verified
               availabilityStatus={availabilityStatus}
               imageUrl={nurse.profile_photo_url ?? undefined}
+              providerType={nurse.provider_type ?? "nurse"}
             />
             );
           })}

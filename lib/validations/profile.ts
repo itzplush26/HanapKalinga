@@ -20,9 +20,10 @@ export const nurseProfileSchema = z
     bio: z.string().optional(),
     hourlyRate: z.number().min(0).optional(),
     dailyRate12hr: z.number().min(0).optional(),
-    prcDocumentUrl: z.string().url().optional(),
-    tesdaDocumentUrl: z.string().url().optional(),
-    nbiDocumentUrl: z.string().url()
+    specializations: z.array(z.string()).min(1, "Select at least one specialization."),
+    prcDocumentUrl: z.string().min(1).optional(),
+    tesdaDocumentUrl: z.string().min(1).optional(),
+    nbiDocumentUrl: z.string().min(1, "NBI clearance is required.")
   })
   .superRefine((values, context) => {
     if (values.providerType === "nurse" && !values.prcDocumentUrl) {

@@ -10,10 +10,23 @@ interface NurseProfilePageProps {
 
 export default async function NurseProfilePage({ params }: NurseProfilePageProps) {
   const supabase = createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  let bookingHref = `/login?redirect=${encodeURIComponent(`/dashboard/family/bookings/new?nurse=${params.id}`)}`;
+  if (auth.user) {
+    const { data: viewerProfile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", auth.user.id)
+      .maybeSingle();
+    if (viewerProfile?.role === "family") {
+      bookingHref = `/dashboard/family/bookings/new?nurse=${params.id}`;
+    }
+  }
+
   const { data: nurse } = await supabase
     .from("nurses")
     .select(
-      "id, specializations, years_experience, bio, hourly_rate, daily_rate_12hr, profiles(full_name, city, barangay)"
+      "id, provider_type, specializations, years_experience, bio, hourly_rate, daily_rate_12hr, profiles(full_name, city, barangay)"
     )
     .eq("id", params.id)
     .single();
@@ -118,9 +131,7 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
           <Button disabled>Request Booking</Button>
         ) : (
           <Button asChild>
-            <Link href={`/register?role=family&next=/dashboard/family/bookings/new?nurse=${nurse.id}`}>
-              Request Booking
-            </Link>
+            <Link href={bookingHref}>Request Booking</Link>
           </Button>
         )}
       </div>

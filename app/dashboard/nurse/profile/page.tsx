@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,52 @@ export default function NurseProfilePage() {
       nbi_document_url: ""
     }
   });
+
+  useEffect(() => {
+    async function loadProfile() {
+      const { data: auth } = await supabase.auth.getUser();
+      const user = auth.user;
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("first_name, middle_name, last_name, phone, region, city, barangay, address")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const { data: nurse } = await supabase
+        .from("nurses")
+        .select(
+          "prc_license_no, specializations, years_experience, bio, hourly_rate, daily_rate_12hr, profile_photo_url, prc_document_url, nbi_document_url"
+        )
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profile || nurse) {
+        form.reset({
+          firstName: profile?.first_name ?? "",
+          middleName: profile?.middle_name ?? "",
+          lastName: profile?.last_name ?? "",
+          phone: profile?.phone ?? "",
+          region: profile?.region ?? "",
+          city: profile?.city ?? "",
+          barangay: profile?.barangay ?? "",
+          address: profile?.address ?? "",
+          prcLicenseNo: nurse?.prc_license_no ?? "",
+          specializations: (nurse?.specializations ?? []).join(", "),
+          yearsExperience: nurse?.years_experience ?? 0,
+          bio: nurse?.bio ?? "",
+          hourlyRate: nurse?.hourly_rate ?? 0,
+          dailyRate12hr: nurse?.daily_rate_12hr ?? 0,
+          profile_photo_url: nurse?.profile_photo_url ?? "",
+          prc_document_url: nurse?.prc_document_url ?? "",
+          nbi_document_url: nurse?.nbi_document_url ?? ""
+        });
+      }
+    }
+
+    loadProfile();
+  }, [form, supabase]);
 
   async function handleSubmit(values: any) {
     const { data } = await supabase.auth.getUser();

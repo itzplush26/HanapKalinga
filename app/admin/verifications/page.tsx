@@ -2,13 +2,26 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { resolveDocumentViewUrl } from "@/lib/storage-docs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 
+type PendingNurse = {
+  id: string;
+  provider_type: string;
+  prc_document_url: string | null;
+  tesda_document_url: string | null;
+  nbi_document_url: string | null;
+  profiles: { full_name: string } | { full_name: string }[] | null;
+  prcSignedUrl: string | null;
+  tesdaSignedUrl: string | null;
+  nbiSignedUrl: string | null;
+};
+
 export default function AdminVerificationsPage() {
   const supabase = createClient();
-  const [nurses, setNurses] = useState<any[]>([]);
+  const [nurses, setNurses] = useState<PendingNurse[]>([]);
   const [reasons, setReasons] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -19,7 +32,16 @@ export default function AdminVerificationsPage() {
           "id, provider_type, prc_document_url, tesda_document_url, nbi_document_url, profiles(full_name)"
         )
         .eq("verification_status", "pending");
-      setNurses(data ?? []);
+
+      const enriched = await Promise.all(
+        (data ?? []).map(async (nurse) => ({
+          ...nurse,
+          prcSignedUrl: await resolveDocumentViewUrl(supabase, nurse.prc_document_url),
+          tesdaSignedUrl: await resolveDocumentViewUrl(supabase, nurse.tesda_document_url),
+          nbiSignedUrl: await resolveDocumentViewUrl(supabase, nurse.nbi_document_url)
+        }))
+      );
+      setNurses(enriched as PendingNurse[]);
     }
     load();
   }, [supabase]);
@@ -63,9 +85,9 @@ export default function AdminVerificationsPage() {
                   {isCaregiver ? (
                     <div>
                       <p className="text-xs font-medium text-slate-500">TESDA NC II Certificate</p>
-                      {nurse.tesda_document_url ? (
+                      {nurse.tesdaSignedUrl ? (
                         <a
-                          href={nurse.tesda_document_url}
+                          href={nurse.tesdaSignedUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-brand-700 underline"
@@ -79,9 +101,9 @@ export default function AdminVerificationsPage() {
                   ) : (
                     <div>
                       <p className="text-xs font-medium text-slate-500">PRC License</p>
-                      {nurse.prc_document_url ? (
+                      {nurse.prcSignedUrl ? (
                         <a
-                          href={nurse.prc_document_url}
+                          href={nurse.prcSignedUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-brand-700 underline"
@@ -95,9 +117,9 @@ export default function AdminVerificationsPage() {
                   )}
                   <div>
                     <p className="text-xs font-medium text-slate-500">NBI Clearance</p>
-                    {nurse.nbi_document_url ? (
+                    {nurse.nbiSignedUrl ? (
                       <a
-                        href={nurse.nbi_document_url}
+                        href={nurse.nbiSignedUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-brand-700 underline"

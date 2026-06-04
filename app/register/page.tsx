@@ -15,6 +15,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { DocumentUploader } from "@/components/document-uploader";
 import { PH_CITIES } from "@/lib/ph-locations";
+import { PROVIDER_SPECIALIZATIONS } from "@/lib/constants";
 
 const SIGNUP_TOTAL_STEPS = 5;
 
@@ -94,6 +95,7 @@ export default function RegisterPage() {
       bio: "",
       hourlyRate: undefined,
       dailyRate12hr: undefined,
+      specializations: [] as string[],
       prcDocumentUrl: "",
       tesdaDocumentUrl: "",
       nbiDocumentUrl: ""
@@ -243,6 +245,7 @@ export default function RegisterPage() {
       await supabase.from("nurses").upsert({
         id: user.id,
         provider_type: values.providerType,
+        specializations: values.specializations,
         bio: values.bio ?? null,
         hourly_rate: values.hourlyRate ?? null,
         daily_rate_12hr: values.dailyRate12hr ?? null,
@@ -562,6 +565,37 @@ export default function RegisterPage() {
               {...nurseForm.register("barangay")}
               className={nurseForm.formState.errors.barangay ? "border-rose-500 focus:ring-rose-500" : undefined}
             />
+            <div className="space-y-2">
+              {requiredLabel("Specializations", !!nurseForm.formState.errors.specializations)}
+              <div className="flex flex-wrap gap-2">
+                {PROVIDER_SPECIALIZATIONS.map((item) => {
+                  const selected = nurseForm.watch("specializations").includes(item);
+                  return (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => {
+                        const current = nurseForm.getValues("specializations");
+                        const next = selected
+                          ? current.filter((s: string) => s !== item)
+                          : [...current, item];
+                        nurseForm.setValue("specializations", next, { shouldValidate: true });
+                      }}
+                      className={
+                        selected
+                          ? "rounded-full border border-brand-300 bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700"
+                          : "rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600"
+                      }
+                    >
+                      {item}
+                    </button>
+                  );
+                })}
+              </div>
+              {nurseForm.formState.errors.specializations ? (
+                <p className="text-xs text-rose-600">Select at least one specialization.</p>
+              ) : null}
+            </div>
             {optionalLabel("Bio (optional)")}
             <Textarea placeholder="Bio" {...nurseForm.register("bio")} />
             {optionalLabel("Hourly rate (optional)")}

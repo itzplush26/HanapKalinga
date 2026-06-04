@@ -22,7 +22,7 @@ export function getPostLoginPath(role: AuthRole, safeRedirect: string | null): s
     }
     return safeRedirect;
   }
-  if (role === "family") return "/dashboard/family";
+  if (role === "family") return "/nurses";
   if (role === "nurse") return "/dashboard/nurse";
   return "/admin";
 }

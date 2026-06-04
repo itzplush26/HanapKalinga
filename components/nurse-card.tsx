@@ -16,6 +16,7 @@ interface NurseCardProps {
   verified: boolean;
   availabilityStatus: AvailabilityStatus;
   imageUrl?: string;
+  providerType?: string;
 }
 
 export function NurseCard({
@@ -29,7 +30,8 @@ export function NurseCard({
   reviewCount = 0,
   verified,
   availabilityStatus,
-  imageUrl
+  imageUrl,
+  providerType = "nurse"
 }: NurseCardProps) {
   const initials = name
     .split(" ")
@@ -71,6 +73,9 @@ export function NurseCard({
           <div className="flex-1 space-y-2">
             <div className="flex items-center gap-2">
               <h3 className="text-base font-semibold text-slate-900">{name}</h3>
+              <Badge className="bg-slate-100 text-slate-700">
+                {providerType === "caregiver" ? "Caregiver" : "Nurse"}
+              </Badge>
               {verified ? (
                 <Badge className="bg-emerald-100 text-emerald-700">Verified</Badge>
               ) : null}

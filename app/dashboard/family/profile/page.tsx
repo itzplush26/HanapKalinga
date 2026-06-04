@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,48 @@ export default function FamilyProfilePage() {
       patientCondition: ""
     }
   });
+
+  useEffect(() => {
+    async function loadProfile() {
+      const { data: auth } = await supabase.auth.getUser();
+      const user = auth.user;
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("first_name, middle_name, last_name, phone, region, city, barangay, address")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const { data: family } = await supabase
+        .from("families")
+        .select(
+          "contact_person_name, relationship_to_patient, patient_name, patient_age, patient_condition"
+        )
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profile || family) {
+        form.reset({
+          firstName: profile?.first_name ?? "",
+          middleName: profile?.middle_name ?? "",
+          lastName: profile?.last_name ?? "",
+          phone: profile?.phone ?? "",
+          region: profile?.region ?? "",
+          city: profile?.city ?? "",
+          barangay: profile?.barangay ?? "",
+          address: profile?.address ?? "",
+          contactPersonName: family?.contact_person_name ?? "",
+          relationshipToPatient: family?.relationship_to_patient ?? "",
+          patientName: family?.patient_name ?? "",
+          patientAge: family?.patient_age ?? 0,
+          patientCondition: family?.patient_condition ?? ""
+        });
+      }
+    }
+
+    loadProfile();
+  }, [form, supabase]);
 
   async function handleSubmit(values: any) {
     const { data } = await supabase.auth.getUser();

@@ -3,24 +3,29 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { AvailabilityCalendar, AvailabilitySlot } from "@/components/availability-calendar";
+import { Button } from "@/components/ui/button";
 
-function getWeekDates() {
+function getWeekDates(weekOffset: number) {
   const today = new Date();
-  return Array.from({ length: 4 }, (_, index) => {
-    const date = new Date(today);
-    date.setDate(today.getDate() + index);
+  const start = new Date(today);
+  start.setDate(today.getDate() + weekOffset * 7);
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + index);
     return date.toISOString().slice(0, 10);
   });
 }
 
 export default function NurseAvailabilityPage() {
   const supabase = createClient();
-  const weekDates = useMemo(() => getWeekDates(), []);
+  const [weekOffset, setWeekOffset] = useState(0);
+  const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset]);
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadExisting() {
+      setLoading(true);
       const { data: auth } = await supabase.auth.getUser();
       const user = auth.user;
       if (!user) {
@@ -71,8 +76,18 @@ export default function NurseAvailabilityPage() {
 
   return (
     <main className="px-5 py-8">
-      <div className="mx-auto flex max-w-md flex-col gap-5">
-        <h1 className="text-2xl font-semibold">Set availability</h1>
+      <div className="mx-auto flex max-w-3xl flex-col gap-5">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold">Set availability</h1>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => setWeekOffset((w) => w - 1)}>
+              Previous week
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => setWeekOffset((w) => w + 1)}>
+              Next week
+            </Button>
+          </div>
+        </div>
         {loading ? (
           <p className="text-sm text-slate-600">Loading availability...</p>
         ) : (

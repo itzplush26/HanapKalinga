@@ -9,7 +9,7 @@ type UploadState = "idle" | "uploading" | "uploaded" | "failed";
 interface DocumentUploaderProps {
   label: string;
   pathPrefix: string;
-  onUploaded: (url: string) => void;
+  onUploaded: (storagePath: string) => void;
 }
 
 export function DocumentUploader({
@@ -26,7 +26,8 @@ export function DocumentUploader({
     setStatus("uploading");
     setFileName(file.name);
 
-    const filePath = `${pathPrefix}/${Date.now()}-${file.name}`;
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const filePath = `${pathPrefix}/${Date.now()}-${safeName}`;
     const { data, error } = await supabase.storage
       .from("nurse-docs")
       .upload(filePath, file, { upsert: true });
@@ -36,16 +37,7 @@ export function DocumentUploader({
       return;
     }
 
-    const { data: signed } = await supabase.storage
-      .from("nurse-docs")
-      .createSignedUrl(data.path, 60 * 60);
-
-    if (!signed?.signedUrl) {
-      setStatus("failed");
-      return;
-    }
-
-    onUploaded(signed.signedUrl);
+    onUploaded(data.path);
     setStatus("uploaded");
   }
 

@@ -18,6 +18,7 @@ export function NurseFilters() {
   }, [searchParams]);
 
   const [city, setCity] = useState(searchParams.get("city") ?? "");
+  const [providerType, setProviderType] = useState(searchParams.get("providerType") ?? "");
   const [selected, setSelected] = useState<string[]>(initialSpecializations);
   const [minDailyRate, setMinDailyRate] = useState(searchParams.get("minDailyRate") ?? "");
   const [maxDailyRate, setMaxDailyRate] = useState(searchParams.get("maxDailyRate") ?? "");
@@ -46,6 +47,9 @@ export function NurseFilters() {
     if (availability) params.set("availability", availability);
     else params.delete("availability");
 
+    if (providerType) params.set("providerType", providerType);
+    else params.delete("providerType");
+
     router.push(`${pathname}?${params.toString()}`);
   }
 
@@ -55,6 +59,7 @@ export function NurseFilters() {
     setMinDailyRate("");
     setMaxDailyRate("");
     setAvailability("");
+    setProviderType("");
     router.push(pathname);
   }
 
@@ -69,6 +74,14 @@ export function NurseFilters() {
               {item}
             </option>
           ))}
+        </Select>
+      </div>
+      <div>
+        <label className="text-sm font-medium text-slate-700">Provider type</label>
+        <Select value={providerType} onChange={(event) => setProviderType(event.target.value)}>
+          <option value="">Both</option>
+          <option value="nurse">Nurse</option>
+          <option value="caregiver">Caregiver</option>
         </Select>
       </div>
       <div>

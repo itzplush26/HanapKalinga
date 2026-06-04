@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { BookingStatusBadge } from "@/components/booking-status-badge";
 import { BookingDetailsCard } from "@/components/booking-details-card";
+import { BookingReviewForm } from "@/components/booking-review-form";
 import { MessageThread } from "@/components/message-thread";
 
 interface BookingDetailPageProps {
@@ -41,6 +42,18 @@ export default async function FamilyBookingDetailPage({ params }: BookingDetailP
     (profiles ?? []).map((p) => [p.id as string, (p.full_name as string) ?? "User"])
   );
 
+  const nurseName =
+    (profiles ?? []).find((p) => p.id === booking.nurse_id)?.full_name ?? "your nurse";
+
+  const { data: existingReview } = await supabase
+    .from("reviews")
+    .select("id")
+    .eq("booking_id", booking.id)
+    .maybeSingle();
+
+  const showReviewForm =
+    booking.status === "completed" && !existingReview && auth.user?.id;
+
   return (
     <main className="px-5 py-8">
       <div className="mx-auto flex max-w-md flex-col gap-5">
@@ -52,6 +65,14 @@ export default async function FamilyBookingDetailPage({ params }: BookingDetailP
           <BookingStatusBadge status={booking.status} />
         </div>
         <BookingDetailsCard notes={booking.notes} />
+        {showReviewForm ? (
+          <BookingReviewForm
+            bookingId={booking.id}
+            nurseId={booking.nurse_id}
+            nurseName={nurseName}
+            reviewerId={auth.user!.id}
+          />
+        ) : null}
         <MessageThread
           bookingId={booking.id}
           currentUserId={auth.user?.id ?? ""}
