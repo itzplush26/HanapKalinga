@@ -4,14 +4,14 @@ export default function TermsPage() {
       <div className="mx-auto flex max-w-md flex-col gap-4 text-sm text-slate-700">
         <h1 className="text-2xl font-semibold text-slate-900">Terms of Service</h1>
         <p className="text-xs text-slate-500">Last Updated: June 2, 2026</p>
-        <p>By accessing or using NurseLink PH, you agree to be bound by these Terms of Service.</p>
-        <h2 className="text-base font-semibold text-slate-900">1. About NurseLink PH</h2>
+        <p>By accessing or using HanapKalinga, you agree to be bound by these Terms of Service.</p>
+        <h2 className="text-base font-semibold text-slate-900">1. About HanapKalinga</h2>
         <p>
-          NurseLink PH is an online marketplace designed to connect families, patients, healthcare
+          HanapKalinga is an online marketplace designed to connect families, patients, healthcare
           facilities, nurses, caregivers, and other healthcare professionals.
         </p>
         <p>
-          NurseLink PH is a technology platform and is not a healthcare provider, nursing agency,
+          HanapKalinga is a technology platform and is not a healthcare provider, nursing agency,
           recruitment agency, employer, or staffing company unless expressly stated otherwise.
         </p>
         <h2 className="text-base font-semibold text-slate-900">2. User Eligibility</h2>
@@ -26,7 +26,7 @@ export default function TermsPage() {
           and credentials submitted are valid and current.
         </p>
         <h2 className="text-base font-semibold text-slate-900">3. Platform Role</h2>
-        <p>NurseLink PH serves solely as a platform for introductions and communication.</p>
+        <p>HanapKalinga serves solely as a platform for introductions and communication.</p>
         <p>We do not:</p>
         <ul className="list-disc space-y-1 pl-5">
           <li>Employ nurses or caregivers</li>
@@ -49,9 +49,9 @@ export default function TermsPage() {
           platform.
         </p>
         <h2 className="text-base font-semibold text-slate-900">5. Verification Services</h2>
-        <p>NurseLink PH may review submitted documents for verification purposes.</p>
+        <p>HanapKalinga may review submitted documents for verification purposes.</p>
         <p>
-          A verification badge indicates that certain documents were reviewed by NurseLink PH. It
+          A verification badge indicates that certain documents were reviewed by HanapKalinga. It
           does not constitute a guarantee of professional competence, safety, conduct, or
           suitability for any specific engagement.
         </p>
@@ -66,7 +66,7 @@ export default function TermsPage() {
         </ul>
         <p>Accounts violating these rules may be suspended or permanently removed.</p>
         <h2 className="text-base font-semibold text-slate-900">7. Limitation of Liability</h2>
-        <p>To the fullest extent permitted by law, NurseLink PH shall not be liable for:</p>
+        <p>To the fullest extent permitted by law, HanapKalinga shall not be liable for:</p>
         <ul className="list-disc space-y-1 pl-5">
           <li>Personal injuries</li>
           <li>Medical outcomes</li>
@@ -89,12 +89,12 @@ export default function TermsPage() {
         </p>
         <h2 className="text-base font-semibold text-slate-900">9. Intellectual Property</h2>
         <p>
-          All platform content, branding, logos, designs, and software are owned by NurseLink PH
+          All platform content, branding, logos, designs, and software are owned by HanapKalinga
           and may not be copied, distributed, or reproduced without permission.
         </p>
         <h2 className="text-base font-semibold text-slate-900">10. Changes to the Terms</h2>
         <p>
-          NurseLink PH may modify these Terms at any time. Continued use of the platform after
+          HanapKalinga may modify these Terms at any time. Continued use of the platform after
           updates constitutes acceptance of the revised Terms.
         </p>
         <h2 className="text-base font-semibold text-slate-900">11. Governing Law</h2>
@@ -106,12 +106,12 @@ export default function TermsPage() {
           12. Medical Emergency Disclaimer
         </h2>
         <p>
-          NurseLink PH is not an emergency service. In case of a medical emergency, contact 911 or
+          HanapKalinga is not an emergency service. In case of a medical emergency, contact 911 or
           your applicable local emergency response hotline immediately.
         </p>
         <h2 className="text-base font-semibold text-slate-900">13. Payment Disclaimer</h2>
         <p>
-          NurseLink PH currently does not process, hold, or mediate payments. Any payment agreement
+          HanapKalinga currently does not process, hold, or mediate payments. Any payment agreement
           is solely between users, and users are responsible for documenting and honoring those
           arrangements.
         </p>
@@ -120,7 +120,7 @@ export default function TermsPage() {
         </h2>
         <p>
           Nurses and caregivers using the platform act as independent service providers and are not
-          employees, agents, or representatives of NurseLink PH.
+          employees, agents, or representatives of HanapKalinga.
         </p>
         <h2 className="text-base font-semibold text-slate-900">
           15. Dispute Resolution (Mediation / Arbitration)
@@ -135,13 +135,13 @@ export default function TermsPage() {
           16. Consent to Verification
         </h2>
         <p>
-          By submitting credentials or identification documents, users authorize NurseLink PH to
+          By submitting credentials or identification documents, users authorize HanapKalinga to
           verify document authenticity and professional standing with relevant licensing authorities,
           institutions, and government agencies, where legally permitted.
         </p>
         <h2 className="text-base font-semibold text-slate-900">17. Contact Information</h2>
         <p>For questions regarding these Terms:</p>
-        <p>Email: nurselinkph@gmail.com</p>
+        <p>Email: support@hanapkalinga.ph</p>
       </div>
     </main>
   );

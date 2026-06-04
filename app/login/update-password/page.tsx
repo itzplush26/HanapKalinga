@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
 import { passwordSetupSchema } from "@/lib/validations/auth";
+import { mapSupabaseError } from "@/lib/user-errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -45,7 +46,7 @@ export default function UpdatePasswordPage() {
     setIsSubmitting(false);
 
     if (error) {
-      setMessage(error.message);
+      setMessage(mapSupabaseError(error, "password"));
       return;
     }
 

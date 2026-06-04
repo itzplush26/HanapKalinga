@@ -6,8 +6,8 @@ const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-displ
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-body" });
 
 export const metadata: Metadata = {
-  title: "NurseLink PH",
-  description: "Find verified private duty nurses in the Philippines."
+  title: "HanapKalinga",
+  description: "Find verified private duty nurses and caregivers in the Philippines."
 };
 
 export default function RootLayout({

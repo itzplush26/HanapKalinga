@@ -4,6 +4,26 @@ import { createServerClient } from "@supabase/ssr";
 
 const protectedPrefixes = ["/dashboard", "/admin"];
 
+async function getProfileRole(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  userId: string
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("middleware.getProfileRole", error);
+    return null;
+  }
+
+  const role = data?.role;
+  return typeof role === "string" ? role : null;
+}
+
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
   const supabase = createServerClient(
@@ -25,6 +45,19 @@ export async function middleware(request: NextRequest) {
   const { data } = await supabase.auth.getUser();
   const pathname = request.nextUrl.pathname;
 
+  if (pathname.startsWith("/register") && data.user) {
+    const role = await getProfileRole(supabase, data.user.id);
+    if (role === "admin") {
+      return NextResponse.redirect(new URL("/admin", request.url));
+    }
+    if (role === "family") {
+      return NextResponse.redirect(new URL("/dashboard/family", request.url));
+    }
+    if (role === "nurse") {
+      return NextResponse.redirect(new URL("/dashboard/nurse", request.url));
+    }
+  }
+
   const isProtected = protectedPrefixes.some((prefix) => pathname.startsWith(prefix));
   if (!isProtected) return response;
 
@@ -34,27 +67,42 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (pathname.startsWith("/admin")) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", data.user.id)
-      .single();
+  const role = await getProfileRole(supabase, data.user.id);
 
-    if (profile?.role !== "admin") {
-      if (profile?.role === "family") {
+  if (pathname.startsWith("/admin")) {
+    if (role !== "admin") {
+      if (role === "family") {
         return NextResponse.redirect(new URL("/dashboard/family", request.url));
       }
-      if (profile?.role === "nurse") {
+      if (role === "nurse") {
         return NextResponse.redirect(new URL("/dashboard/nurse", request.url));
       }
       return NextResponse.redirect(new URL("/login?error=no_profile", request.url));
     }
+    return response;
+  }
+
+  if (pathname.startsWith("/dashboard/family") && role && role !== "family" && role !== "admin") {
+    if (role === "nurse") {
+      return NextResponse.redirect(new URL("/dashboard/nurse", request.url));
+    }
+    return NextResponse.redirect(new URL("/login?error=no_profile", request.url));
+  }
+
+  if (pathname.startsWith("/dashboard/nurse") && role && role !== "nurse" && role !== "admin") {
+    if (role === "family") {
+      return NextResponse.redirect(new URL("/dashboard/family", request.url));
+    }
+    return NextResponse.redirect(new URL("/login?error=no_profile", request.url));
+  }
+
+  if (role === "admin" && pathname.startsWith("/dashboard")) {
+    return NextResponse.redirect(new URL("/admin", request.url));
   }
 
   return response;
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*"]
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/register"]
 };

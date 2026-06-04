@@ -9,6 +9,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
 import { bookingRequestSchema } from "@/lib/validations/booking";
 import { SHIFT_LABELS } from "@/lib/booking-notes";
+import { mapSupabaseError } from "@/lib/user-errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -97,7 +98,7 @@ function BookingForm() {
       .single();
 
     if (error || !booking) {
-      setSubmitError(error?.message ?? "Could not send booking request.");
+      setSubmitError(mapSupabaseError(error, "generic"));
       return;
     }
 

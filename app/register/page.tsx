@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
 import { signupOtpSchema, roleSchema, passwordSetupSchema } from "@/lib/validations/auth";
 import { fetchProfileRole, resolvePostLoginDestination } from "@/lib/post-auth";
+import { mapSupabaseError } from "@/lib/user-errors";
 import { familyProfileSchema, nurseProfileSchema } from "@/lib/validations/profile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,13 +19,22 @@ import { PH_CITIES } from "@/lib/ph-locations";
 const SIGNUP_TOTAL_STEPS = 5;
 
 const SIGNUP_STAGE_KEYS = {
-  step: "nurselink.signup.step",
-  role: "nurselink.signup.role",
-  email: "nurselink.signup.email",
-  family: "nurselink.signup.family",
-  nurse: "nurselink.signup.nurse",
-  auth: "nurselink.signup.auth"
+  step: "hanapkalinga.signup.step",
+  role: "hanapkalinga.signup.role",
+  email: "hanapkalinga.signup.email",
+  family: "hanapkalinga.signup.family",
+  nurse: "hanapkalinga.signup.nurse",
+  auth: "hanapkalinga.signup.auth"
 } as const;
+
+const LEGACY_SIGNUP_KEYS = [
+  "nurselink.signup.step",
+  "nurselink.signup.role",
+  "nurselink.signup.email",
+  "nurselink.signup.family",
+  "nurselink.signup.nurse",
+  "nurselink.signup.auth"
+] as const;
 
 export default function RegisterPage() {
   const [step, setStep] = useState(1);
@@ -92,6 +102,7 @@ export default function RegisterPage() {
 
   function clearSignupStage() {
     Object.values(SIGNUP_STAGE_KEYS).forEach((key) => window.sessionStorage.removeItem(key));
+    LEGACY_SIGNUP_KEYS.forEach((key) => window.sessionStorage.removeItem(key));
   }
 
   async function handleAuthSubmit(values: any) {
@@ -105,7 +116,7 @@ export default function RegisterPage() {
         });
         if (error) {
           console.error("signup.send_code.error", error);
-          setStatus(error.message);
+          setStatus(mapSupabaseError(error, "signup"));
           setIsSubmitting(false);
           return;
         }
@@ -132,7 +143,7 @@ export default function RegisterPage() {
         });
         if (error) {
           console.error("signup.verify_code.error", error);
-          setStatus(error.message);
+          setStatus(mapSupabaseError(error, "signup"));
           setIsSubmitting(false);
           return;
         }
@@ -178,7 +189,7 @@ export default function RegisterPage() {
       } else {
         console.info("signup.resend_code.success", data);
       }
-      setStatus(error ? error.message : "Code resent. Check your email.");
+      setStatus(error ? mapSupabaseError(error, "signup") : "Code resent. Check your email.");
     } catch (error) {
       console.error("signup.resend_code.exception", error);
       setStatus("Unexpected error resending code.");
@@ -261,7 +272,7 @@ export default function RegisterPage() {
     const { error } = await supabase.auth.updateUser({ password: values.password });
 
     if (error) {
-      setStatus(error.message);
+      setStatus(mapSupabaseError(error, "password"));
       setIsSubmitting(false);
       return;
     }

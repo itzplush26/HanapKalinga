@@ -17,7 +17,7 @@ with admin_user as (
     (select id from auth.instances limit 1),
     'authenticated',
     'authenticated',
-    'admin@nurselink.ph',
+    'admin@hanapkalinga.ph',
     crypt('ChangeMe123!', gen_salt('bf')),
     now(),
     now(),
@@ -28,4 +28,4 @@ with admin_user as (
   returning id
 )
 insert into public.profiles (id, role, full_name, city)
-select id, 'admin', 'NurseLink Admin', 'Metro Manila' from admin_user;
+select id, 'admin', 'HanapKalinga Admin', 'Metro Manila' from admin_user;

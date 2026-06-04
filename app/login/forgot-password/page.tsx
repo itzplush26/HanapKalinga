@@ -8,6 +8,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
 import { resetPasswordRequestSchema } from "@/lib/validations/auth";
 import { getAuthCallbackUrl } from "@/lib/auth-redirect";
+import { mapSupabaseError } from "@/lib/user-errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -37,7 +38,7 @@ export default function ForgotPasswordPage() {
     setIsSubmitting(false);
 
     if (error) {
-      setMessage(error.message);
+      setMessage(mapSupabaseError(error, "password"));
       return;
     }
 

@@ -18,7 +18,7 @@ export default async function FamilyDashboardLayout({
     .from("profiles")
     .select("role")
     .eq("id", auth.user.id)
-    .single();
+    .maybeSingle();
 
   if (profile?.role === "admin") {
     redirect("/admin");
@@ -28,8 +28,12 @@ export default async function FamilyDashboardLayout({
     redirect("/dashboard/nurse");
   }
 
-  if (profile?.role !== "family") {
-    redirect("/register");
+  if (!profile?.role) {
+    redirect("/login?error=no_profile");
+  }
+
+  if (profile.role !== "family") {
+    redirect("/login?error=no_profile");
   }
 
   return (

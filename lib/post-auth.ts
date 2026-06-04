@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getPostLoginPath, parseSafeRedirect } from "@/lib/auth-redirect";
+import { mapSupabaseError } from "@/lib/user-errors";
 
 export type ProfileRole = "family" | "nurse" | "admin";
 
@@ -15,7 +16,7 @@ export async function fetchProfileRole(
 
   if (error) {
     console.error("post-auth.fetchProfileRole", error);
-    return { role: null, error: error.message };
+    return { role: null, error: mapSupabaseError(error, "profile") };
   }
 
   const role = data?.role;

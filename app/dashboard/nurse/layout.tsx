@@ -18,7 +18,7 @@ export default async function NurseDashboardLayout({
     .from("profiles")
     .select("role")
     .eq("id", auth.user.id)
-    .single();
+    .maybeSingle();
 
   if (profile?.role === "admin") {
     redirect("/admin");
@@ -28,8 +28,12 @@ export default async function NurseDashboardLayout({
     redirect("/dashboard/family");
   }
 
-  if (profile?.role !== "nurse") {
-    redirect("/register");
+  if (!profile?.role) {
+    redirect("/login?error=no_profile");
+  }
+
+  if (profile.role !== "nurse") {
+    redirect("/login?error=no_profile");
   }
 
   return (

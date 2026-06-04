@@ -7,7 +7,7 @@ export default function HomePage() {
     <main className="px-5 py-10">
       <div className="mx-auto flex max-w-md flex-col gap-8">
         <div className="space-y-4">
-          <p className="text-xs uppercase tracking-[0.3em] text-brand-600">NurseLink PH</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-brand-600">HanapKalinga</p>
           <h1 className="text-3xl font-semibold text-slate-900">
             Trusted nurses and caregivers, ready when your family needs them.
           </h1>
@@ -35,7 +35,7 @@ export default function HomePage() {
           </Link>
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-slate-500">
-          <span>NurseLink PH is a neutral marketplace. We do not take payments or commissions.</span>
+          <span>HanapKalinga is a neutral marketplace. We do not take payments or commissions.</span>
           <Link href="/privacy" className="underline">Privacy Policy</Link>
           <Link href="/terms" className="underline">Terms of Service</Link>
         </div>

@@ -8,6 +8,8 @@ import { createClient } from "@/lib/supabase/client";
 import { loginSchema } from "@/lib/validations/auth";
 import { parseSafeRedirect } from "@/lib/auth-redirect";
 import { fetchProfileRole, resolvePostLoginDestination } from "@/lib/post-auth";
+import { APP_NAME } from "@/lib/constants";
+import { mapSupabaseError } from "@/lib/user-errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { z } from "zod";
@@ -34,11 +36,11 @@ export default function LoginPage() {
     const params = new URLSearchParams(window.location.search);
     setRedirectTarget(params.get("redirect"));
     if (params.get("error") === "auth_callback") {
-      setMessage("Sign-in link expired or invalid. Try again or log in with your password.");
+      setMessage("Your sign-in link has expired or is invalid. Please log in with your password.");
     }
     if (params.get("error") === "no_profile") {
       setMessage(
-        "You are signed in but no profile was found. Complete registration or ask an admin to link your account."
+        "We could not find a complete account profile for this user. Please contact support if you need help."
       );
     }
   }, []);
@@ -54,18 +56,14 @@ export default function LoginPage() {
       });
 
       if (error) {
-        setMessage(
-          error.message === "Invalid login credentials"
-            ? "Incorrect email or password."
-            : error.message
-        );
+        setMessage(mapSupabaseError(error, "auth"));
         setIsSubmitting(false);
         return;
       }
 
       const userId = data.user?.id;
       if (!userId) {
-        setMessage("Sign-in succeeded but no user id was returned. Try again.");
+        setMessage("Sign-in did not complete. Please try again.");
         setIsSubmitting(false);
         return;
       }
@@ -73,7 +71,7 @@ export default function LoginPage() {
       const { role, error: profileError } = await fetchProfileRole(supabase, userId);
 
       if (profileError) {
-        setMessage(`Could not load your profile: ${profileError}`);
+        setMessage(profileError);
         setIsSubmitting(false);
         return;
       }
@@ -82,7 +80,7 @@ export default function LoginPage() {
 
       if (!destination) {
         setMessage(
-          "Your account is signed in but has no NurseLink profile yet. If you are the admin, run supabase/seed.sql in your Supabase project. Otherwise create an account below."
+          `Your sign-in succeeded, but your ${APP_NAME} profile is not set up yet. Please complete registration or contact support.`
         );
         setIsSubmitting(false);
         return;
@@ -90,7 +88,7 @@ export default function LoginPage() {
 
       window.location.href = destination;
     } catch {
-      setMessage("Unexpected error signing in.");
+      setMessage(mapSupabaseError(null, "auth"));
       setIsSubmitting(false);
     }
   }
@@ -100,7 +98,7 @@ export default function LoginPage() {
       <div className="mx-auto flex max-w-md flex-col gap-6">
         <div>
           <h1 className="text-2xl font-semibold">Log in</h1>
-          <p className="text-sm text-slate-600">Sign in with your email and password.</p>
+          <p className="text-sm text-slate-600">Sign in to {APP_NAME} with your email and password.</p>
           {safeRedirect ? (
             <p className="mt-1 text-xs text-slate-500">Sign in to continue to your requested page.</p>
           ) : null}
@@ -132,7 +130,7 @@ export default function LoginPage() {
             Forgot password?
           </Link>
         </p>
-        {message ? <p className="text-sm text-slate-600">{message}</p> : null}
+        {message ? <p className="text-sm text-rose-600">{message}</p> : null}
         <p className="text-center text-xs text-slate-500">
           New here?{" "}
           <Link href="/register" className="underline">

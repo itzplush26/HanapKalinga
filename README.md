@@ -1,11 +1,11 @@
-# NurseLink PH
+# HanapKalinga
 
-Mobile-first marketplace MVP for connecting Filipino families with verified private duty nurses.
+Mobile-first marketplace for connecting Filipino families with verified private duty nurses and caregivers.
 
 ## Local setup
 
 1. Install dependencies.
-2. Create a Supabase project and apply migrations in `supabase/migrations`.
+2. Create a Supabase project and apply migrations in `supabase/migrations` (including `0007_fix_rls_admin_recursion.sql`).
 3. Seed the admin account using `supabase/seed.sql`.
 4. Configure environment variables.
 5. Run the dev server.
@@ -33,12 +33,14 @@ NEXT_PUBLIC_APP_URL=
 5. Run the SQL files in `supabase/migrations` in order.
 6. Run `supabase/seed.sql` to insert the admin user and profile.
 
-SMTP note: Supabase can send auth emails via its own SMTP on free tier, but this project is configured to use your Gmail SMTP sender.
+SMTP note: Supabase can send auth emails via its own SMTP on free tier, but this project may use a custom SMTP sender.
 
-Seeded admin credentials:
+Seeded admin credentials (after seed):
 
-- Email: admin@nurselink.ph
-- Password: ChangeMe123!
+- Email: `admin@hanapkalinga.ph`
+- Password: `ChangeMe123!`
+
+If you previously seeded `admin@nurselink.ph`, either re-run seed on a fresh project or update the auth user email and ensure a matching `profiles` row with `role = 'admin'`.
 
 ## Scripts
 

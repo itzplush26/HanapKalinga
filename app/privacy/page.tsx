@@ -5,7 +5,7 @@ export default function PrivacyPage() {
         <h1 className="text-2xl font-semibold text-slate-900">Privacy Policy</h1>
         <p className="text-xs text-slate-500">Last Updated: June 2, 2026</p>
         <p>
-          Welcome to NurseLink PH. We are committed to protecting your privacy and handling your
+          Welcome to HanapKalinga. We are committed to protecting your privacy and handling your
           personal information responsibly and in accordance with applicable Philippine laws,
           including the Data Privacy Act of 2012 (Republic Act No. 10173).
         </p>
@@ -55,7 +55,7 @@ export default function PrivacyPage() {
           <li>Comply with legal and regulatory obligations</li>
         </ul>
         <h2 className="text-base font-semibold text-slate-900">3. Data Sharing</h2>
-        <p>NurseLink PH does not sell, rent, or trade personal information to third parties.</p>
+        <p>HanapKalinga does not sell, rent, or trade personal information to third parties.</p>
         <p>Information may be shared only:</p>
         <ul className="list-disc space-y-1 pl-5">
           <li>Between users when necessary to facilitate care arrangements</li>
@@ -89,7 +89,7 @@ export default function PrivacyPage() {
         </p>
         <h2 className="text-base font-semibold text-slate-900">7. Third-Party Services</h2>
         <p>
-          NurseLink PH may utilize third-party services for hosting, authentication, analytics,
+          HanapKalinga may utilize third-party services for hosting, authentication, analytics,
           communications, and other operational functions. These providers are required to maintain
           appropriate security standards.
         </p>
@@ -100,7 +100,7 @@ export default function PrivacyPage() {
         </p>
         <h2 className="text-base font-semibold text-slate-900">9. Contact Information</h2>
         <p>For privacy-related concerns or requests, please contact:</p>
-        <p>Email: nurselinkph@gmail.com</p>
+        <p>Email: support@hanapkalinga.ph</p>
       </div>
     </main>
   );
