@@ -1,0 +1,9 @@
+{
+  "name": "@hanapkalinga/database",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Supabase database migrations and seed data",
+  "scripts": {
+    "help": "echo 'Run migrations manually via Supabase Dashboard or CLI'"
+  }
+}
