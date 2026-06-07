@@ -59,8 +59,8 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 3. Add redirect URLs in Supabase Auth settings:
    - Site URL: your production URL
    - Redirect URLs: `http://localhost:3000/auth/callback`, production callback URL
-4. Create a private storage bucket named `nurse-docs`
-5. Run migrations from `packages/database/supabase/migrations/` in order
+4. Run migrations from `packages/database/supabase/migrations/` in order (includes `0008_nurse_docs_storage_policies.sql` for document upload RLS)
+5. Or create the `nurse-docs` bucket manually only if you skip migration 0008 — it must be **private** with storage policies allowing authenticated uploads to `{user_id}/*`
 6. Run `packages/database/supabase/seed.sql` to create admin account
 
 ### Seeded Admin Credentials
