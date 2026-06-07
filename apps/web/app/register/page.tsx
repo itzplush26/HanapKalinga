@@ -14,7 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { DocumentUploader } from "@/components/document-uploader";
-import { PH_CITIES } from "@/lib/ph-locations";
+import { PasswordInput } from "@/components/ui/password-input";
+import { PH_CITIES, PH_REGIONS } from "@/lib/ph-locations";
 import { PROVIDER_SPECIALIZATIONS } from "@/lib/constants";
 
 const SIGNUP_TOTAL_STEPS = 5;
@@ -74,14 +75,14 @@ export default function RegisterPage() {
   const familyForm = useForm({
     resolver: zodResolver(familyProfileSchema),
     defaultValues: {
-      fullName: "",
+      firstName: "",
+      middleName: "",
+      lastName: "",
+      phone: "",
+      region: "",
       city: "",
       barangay: "",
-      contactPersonName: "",
-      relationshipToPatient: "",
-      patientName: "",
-      patientAge: 0,
-      careNeeded: ""
+      address: ""
     }
   });
 
@@ -213,18 +214,22 @@ export default function RegisterPage() {
       return;
     }
 
+    const fullName = [values.firstName, values.middleName, values.lastName]
+      .filter((part: string) => part?.trim())
+      .join(" ");
+
     const profilePayload = {
       id: user.id,
       role,
-      full_name: values.fullName,
-      first_name: null,
-      middle_name: null,
-      last_name: null,
-      phone: null,
-      region: null,
+      full_name: fullName,
+      first_name: values.firstName,
+      middle_name: values.middleName?.trim() || null,
+      last_name: values.lastName,
+      phone: values.phone?.trim() || null,
+      region: values.region,
       city: values.city,
       barangay: values.barangay,
-      address: null
+      address: values.address
     };
 
     await supabase.from("profiles").upsert(profilePayload);
@@ -232,13 +237,7 @@ export default function RegisterPage() {
     if (role === "family") {
       await supabase.from("families").upsert({
         id: user.id,
-        contact_person_name: values.contactPersonName,
-        relationship_to_patient: values.relationshipToPatient,
-        patient_name: values.patientName,
-        patient_age: values.patientAge,
-        patient_condition: null,
-        care_needed: values.careNeeded ?? null,
-        address: null
+        address: values.address
       });
     } else if (role === "nurse") {
       const credentialField = values.providerType === "nurse" ? "prc_document_url" : "tesda_document_url";
@@ -284,7 +283,7 @@ export default function RegisterPage() {
     setIsSubmitting(false);
 
     if (role === "family") {
-      window.location.href = "/nurses?welcome=1";
+      window.location.href = "/dashboard/family?welcome=1";
       return;
     }
 
@@ -426,19 +425,21 @@ export default function RegisterPage() {
                 ) : null}
               </div>
             )}
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Sending..." : step === 1 ? "Send code" : "Verify code"}
-            </Button>
-            {step === 2 ? (
-              <button
-                type="button"
-                onClick={handleResend}
-                className="text-xs text-brand-700 underline"
-                disabled={isSubmitting}
-              >
-                Resend code
-              </button>
-            ) : null}
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Button type="submit" disabled={isSubmitting} className="sm:flex-1">
+                {isSubmitting ? "Sending..." : step === 1 ? "Send code" : "Verify code"}
+              </Button>
+              {step === 2 ? (
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  className="text-sm font-medium text-brand-700 underline hover:text-brand-900 disabled:opacity-50 sm:px-2"
+                  disabled={isSubmitting}
+                >
+                  Resend code
+                </button>
+              ) : null}
+            </div>
           </form>
         ) : null}
 
@@ -476,57 +477,76 @@ export default function RegisterPage() {
 
         {step === 4 && role === "family" ? (
           <form onSubmit={familyForm.handleSubmit(handleProfileSubmit)} className="space-y-3">
-            {requiredLabel("Full name", !!familyForm.formState.errors.fullName)}
-            <Input
-              placeholder="Full name"
-              {...familyForm.register("fullName")}
-              className={familyForm.formState.errors.fullName ? "border-rose-500 focus:ring-rose-500" : undefined}
-            />
-            {requiredLabel("City", !!familyForm.formState.errors.city)}
-            <Select
-              {...familyForm.register("city")}
-              className={familyForm.formState.errors.city ? "border-rose-500 focus:ring-rose-500" : undefined}
-            >
-              <option value="">Select city</option>
-              {PH_CITIES.map((city) => (
-                <option key={city} value={city}>
-                  {city}
-                </option>
-              ))}
-            </Select>
-            {requiredLabel("Barangay", !!familyForm.formState.errors.barangay)}
-            <Input
-              placeholder="Barangay"
-              {...familyForm.register("barangay")}
-              className={familyForm.formState.errors.barangay ? "border-rose-500 focus:ring-rose-500" : undefined}
-            />
-            {requiredLabel("Family contact person", !!familyForm.formState.errors.contactPersonName)}
-            <Input
-              placeholder="Family contact person"
-              {...familyForm.register("contactPersonName")}
-              className={familyForm.formState.errors.contactPersonName ? "border-rose-500 focus:ring-rose-500" : undefined}
-            />
-            {requiredLabel("Relationship to patient", !!familyForm.formState.errors.relationshipToPatient)}
-            <Input
-              placeholder="e.g. son, daughter, spouse"
-              {...familyForm.register("relationshipToPatient")}
-              className={familyForm.formState.errors.relationshipToPatient ? "border-rose-500 focus:ring-rose-500" : undefined}
-            />
-            {requiredLabel("Patient name", !!familyForm.formState.errors.patientName)}
-            <Input
-              placeholder="Patient name"
-              {...familyForm.register("patientName")}
-              className={familyForm.formState.errors.patientName ? "border-rose-500 focus:ring-rose-500" : undefined}
-            />
-            {requiredLabel("Patient age", !!familyForm.formState.errors.patientAge)}
-            <Input
-              type="number"
-              placeholder="Patient age"
-              {...familyForm.register("patientAge", { valueAsNumber: true })}
-              className={familyForm.formState.errors.patientAge ? "border-rose-500 focus:ring-rose-500" : undefined}
-            />
-            {optionalLabel("Care needed (optional)")}
-            <Textarea placeholder="Care needed" {...familyForm.register("careNeeded")} />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                {requiredLabel("First name", !!familyForm.formState.errors.firstName)}
+                <Input
+                  placeholder="First name"
+                  {...familyForm.register("firstName")}
+                  className={familyForm.formState.errors.firstName ? "border-rose-500 focus:ring-rose-500" : undefined}
+                />
+              </div>
+              <div className="space-y-1">
+                {optionalLabel("Middle name (optional)")}
+                <Input placeholder="Middle name" {...familyForm.register("middleName")} />
+              </div>
+            </div>
+            <div className="space-y-1">
+              {requiredLabel("Last name", !!familyForm.formState.errors.lastName)}
+              <Input
+                placeholder="Last name"
+                {...familyForm.register("lastName")}
+                className={familyForm.formState.errors.lastName ? "border-rose-500 focus:ring-rose-500" : undefined}
+              />
+            </div>
+            <div className="space-y-1">
+              {optionalLabel("Phone (optional)")}
+              <Input placeholder="09XX XXX XXXX" {...familyForm.register("phone")} />
+            </div>
+            <div className="space-y-1">
+              {requiredLabel("Region", !!familyForm.formState.errors.region)}
+              <Select
+                {...familyForm.register("region")}
+                className={familyForm.formState.errors.region ? "border-rose-500 focus:ring-rose-500" : undefined}
+              >
+                <option value="">Select region</option>
+                {PH_REGIONS.map((region) => (
+                  <option key={region} value={region}>
+                    {region}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className="space-y-1">
+              {requiredLabel("City", !!familyForm.formState.errors.city)}
+              <Select
+                {...familyForm.register("city")}
+                className={familyForm.formState.errors.city ? "border-rose-500 focus:ring-rose-500" : undefined}
+              >
+                <option value="">Select city</option>
+                {PH_CITIES.map((city) => (
+                  <option key={city} value={city}>
+                    {city}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className="space-y-1">
+              {requiredLabel("Barangay", !!familyForm.formState.errors.barangay)}
+              <Input
+                placeholder="Barangay"
+                {...familyForm.register("barangay")}
+                className={familyForm.formState.errors.barangay ? "border-rose-500 focus:ring-rose-500" : undefined}
+              />
+            </div>
+            <div className="space-y-1">
+              {requiredLabel("Home address", !!familyForm.formState.errors.address)}
+              <Textarea
+                placeholder="Street, building, unit number"
+                {...familyForm.register("address")}
+                className={familyForm.formState.errors.address ? "border-rose-500 focus:ring-rose-500" : undefined}
+              />
+            </div>
             <Button type="submit">Continue</Button>
           </form>
         ) : null}
@@ -648,8 +668,7 @@ export default function RegisterPage() {
               Create a password to sign in next time. You will not need an email code for login.
             </p>
             {requiredLabel("Password", !!passwordForm.formState.errors.password)}
-            <Input
-              type="password"
+            <PasswordInput
               placeholder="At least 8 characters"
               autoComplete="new-password"
               {...passwordForm.register("password")}
@@ -661,8 +680,7 @@ export default function RegisterPage() {
               <p className="text-xs text-rose-600">{passwordForm.formState.errors.password.message}</p>
             ) : null}
             {requiredLabel("Confirm password", !!passwordForm.formState.errors.confirmPassword)}
-            <Input
-              type="password"
+            <PasswordInput
               placeholder="Confirm password"
               autoComplete="new-password"
               {...passwordForm.register("confirmPassword")}

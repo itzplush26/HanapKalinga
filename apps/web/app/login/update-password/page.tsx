@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { passwordSetupSchema } from "@/lib/validations/auth";
 import { mapSupabaseError } from "@/lib/user-errors";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 
 type UpdatePasswordValues = z.infer<typeof passwordSetupSchema>;
 
@@ -79,9 +79,8 @@ export default function UpdatePasswordPage() {
         {ready ? (
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Input
+              <PasswordInput
                 placeholder="New password"
-                type="password"
                 autoComplete="new-password"
                 {...form.register("password")}
               />
@@ -90,9 +89,8 @@ export default function UpdatePasswordPage() {
               ) : null}
             </div>
             <div className="space-y-2">
-              <Input
+              <PasswordInput
                 placeholder="Confirm password"
-                type="password"
                 autoComplete="new-password"
                 {...form.register("confirmPassword")}
               />
