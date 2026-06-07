@@ -1,0 +1,139 @@
+name: ci
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    paths-ignore:
+      - "**.md"
+      - ".gitignore"
+  schedule:
+    - cron: "0 2 * * *"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  changes:
+    name: detect dependency changes
+    runs-on: ubuntu-latest
+    outputs:
+      deps_changed: ${{ steps.final.outputs.deps_changed }}
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - name: Detect dependency file changes (PRs only)
+        if: github.event_name == 'pull_request'
+        id: filter
+        uses: dorny/paths-filter@v3.0.2
+        with:
+          filters: |
+            deps:
+              - 'package.json'
+              - 'package-lock.json'
+              - 'apps/*/package.json'
+              - 'packages/*/package.json'
+      - name: Set dependency change output
+        id: final
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "deps_changed=${{ steps.filter.outputs.deps }}" >> $GITHUB_OUTPUT
+          else
+            echo "deps_changed=true" >> $GITHUB_OUTPUT
+          fi
+
+  phase1-lint:
+    name: phase 1 - lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint all workspaces
+        run: npm run lint
+
+  phase2-typecheck:
+    name: phase 2 - type check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [phase1-lint]
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Type check shared package
+        working-directory: packages/shared
+        run: npx tsc --noEmit
+      - name: Type check web app
+        working-directory: apps/web
+        run: npx tsc --noEmit
+
+  phase3-build:
+    name: phase 3 - build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [phase1-lint, phase2-typecheck]
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build all workspaces
+        run: npm run build
+
+  phase4-dependency-audit:
+    name: phase 4 - dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [phase1-lint]
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: npm audit
+        run: npm audit --audit-level=high
+
+  phase5-ci-summary:
+    name: phase 5 - ci summary
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: always()
+    needs:
+      - phase1-lint
+      - phase2-typecheck
+      - phase3-build
+      - phase4-dependency-audit
+    steps:
+      - name: Write summary
+        run: |
+          echo "## CI Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Phase 1 (Lint): ${{ needs.phase1-lint.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Phase 2 (Type Check): ${{ needs.phase2-typecheck.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Phase 3 (Build): ${{ needs.phase3-build.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Phase 4 (Dependency Audit): ${{ needs.phase4-dependency-audit.result }}" >> $GITHUB_STEP_SUMMARY
