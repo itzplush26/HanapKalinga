@@ -1,7 +1,12 @@
 // Shared type definitions
 export type UserRole = "family" | "nurse" | "admin";
 
-export type VerificationStatus = "pending" | "verified" | "rejected";
+export type VerificationStatus =
+  | "pending"
+  | "under_review"
+  | "verified"
+  | "rejected"
+  | "resubmission_required";
 
 export type BookingStatus = "pending" | "accepted" | "declined" | "completed" | "cancelled";
 
@@ -18,9 +23,14 @@ export interface Profile {
   id: string;
   role: UserRole;
   full_name: string | null;
+  first_name: string | null;
+  middle_name: string | null;
+  last_name: string | null;
   phone: string | null;
+  region: string | null;
   city: string | null;
   barangay: string | null;
+  address: string | null;
   created_at: string;
 }
 
@@ -33,7 +43,11 @@ export interface Nurse {
   years_experience: number | null;
   bio: string | null;
   hourly_rate: number | null;
+  hourly_rate_max: number | null;
+  hourly_rate_range: string | null;
   daily_rate_12hr: number | null;
+  daily_rate_12hr_max: number | null;
+  daily_rate_range: string | null;
   verification_status: VerificationStatus;
   rejection_reason: string | null;
   verified_at: string | null;

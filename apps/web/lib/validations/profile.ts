@@ -1,36 +1,61 @@
 import { z } from "zod";
+import { isCityInRegion } from "@/lib/ph-locations";
+import { RATE_RANGE_IDS } from "@/lib/rate-ranges";
 
-export const familyProfileSchema = z.object({
+const rateRangeField = z.union([z.enum(RATE_RANGE_IDS), z.literal("")]);
+
+function validateCityInRegion(
+  values: { region?: string; city?: string },
+  context: z.RefinementCtx
+) {
+  if (values.region && values.city && !isCityInRegion(values.city, values.region)) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Select a city in the chosen region.",
+      path: ["city"]
+    });
+  }
+}
+
+export const familyProfileSchema = z
+  .object({
+    firstName: z.string().min(1, "First name is required."),
+    middleName: z.string().optional(),
+    lastName: z.string().min(1, "Last name is required."),
+    phone: z.string().min(10, "Enter a valid phone number.").optional().or(z.literal("")),
+    region: z.string().min(2, "Region is required."),
+    city: z.string().min(2, "City is required."),
+    barangay: z.string().min(2, "Barangay is required."),
+    address: z.string().min(5, "Home address is required.")
+  })
+  .superRefine(validateCityInRegion);
+
+const nurseProfileFieldsSchema = z.object({
   firstName: z.string().min(1, "First name is required."),
   middleName: z.string().optional(),
   lastName: z.string().min(1, "Last name is required."),
-  phone: z.string().min(10, "Enter a valid phone number.").optional().or(z.literal("")),
+  providerType: z.enum(["nurse", "caregiver"]),
   region: z.string().min(2, "Region is required."),
   city: z.string().min(2, "City is required."),
   barangay: z.string().min(2, "Barangay is required."),
-  address: z.string().min(5, "Home address is required.")
-});
-
-export const nurseProfileFormSchema = z.object({
-  fullName: z.string().min(2),
-  providerType: z.enum(["nurse", "caregiver"]),
-  city: z.string().min(2),
-  barangay: z.string().min(2),
   bio: z.string().optional(),
-  hourlyRate: z.number().min(0).optional(),
-  dailyRate12hr: z.number().min(0).optional(),
+  hourlyRateRange: rateRangeField,
+  dailyRateRange: rateRangeField,
   specializations: z.array(z.string()).min(1, "Select at least one specialization.")
 });
 
+export const nurseProfileFormSchema = nurseProfileFieldsSchema.superRefine(validateCityInRegion);
+
 export type NurseProfileFormValues = z.infer<typeof nurseProfileFormSchema>;
 
-export const nurseProfileSchema = nurseProfileFormSchema
+export const nurseProfileSchema = nurseProfileFieldsSchema
   .extend({
     prcDocumentUrl: z.string().min(1).optional(),
     tesdaDocumentUrl: z.string().min(1).optional(),
     nbiDocumentUrl: z.string().min(1, "NBI clearance is required.")
   })
   .superRefine((values, context) => {
+    validateCityInRegion(values, context);
     if (values.providerType === "nurse" && !values.prcDocumentUrl) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
@@ -46,3 +71,28 @@ export const nurseProfileSchema = nurseProfileFormSchema
       });
     }
   });
+
+export const nurseProfileEditSchema = z
+  .object({
+    firstName: z.string().min(1, "First name is required."),
+    middleName: z.string().optional(),
+    lastName: z.string().min(1, "Last name is required."),
+    phone: z.string().min(10, "Enter a valid phone number.").optional().or(z.literal("")),
+    region: z.string().min(2, "Region is required."),
+    city: z.string().min(2, "City is required."),
+    barangay: z.string().min(2, "Barangay is required."),
+    address: z.string().optional(),
+    prcLicenseNo: z.string().optional(),
+    specializations: z.string().min(1, "Enter at least one specialization."),
+    yearsExperience: z.number().min(0, "Years of experience cannot be negative."),
+    bio: z.string().optional(),
+    hourlyRateRange: rateRangeField,
+    dailyRateRange: rateRangeField,
+    profile_photo_url: z.string().optional(),
+    prc_document_url: z.string().optional(),
+    tesda_document_url: z.string().optional(),
+    nbi_document_url: z.string().optional()
+  })
+  .superRefine(validateCityInRegion);
+
+export type NurseProfileEditValues = z.infer<typeof nurseProfileEditSchema>;

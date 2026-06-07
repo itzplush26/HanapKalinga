@@ -17,7 +17,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { DeferredDocumentPicker } from "@/components/deferred-document-picker";
 import { PasswordInput } from "@/components/ui/password-input";
 import { uploadNurseDocument } from "@/lib/upload-nurse-document";
-import { PH_CITIES, PH_REGIONS } from "@/lib/ph-locations";
+import { RegionCitySelects } from "@/components/region-city-selects";
+import { RateRangeSelect } from "@/components/rate-range-select";
+import { resolveRateRangeValues, type RateRangeId } from "@/lib/rate-ranges";
 import { PROVIDER_SPECIALIZATIONS } from "@/lib/constants";
 
 const SIGNUP_TOTAL_STEPS = 5;
@@ -96,13 +98,16 @@ export default function RegisterPage() {
   const nurseForm = useForm({
     resolver: zodResolver(nurseProfileFormSchema),
     defaultValues: {
-      fullName: "",
+      firstName: "",
+      middleName: "",
+      lastName: "",
       providerType: "nurse" as NurseProfileFormValues["providerType"],
+      region: "",
       city: "",
       barangay: "",
       bio: "",
-      hourlyRate: undefined,
-      dailyRate12hr: undefined,
+      hourlyRateRange: "",
+      dailyRateRange: "",
       specializations: [] as string[]
     }
   });
@@ -259,15 +264,19 @@ export default function RegisterPage() {
       }
       setDocErrors({});
 
+      const fullName = [values.firstName, values.middleName, values.lastName]
+        .filter((part: string) => part?.trim())
+        .join(" ");
+
       await supabase.from("profiles").upsert({
         id: userId,
         role: "nurse",
-        full_name: values.fullName,
-        first_name: null,
-        middle_name: null,
-        last_name: null,
+        full_name: fullName,
+        first_name: values.firstName,
+        middle_name: values.middleName?.trim() || null,
+        last_name: values.lastName,
         phone: null,
-        region: null,
+        region: values.region,
         city: values.city,
         barangay: values.barangay,
         address: null
@@ -329,13 +338,23 @@ export default function RegisterPage() {
 
       const credentialField =
         cachedNurseProfile.providerType === "nurse" ? "prc_document_url" : "tesda_document_url";
+      const hourlyRates = resolveRateRangeValues(
+        (cachedNurseProfile.hourlyRateRange || undefined) as RateRangeId | undefined
+      );
+      const dailyRates = resolveRateRangeValues(
+        (cachedNurseProfile.dailyRateRange || undefined) as RateRangeId | undefined
+      );
       const { error: nurseError } = await supabase.from("nurses").upsert({
         id: userId,
         provider_type: cachedNurseProfile.providerType,
         specializations: cachedNurseProfile.specializations,
         bio: cachedNurseProfile.bio ?? null,
-        hourly_rate: cachedNurseProfile.hourlyRate ?? null,
-        daily_rate_12hr: cachedNurseProfile.dailyRate12hr ?? null,
+        hourly_rate: hourlyRates.min,
+        hourly_rate_max: hourlyRates.max,
+        hourly_rate_range: cachedNurseProfile.hourlyRateRange || null,
+        daily_rate_12hr: dailyRates.min,
+        daily_rate_12hr_max: dailyRates.max,
+        daily_rate_range: cachedNurseProfile.dailyRateRange || null,
         nbi_document_url: nbiUpload.path,
         [credentialField]: credentialUpload.path,
         verification_status: "pending"
@@ -580,34 +599,23 @@ export default function RegisterPage() {
               {optionalLabel("Phone (optional)")}
               <Input placeholder="09XX XXX XXXX" {...familyForm.register("phone")} />
             </div>
-            <div className="space-y-1">
-              {requiredLabel("Region", !!familyForm.formState.errors.region)}
-              <Select
-                {...familyForm.register("region")}
-                className={familyForm.formState.errors.region ? "border-rose-500 focus:ring-rose-500" : undefined}
-              >
-                <option value="">Select region</option>
-                {PH_REGIONS.map((region) => (
-                  <option key={region} value={region}>
-                    {region}
-                  </option>
-                ))}
-              </Select>
+            <div className="space-y-3">
+              <RegionCitySelects
+                region={familyForm.watch("region")}
+                city={familyForm.watch("city")}
+                onRegionChange={(value) =>
+                  familyForm.setValue("region", value, { shouldValidate: true })
+                }
+                onCityChange={(value) => familyForm.setValue("city", value, { shouldValidate: true })}
+                regionError={!!familyForm.formState.errors.region}
+                cityError={!!familyForm.formState.errors.city}
+                regionLabel={requiredLabel("Region", !!familyForm.formState.errors.region)}
+                cityLabel={requiredLabel("City", !!familyForm.formState.errors.city)}
+              />
             </div>
-            <div className="space-y-1">
-              {requiredLabel("City", !!familyForm.formState.errors.city)}
-              <Select
-                {...familyForm.register("city")}
-                className={familyForm.formState.errors.city ? "border-rose-500 focus:ring-rose-500" : undefined}
-              >
-                <option value="">Select city</option>
-                {PH_CITIES.map((city) => (
-                  <option key={city} value={city}>
-                    {city}
-                  </option>
-                ))}
-              </Select>
-            </div>
+            {familyForm.formState.errors.city ? (
+              <p className="text-xs text-rose-600">{familyForm.formState.errors.city.message}</p>
+            ) : null}
             <div className="space-y-1">
               {requiredLabel("Barangay", !!familyForm.formState.errors.barangay)}
               <Input
@@ -630,12 +638,28 @@ export default function RegisterPage() {
 
         {step === 4 && role === "nurse" ? (
           <form onSubmit={nurseForm.handleSubmit(handleProfileSubmit)} className="space-y-3">
-            {requiredLabel("Full name", !!nurseForm.formState.errors.fullName)}
-            <Input
-              placeholder="Full name"
-              {...nurseForm.register("fullName")}
-              className={nurseForm.formState.errors.fullName ? "border-rose-500 focus:ring-rose-500" : undefined}
-            />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                {requiredLabel("First name", !!nurseForm.formState.errors.firstName)}
+                <Input
+                  placeholder="First name"
+                  {...nurseForm.register("firstName")}
+                  className={nurseForm.formState.errors.firstName ? "border-rose-500 focus:ring-rose-500" : undefined}
+                />
+              </div>
+              <div className="space-y-1">
+                {optionalLabel("Middle name (optional)")}
+                <Input placeholder="Middle name" {...nurseForm.register("middleName")} />
+              </div>
+            </div>
+            <div className="space-y-1">
+              {requiredLabel("Last name", !!nurseForm.formState.errors.lastName)}
+              <Input
+                placeholder="Last name"
+                {...nurseForm.register("lastName")}
+                className={nurseForm.formState.errors.lastName ? "border-rose-500 focus:ring-rose-500" : undefined}
+              />
+            </div>
             {requiredLabel("Provider type", !!nurseForm.formState.errors.providerType)}
             <Select
               {...nurseForm.register("providerType")}
@@ -648,18 +672,25 @@ export default function RegisterPage() {
               <option value="nurse">Nurse (PRC)</option>
               <option value="caregiver">Caregiver (TESDA NC II)</option>
             </Select>
-            {requiredLabel("City", !!nurseForm.formState.errors.city)}
-            <Select
-              {...nurseForm.register("city")}
-              className={nurseForm.formState.errors.city ? "border-rose-500 focus:ring-rose-500" : undefined}
-            >
-              <option value="">Select city</option>
-              {PH_CITIES.map((city) => (
-                <option key={city} value={city}>
-                  {city}
-                </option>
-              ))}
-            </Select>
+            <div className="space-y-3">
+              <RegionCitySelects
+                region={nurseForm.watch("region")}
+                city={nurseForm.watch("city")}
+                onRegionChange={(value) =>
+                  nurseForm.setValue("region", value, { shouldValidate: true, shouldDirty: true })
+                }
+                onCityChange={(value) =>
+                  nurseForm.setValue("city", value, { shouldValidate: true, shouldDirty: true })
+                }
+                regionError={!!nurseForm.formState.errors.region}
+                cityError={!!nurseForm.formState.errors.city}
+                regionLabel={requiredLabel("Region", !!nurseForm.formState.errors.region)}
+                cityLabel={requiredLabel("City", !!nurseForm.formState.errors.city)}
+              />
+            </div>
+            {nurseForm.formState.errors.city ? (
+              <p className="text-xs text-rose-600">{nurseForm.formState.errors.city.message}</p>
+            ) : null}
             {requiredLabel("Barangay", !!nurseForm.formState.errors.barangay)}
             <Input
               placeholder="Barangay"
@@ -699,10 +730,31 @@ export default function RegisterPage() {
             </div>
             {optionalLabel("Bio (optional)")}
             <Textarea placeholder="Bio" {...nurseForm.register("bio")} />
-            {optionalLabel("Hourly rate (optional)")}
-            <Input type="number" placeholder="Hourly rate" {...nurseForm.register("hourlyRate", { valueAsNumber: true })} />
-            {optionalLabel("Daily rate (optional)")}
-            <Input type="number" placeholder="Daily rate" {...nurseForm.register("dailyRate12hr", { valueAsNumber: true })} />
+            <div className="space-y-1">
+              {optionalLabel("Expected hourly rate range (optional)")}
+              <RateRangeSelect
+                value={nurseForm.watch("hourlyRateRange") ?? ""}
+                onChange={(value) =>
+                  nurseForm.setValue(
+                    "hourlyRateRange",
+                    (value || "") as NurseProfileFormValues["hourlyRateRange"]
+                  )
+                }
+              />
+              <p className="text-xs text-slate-500">Final rates can be negotiated privately with families.</p>
+            </div>
+            <div className="space-y-1">
+              {optionalLabel("Expected daily rate range (optional)")}
+              <RateRangeSelect
+                value={nurseForm.watch("dailyRateRange") ?? ""}
+                onChange={(value) =>
+                  nurseForm.setValue(
+                    "dailyRateRange",
+                    (value || "") as NurseProfileFormValues["dailyRateRange"]
+                  )
+                }
+              />
+            </div>
             {requiredLabel(
               nurseForm.watch("providerType") === "caregiver"
                 ? "TESDA NC II certificate"

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { deriveAvailabilityStatus } from "@/lib/availability-status";
+import { formatRateRangeDisplay } from "@/lib/rate-ranges";
 
 interface NurseProfilePageProps {
   params: { id: string };
@@ -26,7 +27,7 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
   const { data: nurse } = await supabase
     .from("nurses")
     .select(
-      "id, provider_type, specializations, years_experience, bio, hourly_rate, daily_rate_12hr, profiles(full_name, city, barangay)"
+      "id, provider_type, specializations, years_experience, bio, hourly_rate, hourly_rate_max, hourly_rate_range, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profiles(full_name, city, barangay, region)"
     )
     .eq("id", params.id)
     .single();
@@ -66,6 +67,16 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
       : availabilityStatus === "available_next_week"
         ? "bg-amber-100 text-amber-700"
         : "bg-rose-100 text-rose-700";
+  const hourlyRateLabel = formatRateRangeDisplay(
+    nurse.hourly_rate_range,
+    nurse.hourly_rate,
+    nurse.hourly_rate_max
+  );
+  const dailyRateLabel = formatRateRangeDisplay(
+    nurse.daily_rate_range,
+    nurse.daily_rate_12hr,
+    nurse.daily_rate_12hr_max
+  );
 
   return (
     <main className="px-5 py-8">
@@ -73,7 +84,7 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
         <div className="space-y-3">
           <h1 className="text-2xl font-semibold">{profile?.full_name ?? "Nurse"}</h1>
           <p className="text-sm text-slate-600">
-            {profile?.city ?? ""} {profile?.barangay ?? ""}
+            {[profile?.region, profile?.city, profile?.barangay].filter(Boolean).join(" • ")}
           </p>
           <Badge className={availabilityClass}>{availabilityText}</Badge>
           <div className="flex flex-wrap gap-2">
@@ -86,14 +97,15 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
           <p className="text-sm text-slate-600">{nurse.bio}</p>
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="rounded-xl border border-slate-200 bg-white p-3">
-              <p className="text-xs text-slate-500">Hourly</p>
-              <p className="font-semibold">PHP {nurse.hourly_rate ?? 0}</p>
+              <p className="text-xs text-slate-500">Hourly (expected)</p>
+              <p className="font-semibold">{hourlyRateLabel ?? "Rate on request"}</p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-white p-3">
-              <p className="text-xs text-slate-500">12-hr</p>
-              <p className="font-semibold">PHP {nurse.daily_rate_12hr ?? 0}</p>
+              <p className="text-xs text-slate-500">Daily (expected)</p>
+              <p className="font-semibold">{dailyRateLabel ?? "Rate on request"}</p>
             </div>
           </div>
+          <p className="text-xs text-slate-500">Rates shown are starting expectations. Final rates can be negotiated privately.</p>
         </div>
 
         <div className="space-y-3">

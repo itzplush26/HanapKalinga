@@ -5,6 +5,7 @@ import { NurseFilters } from "@/components/nurse-filters";
 import { NursesWelcomeBanner } from "@/components/nurses-welcome-banner";
 import { Button } from "@/components/ui/button";
 import { AvailabilitySlot, AvailabilityStatus, deriveAvailabilityStatus } from "@/lib/availability-status";
+import { formatRateRangeDisplay } from "@/lib/rate-ranges";
 
 interface NursesPageProps {
   searchParams?: Record<string, string | string[] | undefined>;
@@ -47,7 +48,7 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
 
   const { data: nurses } = await supabase
     .from("nurses")
-    .select("id, provider_type, specializations, years_experience, daily_rate_12hr, hourly_rate, profile_photo_url, profiles(full_name, city)")
+    .select("id, provider_type, specializations, years_experience, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, hourly_rate, profile_photo_url, profiles(full_name, city)")
     .eq("verification_status", "verified");
   const nurseIds = (nurses ?? []).map((nurse) => nurse.id);
 
@@ -109,11 +110,13 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
       ) {
         return false;
       }
-      if (typeof minDailyRateFilter === "number" && (nurse.daily_rate_12hr ?? 0) < minDailyRateFilter) {
-        return false;
+      if (typeof minDailyRateFilter === "number") {
+        const nurseMax = nurse.daily_rate_12hr_max ?? nurse.daily_rate_12hr ?? 0;
+        if (nurseMax < minDailyRateFilter) return false;
       }
-      if (typeof maxDailyRateFilter === "number" && (nurse.daily_rate_12hr ?? 0) > maxDailyRateFilter) {
-        return false;
+      if (typeof maxDailyRateFilter === "number") {
+        const nurseMin = nurse.daily_rate_12hr ?? 0;
+        if (nurseMin > maxDailyRateFilter) return false;
       }
       if (availabilityFilter && availabilityStatus !== availabilityFilter) return false;
       return true;
@@ -144,7 +147,11 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
               city={profile?.city ?? "Philippines"}
               specializations={nurse.specializations ?? []}
               yearsExperience={nurse.years_experience ?? 0}
-              dailyRate={nurse.daily_rate_12hr ?? 0}
+              dailyRateLabel={formatRateRangeDisplay(
+                nurse.daily_rate_range,
+                nurse.daily_rate_12hr,
+                nurse.daily_rate_12hr_max
+              )}
               averageRating={ratings?.averageRating ?? null}
               reviewCount={ratings?.reviewCount ?? 0}
               verified
