@@ -9,13 +9,14 @@ import { signupOtpSchema, roleSchema, passwordSetupSchema } from "@/lib/validati
 import { fetchProfileRole, resolvePostLoginDestination } from "@/lib/post-auth";
 import { resolveAuthUserId } from "@/lib/auth-session";
 import { mapSupabaseError } from "@/lib/user-errors";
-import { familyProfileSchema, nurseProfileSchema } from "@/lib/validations/profile";
+import { familyProfileSchema, nurseProfileFormSchema, type NurseProfileFormValues } from "@/lib/validations/profile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { DocumentUploader } from "@/components/document-uploader";
+import { DeferredDocumentPicker } from "@/components/deferred-document-picker";
 import { PasswordInput } from "@/components/ui/password-input";
+import { uploadNurseDocument } from "@/lib/upload-nurse-document";
 import { PH_CITIES, PH_REGIONS } from "@/lib/ph-locations";
 import { PROVIDER_SPECIALIZATIONS } from "@/lib/constants";
 
@@ -45,6 +46,10 @@ export default function RegisterPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [email, setEmail] = useState<string>("");
   const [signupUserId, setSignupUserId] = useState<string | null>(null);
+  const [cachedNurseProfile, setCachedNurseProfile] = useState<NurseProfileFormValues | null>(null);
+  const [pendingCredentialFile, setPendingCredentialFile] = useState<File | null>(null);
+  const [pendingNbiFile, setPendingNbiFile] = useState<File | null>(null);
+  const [docErrors, setDocErrors] = useState<{ credential?: string; nbi?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const supabase = createClient();
 
@@ -89,19 +94,16 @@ export default function RegisterPage() {
   });
 
   const nurseForm = useForm({
-    resolver: zodResolver(nurseProfileSchema),
+    resolver: zodResolver(nurseProfileFormSchema),
     defaultValues: {
       fullName: "",
-      providerType: "nurse",
+      providerType: "nurse" as NurseProfileFormValues["providerType"],
       city: "",
       barangay: "",
       bio: "",
       hourlyRate: undefined,
       dailyRate12hr: undefined,
-      specializations: [] as string[],
-      prcDocumentUrl: "",
-      tesdaDocumentUrl: "",
-      nbiDocumentUrl: ""
+      specializations: [] as string[]
     }
   });
 
@@ -241,6 +243,22 @@ export default function RegisterPage() {
         address: values.address
       });
     } else if (role === "nurse") {
+      const nextDocErrors: { credential?: string; nbi?: string } = {};
+      if (!pendingCredentialFile) {
+        nextDocErrors.credential =
+          values.providerType === "caregiver"
+            ? "TESDA NC II certificate is required."
+            : "PRC license is required.";
+      }
+      if (!pendingNbiFile) {
+        nextDocErrors.nbi = "NBI clearance is required.";
+      }
+      if (Object.keys(nextDocErrors).length > 0) {
+        setDocErrors(nextDocErrors);
+        return;
+      }
+      setDocErrors({});
+
       await supabase.from("profiles").upsert({
         id: userId,
         role: "nurse",
@@ -255,18 +273,7 @@ export default function RegisterPage() {
         address: null
       });
 
-      const credentialField = values.providerType === "nurse" ? "prc_document_url" : "tesda_document_url";
-      await supabase.from("nurses").upsert({
-        id: userId,
-        provider_type: values.providerType,
-        specializations: values.specializations,
-        bio: values.bio ?? null,
-        hourly_rate: values.hourlyRate ?? null,
-        daily_rate_12hr: values.dailyRate12hr ?? null,
-        nbi_document_url: values.nbiDocumentUrl,
-        [credentialField]: values.providerType === "nurse" ? values.prcDocumentUrl : values.tesdaDocumentUrl,
-        verification_status: "pending"
-      });
+      setCachedNurseProfile(values);
     }
 
     setStep(5);
@@ -291,6 +298,54 @@ export default function RegisterPage() {
       setStatus(mapSupabaseError(error, "password"));
       setIsSubmitting(false);
       return;
+    }
+
+    if (role === "nurse") {
+      if (!cachedNurseProfile || !pendingCredentialFile || !pendingNbiFile) {
+        setStatus("Registration data was lost. Please go back and re-select your documents.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const credentialPrefix = cachedNurseProfile.providerType === "nurse" ? "prc" : "tesda";
+      const credentialUpload = await uploadNurseDocument(
+        supabase,
+        userId,
+        pendingCredentialFile,
+        credentialPrefix
+      );
+      if ("error" in credentialUpload) {
+        setStatus(credentialUpload.error);
+        setIsSubmitting(false);
+        return;
+      }
+
+      const nbiUpload = await uploadNurseDocument(supabase, userId, pendingNbiFile, "nbi");
+      if ("error" in nbiUpload) {
+        setStatus(nbiUpload.error);
+        setIsSubmitting(false);
+        return;
+      }
+
+      const credentialField =
+        cachedNurseProfile.providerType === "nurse" ? "prc_document_url" : "tesda_document_url";
+      const { error: nurseError } = await supabase.from("nurses").upsert({
+        id: userId,
+        provider_type: cachedNurseProfile.providerType,
+        specializations: cachedNurseProfile.specializations,
+        bio: cachedNurseProfile.bio ?? null,
+        hourly_rate: cachedNurseProfile.hourlyRate ?? null,
+        daily_rate_12hr: cachedNurseProfile.dailyRate12hr ?? null,
+        nbi_document_url: nbiUpload.path,
+        [credentialField]: credentialUpload.path,
+        verification_status: "pending"
+      });
+
+      if (nurseError) {
+        setStatus(mapSupabaseError(nurseError, "generic"));
+        setIsSubmitting(false);
+        return;
+      }
     }
 
     clearSignupStage();
@@ -585,6 +640,10 @@ export default function RegisterPage() {
             <Select
               {...nurseForm.register("providerType")}
               className={nurseForm.formState.errors.providerType ? "border-rose-500 focus:ring-rose-500" : undefined}
+              onChange={(event) => {
+                nurseForm.setValue("providerType", event.target.value as "nurse" | "caregiver");
+                setPendingCredentialFile(null);
+              }}
             >
               <option value="nurse">Nurse (PRC)</option>
               <option value="caregiver">Caregiver (TESDA NC II)</option>
@@ -648,41 +707,33 @@ export default function RegisterPage() {
               nurseForm.watch("providerType") === "caregiver"
                 ? "TESDA NC II certificate"
                 : "PRC license scan",
-              nurseForm.watch("providerType") === "caregiver"
-                ? !!nurseForm.formState.errors.tesdaDocumentUrl
-                : !!nurseForm.formState.errors.prcDocumentUrl
+              !!docErrors.credential
             )}
-            {nurseForm.watch("providerType") === "caregiver" ? (
-              <DocumentUploader
-                label="TESDA NC II certificate"
-                pathPrefix="tesda"
-                userId={signupUserId}
-                onUploaded={(url) => nurseForm.setValue("tesdaDocumentUrl", url, { shouldValidate: true })}
-              />
-            ) : (
-              <DocumentUploader
-                label="PRC license scan"
-                pathPrefix="prc"
-                userId={signupUserId}
-                onUploaded={(url) => nurseForm.setValue("prcDocumentUrl", url, { shouldValidate: true })}
-              />
-            )}
-            {nurseForm.watch("providerType") === "caregiver" && nurseForm.formState.errors.tesdaDocumentUrl ? (
-              <p className="text-xs text-rose-600">Required</p>
-            ) : null}
-            {nurseForm.watch("providerType") !== "caregiver" && nurseForm.formState.errors.prcDocumentUrl ? (
-              <p className="text-xs text-rose-600">Required</p>
-            ) : null}
-            {requiredLabel("NBI clearance", !!nurseForm.formState.errors.nbiDocumentUrl)}
-            <DocumentUploader
-              label="NBI clearance"
-              pathPrefix="nbi"
-              userId={signupUserId}
-              onUploaded={(url) => nurseForm.setValue("nbiDocumentUrl", url, { shouldValidate: true })}
+            <DeferredDocumentPicker
+              label={
+                nurseForm.watch("providerType") === "caregiver"
+                  ? "TESDA NC II certificate"
+                  : "PRC license scan"
+              }
+              file={pendingCredentialFile}
+              onFileSelected={(file) => {
+                setPendingCredentialFile(file);
+                if (file) setDocErrors((prev) => ({ ...prev, credential: undefined }));
+              }}
             />
-            {nurseForm.formState.errors.nbiDocumentUrl ? (
-              <p className="text-xs text-rose-600">Required</p>
+            {docErrors.credential ? (
+              <p className="text-xs text-rose-600">{docErrors.credential}</p>
             ) : null}
+            {requiredLabel("NBI clearance", !!docErrors.nbi)}
+            <DeferredDocumentPicker
+              label="NBI clearance"
+              file={pendingNbiFile}
+              onFileSelected={(file) => {
+                setPendingNbiFile(file);
+                if (file) setDocErrors((prev) => ({ ...prev, nbi: undefined }));
+              }}
+            />
+            {docErrors.nbi ? <p className="text-xs text-rose-600">{docErrors.nbi}</p> : null}
             <Button type="submit">Continue</Button>
           </form>
         ) : null}
@@ -721,7 +772,11 @@ export default function RegisterPage() {
               </p>
             ) : null}
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Create account"}
+              {isSubmitting
+                ? role === "nurse"
+                  ? "Uploading documents..."
+                  : "Saving..."
+                : "Create account"}
             </Button>
           </form>
         ) : null}
