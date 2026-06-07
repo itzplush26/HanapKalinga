@@ -11,16 +11,21 @@ export const familyProfileSchema = z.object({
   address: z.string().min(5, "Home address is required.")
 });
 
-export const nurseProfileSchema = z
-  .object({
-    fullName: z.string().min(2),
-    providerType: z.enum(["nurse", "caregiver"]),
-    city: z.string().min(2),
-    barangay: z.string().min(2),
-    bio: z.string().optional(),
-    hourlyRate: z.number().min(0).optional(),
-    dailyRate12hr: z.number().min(0).optional(),
-    specializations: z.array(z.string()).min(1, "Select at least one specialization."),
+export const nurseProfileFormSchema = z.object({
+  fullName: z.string().min(2),
+  providerType: z.enum(["nurse", "caregiver"]),
+  city: z.string().min(2),
+  barangay: z.string().min(2),
+  bio: z.string().optional(),
+  hourlyRate: z.number().min(0).optional(),
+  dailyRate12hr: z.number().min(0).optional(),
+  specializations: z.array(z.string()).min(1, "Select at least one specialization.")
+});
+
+export type NurseProfileFormValues = z.infer<typeof nurseProfileFormSchema>;
+
+export const nurseProfileSchema = nurseProfileFormSchema
+  .extend({
     prcDocumentUrl: z.string().min(1).optional(),
     tesdaDocumentUrl: z.string().min(1).optional(),
     nbiDocumentUrl: z.string().min(1, "NBI clearance is required.")
