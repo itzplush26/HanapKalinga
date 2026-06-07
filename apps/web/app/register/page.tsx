@@ -219,45 +219,42 @@ export default function RegisterPage() {
       return;
     }
 
-    const profilePayload =
-      role === "family"
-        ? {
-            id: userId,
-            role,
-            full_name: [values.firstName, values.middleName, values.lastName]
-              .filter((part: string) => part?.trim())
-              .join(" "),
-            first_name: values.firstName,
-            middle_name: values.middleName?.trim() || null,
-            last_name: values.lastName,
-            phone: values.phone?.trim() || null,
-            region: values.region,
-            city: values.city,
-            barangay: values.barangay,
-            address: values.address
-          }
-        : {
-            id: userId,
-            role,
-            full_name: values.fullName,
-            first_name: null,
-            middle_name: null,
-            last_name: null,
-            phone: null,
-            region: null,
-            city: values.city,
-            barangay: values.barangay,
-            address: null
-          };
-
-    await supabase.from("profiles").upsert(profilePayload);
-
     if (role === "family") {
+      await supabase.from("profiles").upsert({
+        id: userId,
+        role: "family",
+        full_name: [values.firstName, values.middleName, values.lastName]
+          .filter((part: string) => part?.trim())
+          .join(" "),
+        first_name: values.firstName,
+        middle_name: values.middleName?.trim() || null,
+        last_name: values.lastName,
+        phone: values.phone?.trim() || null,
+        region: values.region,
+        city: values.city,
+        barangay: values.barangay,
+        address: values.address
+      });
+
       await supabase.from("families").upsert({
         id: userId,
         address: values.address
       });
     } else if (role === "nurse") {
+      await supabase.from("profiles").upsert({
+        id: userId,
+        role: "nurse",
+        full_name: values.fullName,
+        first_name: null,
+        middle_name: null,
+        last_name: null,
+        phone: null,
+        region: null,
+        city: values.city,
+        barangay: values.barangay,
+        address: null
+      });
+
       const credentialField = values.providerType === "nurse" ? "prc_document_url" : "tesda_document_url";
       await supabase.from("nurses").upsert({
         id: userId,
