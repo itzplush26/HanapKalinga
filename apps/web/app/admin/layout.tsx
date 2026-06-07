@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { SignOutButton } from "@/components/sign-out-button";
+import { AdminShell } from "@/components/admin/admin-shell";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
@@ -20,16 +20,5 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect("/login?error=no_profile");
   }
 
-  return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-3">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Admin</p>
-          <p className="text-sm text-slate-700">{profile.full_name ?? auth.user.email}</p>
-        </div>
-        <SignOutButton />
-      </header>
-      {children}
-    </div>
-  );
+  return <AdminShell adminName={profile.full_name ?? auth.user.email ?? "Administrator"}>{children}</AdminShell>;
 }

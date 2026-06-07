@@ -1,161 +1,114 @@
-"use client";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { AdminBreadcrumbs } from "@/components/admin/admin-breadcrumbs";
+import { AdminPageHeader } from "@/components/admin/admin-shell";
+import { VerificationStatusBadge } from "@/components/verification-status-badge";
+import {
+  VERIFICATION_STATUS_LABELS,
+  type VerificationStatus
+} from "@/lib/verification";
 
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { resolveDocumentViewUrl } from "@/lib/storage-docs";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
+const STATUS_TABS: { value: VerificationStatus | "all"; label: string }[] = [
+  { value: "all", label: "All active" },
+  { value: "pending", label: VERIFICATION_STATUS_LABELS.pending },
+  { value: "under_review", label: VERIFICATION_STATUS_LABELS.under_review },
+  { value: "verified", label: VERIFICATION_STATUS_LABELS.verified },
+  { value: "rejected", label: VERIFICATION_STATUS_LABELS.rejected },
+  { value: "resubmission_required", label: VERIFICATION_STATUS_LABELS.resubmission_required }
+];
 
-type PendingNurse = {
-  id: string;
-  provider_type: string;
-  prc_document_url: string | null;
-  tesda_document_url: string | null;
-  nbi_document_url: string | null;
-  profiles: { full_name: string } | { full_name: string }[] | null;
-  prcSignedUrl: string | null;
-  tesdaSignedUrl: string | null;
-  nbiSignedUrl: string | null;
-};
+interface AdminVerificationsPageProps {
+  searchParams?: { status?: string };
+}
 
-export default function AdminVerificationsPage() {
+export default async function AdminVerificationsPage({ searchParams }: AdminVerificationsPageProps) {
   const supabase = createClient();
-  const [nurses, setNurses] = useState<PendingNurse[]>([]);
-  const [reasons, setReasons] = useState<Record<string, string>>({});
+  const statusFilter = searchParams?.status ?? "all";
 
-  useEffect(() => {
-    async function load() {
-      const { data } = await supabase
-        .from("nurses")
-        .select(
-          "id, provider_type, prc_document_url, tesda_document_url, nbi_document_url, profiles(full_name)"
-        )
-        .eq("verification_status", "pending");
+  let query = supabase
+    .from("nurses")
+    .select(
+      "id, provider_type, verification_status, submitted_at, profiles(full_name, city, region, phone)"
+    )
+    .order("submitted_at", { ascending: false });
 
-      const enriched = await Promise.all(
-        (data ?? []).map(async (nurse) => ({
-          ...nurse,
-          prcSignedUrl: await resolveDocumentViewUrl(supabase, nurse.prc_document_url),
-          tesdaSignedUrl: await resolveDocumentViewUrl(supabase, nurse.tesda_document_url),
-          nbiSignedUrl: await resolveDocumentViewUrl(supabase, nurse.nbi_document_url)
-        }))
-      );
-      setNurses(enriched as PendingNurse[]);
-    }
-    load();
-  }, [supabase]);
-
-  async function handleVerify(id: string) {
-    await supabase
-      .from("nurses")
-      .update({ verification_status: "verified", verified_at: new Date().toISOString() })
-      .eq("id", id);
-    setNurses((prev) => prev.filter((nurse) => nurse.id !== id));
+  if (statusFilter === "all") {
+    query = query.in("verification_status", ["pending", "under_review"]);
+  } else {
+    query = query.eq("verification_status", statusFilter);
   }
 
-  async function handleReject(id: string) {
-    await supabase
-      .from("nurses")
-      .update({
-        verification_status: "rejected",
-        rejection_reason: reasons[id] ?? ""
-      })
-      .eq("id", id);
-    setNurses((prev) => prev.filter((nurse) => nurse.id !== id));
-  }
+  const { data: nurses } = await query;
 
   return (
-    <main className="px-5 py-8">
-      <div className="mx-auto flex max-w-md flex-col gap-5">
-        <h1 className="text-2xl font-semibold">Verification queue</h1>
-        <div className="space-y-4">
-          {nurses.map((nurse) => {
-            const profile = Array.isArray(nurse.profiles) ? nurse.profiles[0] : nurse.profiles;
-            const isCaregiver = nurse.provider_type === "caregiver";
-            return (
-              <div key={nurse.id} className="rounded-2xl border border-slate-200 bg-white p-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-semibold">{profile?.full_name ?? "Provider"}</p>
-                  <Badge className={isCaregiver ? "bg-amber-100 text-amber-800" : "bg-brand-100 text-brand-800"}>
-                    {isCaregiver ? "Caregiver" : "Nurse"}
-                  </Badge>
-                </div>
-                <div className="mt-3 space-y-2 text-sm">
-                  {isCaregiver ? (
-                    <div>
-                      <p className="text-xs font-medium text-slate-500">TESDA NC II Certificate</p>
-                      {nurse.tesdaSignedUrl ? (
-                        <a
-                          href={nurse.tesdaSignedUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-brand-700 underline"
-                        >
-                          View document
-                        </a>
-                      ) : (
-                        <span className="text-rose-600">Not uploaded</span>
-                      )}
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="text-xs font-medium text-slate-500">PRC License</p>
-                      {nurse.prcSignedUrl ? (
-                        <a
-                          href={nurse.prcSignedUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-brand-700 underline"
-                        >
-                          View document
-                        </a>
-                      ) : (
-                        <span className="text-rose-600">Not uploaded</span>
-                      )}
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-xs font-medium text-slate-500">NBI Clearance</p>
-                    {nurse.nbiSignedUrl ? (
-                      <a
-                        href={nurse.nbiSignedUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-brand-700 underline"
-                      >
-                        View document
-                      </a>
-                    ) : (
-                      <span className="text-rose-600">Not uploaded</span>
-                    )}
+    <main>
+      <AdminPageHeader
+        title="Verification management"
+        description="Review applicant documents, update statuses, and track audit history."
+        backHref="/admin"
+        breadcrumbs={
+          <AdminBreadcrumbs
+            items={[
+              { label: "Dashboard", href: "/admin" },
+              { label: "Verification Management" }
+            ]}
+          />
+        }
+      />
+
+      <div className="mb-5 flex flex-wrap gap-2">
+        {STATUS_TABS.map((tab) => {
+          const active = statusFilter === tab.value;
+          const href =
+            tab.value === "all" ? "/admin/verifications" : `/admin/verifications?status=${tab.value}`;
+          return (
+            <Link
+              key={tab.value}
+              href={href}
+              className={
+                active
+                  ? "rounded-full bg-brand-600 px-3 py-1.5 text-xs font-medium text-white"
+                  : "rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+              }
+            >
+              {tab.label}
+            </Link>
+          );
+        })}
+      </div>
+
+      <div className="space-y-3">
+        {(nurses ?? []).map((nurse) => {
+          const profile = Array.isArray(nurse.profiles) ? nurse.profiles[0] : nurse.profiles;
+          return (
+            <Link
+              key={nurse.id}
+              href={`/admin/verifications/${nurse.id}`}
+              className="block rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-brand-200 hover:shadow-sm"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold text-slate-900">{profile?.full_name ?? "Applicant"}</p>
+                    <VerificationStatusBadge status={nurse.verification_status as VerificationStatus} />
                   </div>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {profile?.city ?? "—"} • {nurse.provider_type === "caregiver" ? "Caregiver" : "Nurse"}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Submitted {nurse.submitted_at ? new Date(nurse.submitted_at).toLocaleString() : "—"}
+                  </p>
                 </div>
-                <Textarea
-                  className="mt-3"
-                  placeholder="Rejection reason"
-                  value={reasons[nurse.id] ?? ""}
-                  onChange={(event) =>
-                    setReasons((prev) => ({ ...prev, [nurse.id]: event.target.value }))
-                  }
-                />
-                <div className="mt-3 flex gap-2">
-                  <Button type="button" onClick={() => handleVerify(nurse.id)}>
-                    Verify
-                  </Button>
-                  <Button type="button" variant="outline" onClick={() => handleReject(nurse.id)}>
-                    Reject
-                  </Button>
-                </div>
+                <span className="text-sm font-medium text-brand-700">Review →</span>
               </div>
-            );
-          })}
-          {nurses.length === 0 ? (
-            <p className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
-              No pending verifications.
-            </p>
-          ) : null}
-        </div>
+            </Link>
+          );
+        })}
+        {(nurses ?? []).length === 0 ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
+            No applications in this queue.
+          </div>
+        ) : null}
       </div>
     </main>
   );

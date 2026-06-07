@@ -2,20 +2,25 @@
 
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
+import { familyProfileSchema } from "@/lib/validations/profile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PH_CITIES, PH_REGIONS } from "@/lib/ph-locations";
-import { Select } from "@/components/ui/select";
+import { RegionCitySelects } from "@/components/region-city-selects";
+import { z } from "zod";
+
+type FamilyProfileValues = z.infer<typeof familyProfileSchema>;
 
 export default function FamilyProfilePage() {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
-  const form = useForm({
+  const form = useForm<FamilyProfileValues>({
+    resolver: zodResolver(familyProfileSchema),
     defaultValues: {
       firstName: "",
       middleName: "",
@@ -62,16 +67,7 @@ export default function FamilyProfilePage() {
     loadProfile();
   }, [form, supabase]);
 
-  async function handleSubmit(values: {
-    firstName: string;
-    middleName?: string;
-    lastName: string;
-    phone?: string;
-    region: string;
-    city: string;
-    barangay: string;
-    address: string;
-  }) {
+  async function handleSubmit(values: FamilyProfileValues) {
     setSaved(false);
     const { data } = await supabase.auth.getUser();
     const user = data.user;
@@ -128,6 +124,9 @@ export default function FamilyProfilePage() {
             <div className="space-y-1">
               <Label htmlFor="firstName">First name</Label>
               <Input id="firstName" {...form.register("firstName")} />
+              {form.formState.errors.firstName ? (
+                <p className="text-xs text-rose-600">{form.formState.errors.firstName.message}</p>
+              ) : null}
             </div>
             <div className="space-y-1">
               <Label htmlFor="middleName">Middle name (optional)</Label>
@@ -137,33 +136,27 @@ export default function FamilyProfilePage() {
           <div className="space-y-1">
             <Label htmlFor="lastName">Last name</Label>
             <Input id="lastName" {...form.register("lastName")} />
+            {form.formState.errors.lastName ? (
+              <p className="text-xs text-rose-600">{form.formState.errors.lastName.message}</p>
+            ) : null}
           </div>
           <div className="space-y-1">
             <Label htmlFor="phone">Phone</Label>
             <Input id="phone" placeholder="09XX XXX XXXX" {...form.register("phone")} />
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="region">Region</Label>
-            <Select id="region" {...form.register("region")}>
-              <option value="">Select region</option>
-              {PH_REGIONS.map((region) => (
-                <option key={region} value={region}>
-                  {region}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="city">City</Label>
-            <Select id="city" {...form.register("city")}>
-              <option value="">Select city</option>
-              {PH_CITIES.map((city) => (
-                <option key={city} value={city}>
-                  {city}
-                </option>
-              ))}
-            </Select>
-          </div>
+          <RegionCitySelects
+            region={form.watch("region")}
+            city={form.watch("city")}
+            onRegionChange={(value) => form.setValue("region", value, { shouldValidate: true })}
+            onCityChange={(value) => form.setValue("city", value, { shouldValidate: true })}
+            regionError={!!form.formState.errors.region}
+            cityError={!!form.formState.errors.city}
+            regionLabel={<Label htmlFor="region">Region</Label>}
+            cityLabel={<Label htmlFor="city">City</Label>}
+          />
+          {form.formState.errors.city ? (
+            <p className="text-xs text-rose-600">{form.formState.errors.city.message}</p>
+          ) : null}
           <div className="space-y-1">
             <Label htmlFor="barangay">Barangay</Label>
             <Input id="barangay" {...form.register("barangay")} />

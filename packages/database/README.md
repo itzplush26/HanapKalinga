@@ -37,4 +37,14 @@ After running the seed file:
 | 0004_role_lock.sql | Prevent role changes after creation |
 | 0005_registration_rules.sql | Registration flow constraints |
 | 0006_nurse_ratings_and_message_read.sql | Ratings and message read status |
-| 0007_fix_rls_admin_recursion.sql | Fix RLS policies for admin access |
+| 0008_nurse_docs_storage_policies.sql | Storage RLS for nurse document uploads |
+| 0009_nurse_rate_ranges.sql | Optional rate range metadata on nurses |
+| 0010_verification_notifications.sql | Notifications, audit logs, extended verification statuses |
+
+## Admin login troubleshooting
+
+If password login fails for `admin@hanapkalinga.ph` after seeding:
+
+1. Re-run `supabase/seed.sql` — it is idempotent and creates the missing `auth.identities` row when needed.
+2. Confirm migrations through **0007** are applied (admin RLS helper).
+3. Verify the web app env vars point to the same Supabase project where seed was run.

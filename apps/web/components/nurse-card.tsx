@@ -10,7 +10,7 @@ interface NurseCardProps {
   city: string;
   specializations: string[];
   yearsExperience: number;
-  dailyRate: number;
+  dailyRateLabel: string | null;
   averageRating?: number | null;
   reviewCount?: number;
   verified: boolean;
@@ -25,7 +25,7 @@ export function NurseCard({
   city,
   specializations,
   yearsExperience,
-  dailyRate,
+  dailyRateLabel,
   averageRating,
   reviewCount = 0,
   verified,
@@ -93,7 +93,9 @@ export function NurseCard({
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-slate-600">Daily rate</span>
-              <span className="font-semibold text-slate-900">PHP {dailyRate}</span>
+              <span className="font-semibold text-slate-900">
+                {dailyRateLabel ?? "Rate on request"}
+              </span>
             </div>
             <div className="text-sm text-slate-600">
               {averageRating != null && reviewCount > 0 ? (

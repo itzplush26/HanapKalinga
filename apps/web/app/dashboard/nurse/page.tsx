@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { VerificationStatusBanner } from "@/components/verification-status-banner";
+import { NotificationsPanel } from "@/components/notifications-panel";
 import { Button } from "@/components/ui/button";
+import type { VerificationStatus } from "@/lib/verification";
 
 export default async function NurseDashboardPage() {
   const supabase = createClient();
@@ -23,12 +25,13 @@ export default async function NurseDashboardPage() {
       <div className="mx-auto flex max-w-md flex-col gap-6">
         <div>
           <h1 className="text-2xl font-semibold">Nurse dashboard</h1>
-          <p className="text-sm text-slate-600">Manage your profile and bookings.</p>
+          <p className="text-sm text-slate-600">Manage your profile, verification status, and bookings.</p>
         </div>
         <VerificationStatusBanner
-          status={nurse?.verification_status ?? "pending"}
+          status={(nurse?.verification_status ?? "pending") as VerificationStatus}
           rejectionReason={nurse?.rejection_reason}
         />
+        <NotificationsPanel />
         <div className="space-y-3">
           {(bookings ?? []).map((booking) => (
             <Link
