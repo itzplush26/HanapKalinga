@@ -12,6 +12,7 @@ import { APP_NAME } from "@/lib/constants";
 import { mapSupabaseError } from "@/lib/user-errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { z } from "zod";
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -111,9 +112,8 @@ export default function LoginPage() {
             ) : null}
           </div>
           <div className="space-y-2">
-            <Input
+            <PasswordInput
               placeholder="Password"
-              type="password"
               autoComplete="current-password"
               {...form.register("password")}
             />

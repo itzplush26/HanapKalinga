@@ -10,12 +10,12 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@hanapkalinga/shared": "*",
     "@hanapkalinga/database": "*",
+    "@hanapkalinga/shared": "*",
     "@hookform/resolvers": "3.9.0",
     "@radix-ui/react-slot": "1.1.0",
-    "@supabase/ssr": "0.3.0",
-    "@supabase/supabase-js": "2.45.4",
+    "@supabase/ssr": "^0.10.3",
+    "@supabase/supabase-js": "^2.107.0",
     "class-variance-authority": "0.7.0",
     "clsx": "2.1.1",
     "lucide-react": "0.400.0",
@@ -29,6 +29,7 @@
     "zustand": "4.5.4"
   },
   "devDependencies": {
+    "@types/node": "^20.17.0",
     "@types/react": "19.2.15",
     "autoprefixer": "10.4.20",
     "eslint": "8.57.0",

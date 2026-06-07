@@ -1,14 +1,14 @@
 import { z } from "zod";
 
 export const familyProfileSchema = z.object({
-  fullName: z.string().min(2),
-  city: z.string().min(2),
-  barangay: z.string().min(2),
-  contactPersonName: z.string().min(2),
-  relationshipToPatient: z.string().min(2),
-  patientName: z.string().min(2),
-  patientAge: z.number().int().min(0),
-  careNeeded: z.string().optional()
+  firstName: z.string().min(1, "First name is required."),
+  middleName: z.string().optional(),
+  lastName: z.string().min(1, "Last name is required."),
+  phone: z.string().min(10, "Enter a valid phone number.").optional().or(z.literal("")),
+  region: z.string().min(2, "Region is required."),
+  city: z.string().min(2, "City is required."),
+  barangay: z.string().min(2, "Barangay is required."),
+  address: z.string().min(5, "Home address is required.")
 });
 
 export const nurseProfileSchema = z

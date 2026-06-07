@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { MAX_DOCUMENT_SIZE_BYTES, MAX_DOCUMENT_SIZE_LABEL } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 
 type UploadState = "idle" | "uploading" | "uploaded" | "failed";
@@ -17,23 +19,50 @@ export function DocumentUploader({
   pathPrefix,
   onUploaded
 }: DocumentUploaderProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<UploadState>("idle");
   const [fileName, setFileName] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const supabase = createClient();
 
   async function handleUpload(file: File | null) {
     if (!file) return;
+
+    setErrorMessage(null);
+
+    if (file.size > MAX_DOCUMENT_SIZE_BYTES) {
+      setStatus("failed");
+      setErrorMessage(`File is too large. Maximum size is ${MAX_DOCUMENT_SIZE_LABEL}.`);
+      return;
+    }
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      setStatus("failed");
+      setErrorMessage("Use a JPG, PNG, WebP, or PDF file.");
+      return;
+    }
+
     setStatus("uploading");
     setFileName(file.name);
 
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) {
+      setStatus("failed");
+      setErrorMessage("Sign in required before uploading. Please refresh and try again.");
+      return;
+    }
+
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const filePath = `${pathPrefix}/${Date.now()}-${safeName}`;
+    const filePath = `${auth.user.id}/${pathPrefix}/${Date.now()}-${safeName}`;
+
     const { data, error } = await supabase.storage
       .from("nurse-docs")
-      .upload(filePath, file, { upsert: true });
+      .upload(filePath, file, { upsert: true, contentType: file.type });
 
     if (error || !data) {
       setStatus("failed");
+      setErrorMessage(error?.message ?? "Upload failed. Please try again.");
       return;
     }
 
@@ -41,31 +70,56 @@ export function DocumentUploader({
     setStatus("uploaded");
   }
 
+  function openFilePicker() {
+    inputRef.current?.click();
+  }
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-slate-900">{label}</p>
           <p className="text-xs text-slate-500">
-            {status === "idle" && "Upload a clear scan"}
-            {status === "uploading" && "Uploading..."}
+            {status === "idle" && `PDF or image, max ${MAX_DOCUMENT_SIZE_LABEL}`}
+            {status === "uploading" && "Uploading…"}
             {status === "uploaded" && "Uploaded. Under review."}
-            {status === "failed" && "Upload failed. Try again."}
+            {status === "failed" && (errorMessage ?? "Upload failed. Try again.")}
           </p>
         </div>
-        <label className="cursor-pointer">
+        <div>
           <input
+            ref={inputRef}
             type="file"
-            accept="image/*,application/pdf"
-            className="hidden"
-            onChange={(event) => handleUpload(event.target.files?.[0] ?? null)}
+            accept="image/jpeg,image/png,image/webp,application/pdf"
+            className="sr-only"
+            onChange={(event) => {
+              void handleUpload(event.target.files?.[0] ?? null);
+              event.target.value = "";
+            }}
           />
-          <Button type="button" variant="outline">
-            Select file
+          <Button
+            type="button"
+            variant="outline"
+            disabled={status === "uploading"}
+            onClick={openFilePicker}
+          >
+            {status === "uploading" ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                Uploading…
+              </>
+            ) : (
+              "Select file"
+            )}
           </Button>
-        </label>
+        </div>
       </div>
       {fileName ? <p className="mt-2 text-xs text-slate-500">{fileName}</p> : null}
+      {status === "failed" && errorMessage ? (
+        <p className="mt-2 text-xs text-rose-600" role="alert">
+          {errorMessage}
+        </p>
+      ) : null}
     </div>
   );
 }

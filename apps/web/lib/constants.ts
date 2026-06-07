@@ -15,6 +15,11 @@ export const PROVIDER_SPECIALIZATIONS = [
   "Bedridden Patient Care"
 ] as const;
 
+/** Maximum upload size for verification documents (5 MB). */
+export const MAX_DOCUMENT_SIZE_BYTES = 5 * 1024 * 1024;
+
+export const MAX_DOCUMENT_SIZE_LABEL = "5 MB";
+
 export const BOOKING_SKILLS = [
   "IV Therapy",
   "Wound Care",

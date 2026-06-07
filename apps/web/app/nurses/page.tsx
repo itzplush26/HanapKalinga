@@ -34,6 +34,17 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
   const showWelcome = parseString(searchParams?.welcome) === "1";
 
   const supabase = createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  let viewerRole: string | null = null;
+  if (auth.user) {
+    const { data: viewerProfile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", auth.user.id)
+      .maybeSingle();
+    viewerRole = viewerProfile?.role ?? null;
+  }
+
   const { data: nurses } = await supabase
     .from("nurses")
     .select("id, provider_type, specializations, years_experience, daily_rate_12hr, hourly_rate, profile_photo_url, profiles(full_name, city)")
@@ -146,10 +157,20 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
           {filteredNurses.length === 0 ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
               <p className="font-semibold text-slate-900">No matching verified providers yet</p>
-              <p className="mt-1">Try adjusting your filters or sign up to join the network.</p>
-              <Button asChild className="mt-3">
-                <Link href="/register?role=provider">Create provider profile</Link>
-              </Button>
+              <p className="mt-1">
+                {viewerRole === "family"
+                  ? "Try adjusting your filters or check back soon as new providers are verified."
+                  : "Try adjusting your filters to broaden your search."}
+              </p>
+              {viewerRole === "family" ? (
+                <Button asChild className="mt-3" variant="outline">
+                  <Link href="/dashboard/family">Back to dashboard</Link>
+                </Button>
+              ) : viewerRole === "nurse" ? null : (
+                <Button asChild className="mt-3" variant="outline">
+                  <Link href="/register?role=provider">Join as a nurse or caregiver</Link>
+                </Button>
+              )}
             </div>
           ) : null}
         </div>

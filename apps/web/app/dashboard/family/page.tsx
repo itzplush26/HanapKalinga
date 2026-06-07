@@ -2,8 +2,14 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { BookingStatusBadge } from "@/components/booking-status-badge";
+import { FamilyWelcomeBanner } from "@/components/family-welcome-banner";
 
-export default async function FamilyDashboardPage() {
+interface FamilyDashboardPageProps {
+  searchParams?: Record<string, string | string[] | undefined>;
+}
+
+export default async function FamilyDashboardPage({ searchParams }: FamilyDashboardPageProps) {
+  const showWelcome = searchParams?.welcome === "1";
   const supabase = createClient();
   const { data: bookings } = await supabase
     .from("bookings")
@@ -18,6 +24,7 @@ export default async function FamilyDashboardPage() {
           <h1 className="text-2xl font-semibold">Family dashboard</h1>
           <p className="text-sm text-slate-600">Your latest booking activity.</p>
         </div>
+        {showWelcome ? <FamilyWelcomeBanner /> : null}
         <Link
           href="/nurses"
           className="block rounded-2xl border border-brand-200 bg-brand-50 p-4 transition hover:bg-brand-100"
