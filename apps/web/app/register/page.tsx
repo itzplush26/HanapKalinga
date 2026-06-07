@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
 import { signupOtpSchema, roleSchema, passwordSetupSchema } from "@/lib/validations/auth";
 import { fetchProfileRole, resolvePostLoginDestination } from "@/lib/post-auth";
+import { resolveAuthUserId } from "@/lib/auth-session";
 import { mapSupabaseError } from "@/lib/user-errors";
 import { familyProfileSchema, nurseProfileSchema } from "@/lib/validations/profile";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ export default function RegisterPage() {
   const [role, setRole] = useState<"family" | "nurse" | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [email, setEmail] = useState<string>("");
+  const [signupUserId, setSignupUserId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const supabase = createClient();
 
@@ -151,8 +153,12 @@ export default function RegisterPage() {
           return;
         }
         console.info("signup.verify_code.success", data);
-        const userId = data?.user?.id;
+        if (data.session) {
+          await supabase.auth.setSession(data.session);
+        }
+        const userId = data?.user?.id ?? data.session?.user?.id ?? null;
         if (userId) {
+          setSignupUserId(userId);
           const { role: existingRole } = await fetchProfileRole(supabase, userId);
           if (existingRole) {
             clearSignupStage();
@@ -206,43 +212,55 @@ export default function RegisterPage() {
   }
 
   async function handleProfileSubmit(values: any) {
-    const { data } = await supabase.auth.getUser();
-    const user = data.user;
+    const userId = await resolveAuthUserId(supabase, signupUserId);
 
-    if (!user || !role) {
-      setStatus("Missing user or role.");
+    if (!userId || !role) {
+      setStatus("Your session expired. Please verify your email code again (step 2).");
       return;
     }
 
-    const fullName = [values.firstName, values.middleName, values.lastName]
-      .filter((part: string) => part?.trim())
-      .join(" ");
-
-    const profilePayload = {
-      id: user.id,
-      role,
-      full_name: fullName,
-      first_name: values.firstName,
-      middle_name: values.middleName?.trim() || null,
-      last_name: values.lastName,
-      phone: values.phone?.trim() || null,
-      region: values.region,
-      city: values.city,
-      barangay: values.barangay,
-      address: values.address
-    };
+    const profilePayload =
+      role === "family"
+        ? {
+            id: userId,
+            role,
+            full_name: [values.firstName, values.middleName, values.lastName]
+              .filter((part: string) => part?.trim())
+              .join(" "),
+            first_name: values.firstName,
+            middle_name: values.middleName?.trim() || null,
+            last_name: values.lastName,
+            phone: values.phone?.trim() || null,
+            region: values.region,
+            city: values.city,
+            barangay: values.barangay,
+            address: values.address
+          }
+        : {
+            id: userId,
+            role,
+            full_name: values.fullName,
+            first_name: null,
+            middle_name: null,
+            last_name: null,
+            phone: null,
+            region: null,
+            city: values.city,
+            barangay: values.barangay,
+            address: null
+          };
 
     await supabase.from("profiles").upsert(profilePayload);
 
     if (role === "family") {
       await supabase.from("families").upsert({
-        id: user.id,
+        id: userId,
         address: values.address
       });
     } else if (role === "nurse") {
       const credentialField = values.providerType === "nurse" ? "prc_document_url" : "tesda_document_url";
       await supabase.from("nurses").upsert({
-        id: user.id,
+        id: userId,
         provider_type: values.providerType,
         specializations: values.specializations,
         bio: values.bio ?? null,
@@ -262,10 +280,9 @@ export default function RegisterPage() {
     setStatus(null);
     setIsSubmitting(true);
 
-    const { data } = await supabase.auth.getUser();
-    const user = data.user;
+    const userId = await resolveAuthUserId(supabase, signupUserId);
 
-    if (!user || !role) {
+    if (!userId || !role) {
       setStatus("Session expired. Please start registration again.");
       setIsSubmitting(false);
       return;
@@ -289,6 +306,14 @@ export default function RegisterPage() {
 
     window.location.href = "/dashboard/nurse";
   }
+
+  useEffect(() => {
+    async function restoreSignupSession() {
+      const userId = await resolveAuthUserId(supabase, null);
+      if (userId) setSignupUserId(userId);
+    }
+    restoreSignupSession();
+  }, [supabase]);
 
   useEffect(() => {
     async function redirectIfProfileComplete() {
@@ -634,12 +659,14 @@ export default function RegisterPage() {
               <DocumentUploader
                 label="TESDA NC II certificate"
                 pathPrefix="tesda"
+                userId={signupUserId}
                 onUploaded={(url) => nurseForm.setValue("tesdaDocumentUrl", url, { shouldValidate: true })}
               />
             ) : (
               <DocumentUploader
                 label="PRC license scan"
                 pathPrefix="prc"
+                userId={signupUserId}
                 onUploaded={(url) => nurseForm.setValue("prcDocumentUrl", url, { shouldValidate: true })}
               />
             )}
@@ -653,6 +680,7 @@ export default function RegisterPage() {
             <DocumentUploader
               label="NBI clearance"
               pathPrefix="nbi"
+              userId={signupUserId}
               onUploaded={(url) => nurseForm.setValue("nbiDocumentUrl", url, { shouldValidate: true })}
             />
             {nurseForm.formState.errors.nbiDocumentUrl ? (
