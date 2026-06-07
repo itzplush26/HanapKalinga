@@ -68,7 +68,12 @@ export function DocumentUploader({
 
     if (error || !data) {
       setStatus("failed");
-      setErrorMessage(error?.message ?? "Upload failed. Please try again.");
+      const message = error?.message ?? "Upload failed. Please try again.";
+      setErrorMessage(
+        message.includes("row-level security")
+          ? "Upload blocked by storage permissions. Ask an admin to apply migration 0008_nurse_docs_storage_policies.sql in Supabase."
+          : message
+      );
       return;
     }
 
