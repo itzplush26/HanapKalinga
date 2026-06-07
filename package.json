@@ -11,6 +11,7 @@
     "dev:web": "npm run dev --workspace=apps/web",
     "build": "npm run build --workspaces --if-present",
     "build:web": "npm run build --workspace=apps/web",
+    "vercel-build": "npm run build --workspace=@hanapkalinga/web && rm -rf .next && cp -a apps/web/.next .next",
     "lint": "npm run lint --workspaces --if-present",
     "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules apps/*/.next"
   },

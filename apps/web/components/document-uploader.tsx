@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { resolveAuthUserId } from "@/lib/auth-session";
 import { MAX_DOCUMENT_SIZE_BYTES, MAX_DOCUMENT_SIZE_LABEL } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 
@@ -11,12 +12,15 @@ type UploadState = "idle" | "uploading" | "uploaded" | "failed";
 interface DocumentUploaderProps {
   label: string;
   pathPrefix: string;
+  /** Pass during registration after email OTP — avoids false "sign in required" errors. */
+  userId?: string | null;
   onUploaded: (storagePath: string) => void;
 }
 
 export function DocumentUploader({
   label,
   pathPrefix,
+  userId,
   onUploaded
 }: DocumentUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -46,15 +50,17 @@ export function DocumentUploader({
     setStatus("uploading");
     setFileName(file.name);
 
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth.user) {
+    const resolvedUserId = await resolveAuthUserId(supabase, userId);
+    if (!resolvedUserId) {
       setStatus("failed");
-      setErrorMessage("Sign in required before uploading. Please refresh and try again.");
+      setErrorMessage(
+        "Your verification session expired. Go back to step 2, re-enter your email code, then try uploading again."
+      );
       return;
     }
 
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const filePath = `${auth.user.id}/${pathPrefix}/${Date.now()}-${safeName}`;
+    const filePath = `${resolvedUserId}/${pathPrefix}/${Date.now()}-${safeName}`;
 
     const { data, error } = await supabase.storage
       .from("nurse-docs")
