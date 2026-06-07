@@ -41,6 +41,6 @@ export const PH_CITIES = [
   "Butuan"
 ];
 
-import { PROVIDER_SPECIALIZATIONS } from "@/lib/constants";
+import { PROVIDER_SPECIALIZATIONS } from "@hanapkalinga/shared/constants";
 
 export const PH_SPECIALIZATIONS = [...PROVIDER_SPECIALIZATIONS];

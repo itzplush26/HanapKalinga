@@ -25,7 +25,9 @@
     "paths": {
       "@/*": [
         "./*"
-      ]
+      ],
+      "@hanapkalinga/shared": ["../../packages/shared/src/index.ts"],
+      "@hanapkalinga/shared/*": ["../../packages/shared/src/*"]
     }
   },
   "include": [
