@@ -6,6 +6,7 @@ import { BookingReviewForm } from "@/components/booking-review-form";
 import { MessageThread } from "@/components/message-thread";
 import { ScrollToHash } from "@/components/scroll-to-hash";
 import { formatShiftLabel } from "@/lib/booking-notes";
+import { resolveProfilePhotoUrl } from "@/lib/storage/r2";
 
 interface BookingDetailPageProps {
   params: { id: string };
@@ -71,7 +72,7 @@ export default async function FamilyBookingDetailPage({ params }: BookingDetailP
         <BookingPartyCard
           name={nurseName}
           subtitle={nurseProfile?.city ?? "Philippines"}
-          imageUrl={nurse?.profile_photo_url}
+          imageUrl={resolveProfilePhotoUrl(nurse?.profile_photo_url)}
           badgeLabel={nurse?.provider_type === "caregiver" ? "Caregiver" : "Nurse"}
         />
         <div className="flex items-center justify-between">

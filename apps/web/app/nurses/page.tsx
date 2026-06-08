@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AvailabilitySlot, AvailabilityStatus, deriveAvailabilityStatus } from "@/lib/availability-status";
 import { formatDailyRateBandLabel, nurseMatchesDailyRateBand } from "@/lib/data/rates";
 import { findRegionForCity } from "@/lib/data/ph-locations";
+import { resolveProfilePhotoUrl } from "@/lib/storage/r2";
 
 interface NursesPageProps {
   searchParams?: Record<string, string | string[] | undefined>;
@@ -155,7 +156,7 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
                 reviewCount={ratings?.reviewCount ?? 0}
                 verified
                 availabilityStatus={availabilityStatus}
-                imageUrl={nurse.profile_photo_url ?? undefined}
+                imageUrl={resolveProfilePhotoUrl(nurse.profile_photo_url) ?? undefined}
                 providerType={nurse.provider_type ?? "nurse"}
               />
             );

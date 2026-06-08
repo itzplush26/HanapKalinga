@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { resolveProfilePhotoUrl } from "@/lib/storage/r2";
 
 export type InboxRow = {
   bookingId: string;
@@ -125,7 +126,7 @@ export async function buildInbox(
     for (const nurse of nurses ?? []) {
       const profile = Array.isArray(nurse.profiles) ? nurse.profiles[0] : nurse.profiles;
       nameById.set(nurse.id as string, profile?.full_name ?? "Nurse");
-      photoById.set(nurse.id as string, nurse.profile_photo_url ?? null);
+      photoById.set(nurse.id as string, resolveProfilePhotoUrl(nurse.profile_photo_url));
     }
   } else {
     const { data: profiles } = await supabase
