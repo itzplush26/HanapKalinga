@@ -13,11 +13,21 @@
     "build:web": "npm run build --workspace=apps/web",
     "vercel-build": "npm run build --workspace=@hanapkalinga/web && rm -rf .next && cp -a apps/web/.next .next",
     "lint": "npm run lint --workspaces --if-present",
+    "audit:critical": "node scripts/audit-critical.mjs",
     "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules apps/*/.next"
   },
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
+  },
+  "overrides": {
+    "expo": "54.0.35",
+    "@expo/metro-config": {
+      "expo": "54.0.35"
+    },
+    "@expo/prebuild-config": {
+      "expo": "54.0.35"
+    }
   },
   "devDependencies": {
     "typescript": "5.5.4"
