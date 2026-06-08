@@ -55,7 +55,9 @@ export function formatPatientCondition(value?: string) {
 
 export function formatBudgetRange(value?: string) {
   if (!value) return null;
-  return getDailyRateBand(value)?.label ?? value;
+  const band = getDailyRateBand(value);
+  if (band) return band.label;
+  return value.replace(/_/g, "-");
 }
 
 export const SHIFT_LABELS: Record<string, string> = {

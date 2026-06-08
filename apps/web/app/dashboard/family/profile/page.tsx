@@ -11,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RegionCitySelects } from "@/components/region-city-selects";
+import { PageHeader } from "@/components/page-header";
+import { SignOutDialog } from "@/components/sign-out-dialog";
 import { z } from "zod";
 
 type FamilyProfileValues = z.infer<typeof familyProfileSchema>;
@@ -113,12 +115,11 @@ export default function FamilyProfilePage() {
   }
 
   return (
-    <main className="px-5 py-8">
+    <>
+      <PageHeader title="User Profile" showBack={false} />
+      <main className="px-5 py-6">
       <div className="mx-auto flex max-w-md flex-col gap-5">
-        <div>
-          <h1 className="text-2xl font-semibold">Family profile</h1>
-          <p className="text-sm text-slate-600">Update your contact and location details.</p>
-        </div>
+        <p className="text-sm text-slate-600">Update your contact and location details.</p>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1">
@@ -168,9 +169,11 @@ export default function FamilyProfilePage() {
           {saved ? (
             <p className="text-sm text-emerald-700">Profile saved successfully.</p>
           ) : null}
-          <Button type="submit">Save changes</Button>
+          <Button type="submit" className="w-full">Save changes</Button>
         </form>
+        <SignOutDialog className="mt-2" />
       </div>
     </main>
+    </>
   );
 }

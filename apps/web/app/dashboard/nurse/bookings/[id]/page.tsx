@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { MessageThread } from "@/components/message-thread";
 import { ScrollToHash } from "@/components/scroll-to-hash";
 import { formatShiftLabel } from "@/lib/booking-notes";
+import { PageHeader } from "@/components/page-header";
 
 type BookingStatus = "pending" | "accepted" | "declined" | "completed" | "cancelled";
 
@@ -29,7 +30,7 @@ export default function NurseBookingDetailPage({ params }: BookingDetailPageProp
   const [messages, setMessages] = useState<any[]>([]);
   const [userId, setUserId] = useState<string>("");
   const [senderNames, setSenderNames] = useState<Record<string, string>>({});
-  const [familyName, setFamilyName] = useState("Family");
+  const [familyName, setFamilyName] = useState("Unknown User");
   const [patientName, setPatientName] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,11 +59,11 @@ export default function NurseBookingDetailPage({ params }: BookingDetailPageProp
 
         setSenderNames(
           Object.fromEntries(
-            (profiles ?? []).map((p) => [p.id as string, (p.full_name as string) ?? "Family"])
+            (profiles ?? []).map((p) => [p.id as string, (p.full_name as string)?.trim() || "Unknown User"])
           )
         );
         const familyProfile = (profiles ?? []).find((p) => p.id === bookingData.family_id);
-        setFamilyName(familyProfile?.full_name ?? "Family");
+        setFamilyName(familyProfile?.full_name?.trim() || "Unknown User");
         setPatientName(family?.patient_name ?? null);
       }
     }
@@ -83,17 +84,18 @@ export default function NurseBookingDetailPage({ params }: BookingDetailPageProp
   }
 
   return (
-    <main className="px-5 py-8">
+    <>
+      <PageHeader title={familyName} />
+      <main className="px-5 py-6">
       <ScrollToHash hash="chat" />
       <div className="mx-auto flex max-w-md flex-col gap-5">
         <BookingPartyCard
           name={familyName}
-          subtitle={patientName ? `Patient: ${patientName}` : "Family booking request"}
-          badgeLabel="Family"
+          subtitle={patientName ? `Patient: ${patientName}` : "Booking request"}
         />
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold">Booking {booking.requested_date}</h1>
+            <h2 className="text-xl font-semibold">Booking {booking.requested_date}</h2>
             <p className="text-sm text-slate-600">{formatShiftLabel(booking.shift, booking.notes)}</p>
           </div>
           <BookingStatusBadge status={booking.status} />
@@ -117,5 +119,6 @@ export default function NurseBookingDetailPage({ params }: BookingDetailPageProp
         />
       </div>
     </main>
+    </>
   );
 }

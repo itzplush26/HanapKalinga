@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { BookingStatusBadge } from "@/components/booking-status-badge";
 import { FamilyWelcomeBanner } from "@/components/family-welcome-banner";
+import { PageHeader } from "@/components/page-header";
 
 interface FamilyDashboardPageProps {
   searchParams?: Record<string, string | string[] | undefined>;
@@ -18,12 +19,11 @@ export default async function FamilyDashboardPage({ searchParams }: FamilyDashbo
     .limit(3);
 
   return (
-    <main className="px-5 py-8">
+    <>
+      <PageHeader title="Home" showBack={false} />
+      <main className="px-5 py-6">
       <div className="mx-auto flex max-w-md flex-col gap-6">
-        <div>
-          <h1 className="text-2xl font-semibold">Family dashboard</h1>
-          <p className="text-sm text-slate-600">Your latest booking activity.</p>
-        </div>
+        <p className="text-sm text-slate-600">Your latest booking activity.</p>
         {showWelcome ? <FamilyWelcomeBanner /> : null}
         <Link
           href="/nurses"
@@ -60,5 +60,6 @@ export default async function FamilyDashboardPage({ searchParams }: FamilyDashbo
         </Button>
       </div>
     </main>
+    </>
   );
 }

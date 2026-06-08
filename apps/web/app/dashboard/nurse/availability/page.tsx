@@ -3,25 +3,44 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { AvailabilityCalendar, AvailabilitySlot } from "@/components/availability-calendar";
+import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-
-function getWeekDates(weekOffset: number) {
-  const today = new Date();
-  const start = new Date(today);
-  start.setDate(today.getDate() + weekOffset * 7);
-  return Array.from({ length: 7 }, (_, index) => {
-    const date = new Date(start);
-    date.setDate(start.getDate() + index);
-    return date.toISOString().slice(0, 10);
-  });
-}
+import {
+  getAccountCreationWeekStart,
+  getManilaDateString,
+  getWeekDatesFromOffset
+} from "@/lib/date-format";
 
 export default function NurseAvailabilityPage() {
   const supabase = createClient();
   const [weekOffset, setWeekOffset] = useState(0);
-  const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset]);
+  const [accountCreatedAt, setAccountCreatedAt] = useState<string | null>(null);
+  const weekDates = useMemo(() => getWeekDatesFromOffset(weekOffset), [weekOffset]);
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const accountCreationDate = accountCreatedAt?.slice(0, 10) ?? null;
+  const minWeekStart = accountCreationDate ? getAccountCreationWeekStart(accountCreationDate) : null;
+  const currentWeekStart = weekDates[0];
+  const canGoPrevious = !minWeekStart || currentWeekStart > minWeekStart;
+  const todayManila = getManilaDateString();
+
+  useEffect(() => {
+    async function loadAccountCreatedAt() {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("created_at")
+        .eq("id", auth.user.id)
+        .maybeSingle();
+
+      setAccountCreatedAt(profile?.created_at ?? auth.user.created_at ?? null);
+    }
+
+    loadAccountCreatedAt();
+  }, [supabase]);
 
   useEffect(() => {
     async function loadExisting() {
@@ -57,6 +76,13 @@ export default function NurseAvailabilityPage() {
   }, [supabase, weekDates]);
 
   async function handleToggle(slot: AvailabilitySlot) {
+    if (accountCreationDate && slot.date < accountCreationDate) {
+      return;
+    }
+    if (slot.date < todayManila) {
+      return;
+    }
+
     setSlots((prev) => {
       const next = prev.filter((item) => !(item.date === slot.date && item.shift === slot.shift));
       return [...next, slot];
@@ -65,6 +91,10 @@ export default function NurseAvailabilityPage() {
     const { data } = await supabase.auth.getUser();
     const user = data.user;
     if (!user) return;
+
+    if (accountCreationDate && slot.date < accountCreationDate) {
+      return;
+    }
 
     await supabase.from("availability").upsert({
       nurse_id: user.id,
@@ -75,25 +105,36 @@ export default function NurseAvailabilityPage() {
   }
 
   return (
-    <main className="px-5 py-8">
-      <div className="mx-auto flex max-w-3xl flex-col gap-5">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">Set availability</h1>
-          <div className="flex gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => setWeekOffset((w) => w - 1)}>
+    <>
+      <PageHeader title="Set availability" />
+      <main className="px-5 py-6">
+        <div className="mx-auto flex max-w-3xl flex-col gap-5">
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={!canGoPrevious}
+              onClick={() => setWeekOffset((w) => w - 1)}
+            >
               Previous week
             </Button>
             <Button type="button" variant="outline" size="sm" onClick={() => setWeekOffset((w) => w + 1)}>
               Next week
             </Button>
           </div>
+          {loading ? (
+            <p className="text-sm text-slate-600">Loading availability...</p>
+          ) : (
+            <AvailabilityCalendar
+              weekDates={weekDates}
+              slots={slots}
+              minDate={accountCreationDate ?? undefined}
+              onToggle={handleToggle}
+            />
+          )}
         </div>
-        {loading ? (
-          <p className="text-sm text-slate-600">Loading availability...</p>
-        ) : (
-          <AvailabilityCalendar weekDates={weekDates} slots={slots} onToggle={handleToggle} />
-        )}
-      </div>
-    </main>
+      </main>
+    </>
   );
 }

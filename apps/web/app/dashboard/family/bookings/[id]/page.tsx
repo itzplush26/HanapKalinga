@@ -7,6 +7,7 @@ import { MessageThread } from "@/components/message-thread";
 import { ScrollToHash } from "@/components/scroll-to-hash";
 import { formatShiftLabel } from "@/lib/booking-notes";
 import { resolveProfilePhotoUrl } from "@/lib/storage/r2";
+import { PageHeader } from "@/components/page-header";
 
 interface BookingDetailPageProps {
   params: { id: string };
@@ -51,10 +52,11 @@ export default async function FamilyBookingDetailPage({ params }: BookingDetailP
     .in("id", participantIds);
 
   const senderNames = Object.fromEntries(
-    (profiles ?? []).map((p) => [p.id as string, (p.full_name as string) ?? "User"])
+    (profiles ?? []).map((p) => [p.id as string, (p.full_name as string)?.trim() || "Unknown User"])
   );
 
-  const nurseName = nurseProfile?.full_name ?? senderNames[booking.nurse_id] ?? "Nurse";
+  const nurseName =
+    nurseProfile?.full_name?.trim() || senderNames[booking.nurse_id] || "Unknown User";
 
   const { data: existingReview } = await supabase
     .from("reviews")
@@ -66,18 +68,19 @@ export default async function FamilyBookingDetailPage({ params }: BookingDetailP
     booking.status === "completed" && !existingReview && auth.user?.id;
 
   return (
-    <main className="px-5 py-8">
+    <>
+      <PageHeader title={nurseName} />
+      <main className="px-5 py-6">
       <ScrollToHash hash="chat" />
       <div className="mx-auto flex max-w-md flex-col gap-5">
         <BookingPartyCard
           name={nurseName}
           subtitle={nurseProfile?.city ?? "Philippines"}
           imageUrl={resolveProfilePhotoUrl(nurse?.profile_photo_url)}
-          badgeLabel={nurse?.provider_type === "caregiver" ? "Caregiver" : "Nurse"}
         />
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold">Booking {booking.requested_date}</h1>
+            <h2 className="text-xl font-semibold">Booking {booking.requested_date}</h2>
             <p className="text-sm text-slate-600">{formatShiftLabel(booking.shift, booking.notes)}</p>
           </div>
           <BookingStatusBadge status={booking.status} />
@@ -99,5 +102,6 @@ export default async function FamilyBookingDetailPage({ params }: BookingDetailP
         />
       </div>
     </main>
+    </>
   );
 }
