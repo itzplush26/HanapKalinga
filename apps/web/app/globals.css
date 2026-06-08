@@ -15,25 +15,8 @@ h1, h2, h3 {
   font-family: var(--font-display);
 }
 
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 5px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+main {
+  min-height: 100vh;
+  background: radial-gradient(circle at top, rgba(31, 111, 255, 0.12), transparent 50%),
+    radial-gradient(circle at bottom, rgba(16, 185, 129, 0.12), transparent 55%);
 }
