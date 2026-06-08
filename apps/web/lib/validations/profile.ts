@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { isCityInRegion } from "@/lib/ph-locations";
-import { RATE_RANGE_IDS } from "@/lib/rate-ranges";
+import { isCityInRegion } from "@/lib/data/ph-locations";
+import { DAILY_RATE_BAND_IDS } from "@/lib/data/rates";
 
-const rateRangeField = z.union([z.enum(RATE_RANGE_IDS), z.literal("")]);
+const rateRangeField = z.union([z.enum(DAILY_RATE_BAND_IDS), z.literal("")]);
 
 function validateCityInRegion(
   values: { region?: string; city?: string },

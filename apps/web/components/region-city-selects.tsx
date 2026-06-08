@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
-import { PH_REGIONS, getCitiesForRegion } from "@/lib/ph-locations";
+import { PH_REGIONS, getCitiesForRegion } from "@/lib/data/ph-locations";
 import { Select } from "@/components/ui/select";
 
 interface RegionCitySelectsProps {

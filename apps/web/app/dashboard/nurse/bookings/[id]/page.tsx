@@ -3,11 +3,14 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { BookingStatusBadge } from "@/components/booking-status-badge";
-
-type BookingStatus = "pending" | "accepted" | "declined" | "completed" | "cancelled";
 import { BookingDetailsCard } from "@/components/booking-details-card";
+import { BookingPartyCard } from "@/components/booking-party-card";
 import { Button } from "@/components/ui/button";
 import { MessageThread } from "@/components/message-thread";
+import { ScrollToHash } from "@/components/scroll-to-hash";
+import { formatShiftLabel } from "@/lib/booking-notes";
+
+type BookingStatus = "pending" | "accepted" | "declined" | "completed" | "cancelled";
 
 interface BookingDetailPageProps {
   params: { id: string };
@@ -26,6 +29,8 @@ export default function NurseBookingDetailPage({ params }: BookingDetailPageProp
   const [messages, setMessages] = useState<any[]>([]);
   const [userId, setUserId] = useState<string>("");
   const [senderNames, setSenderNames] = useState<Record<string, string>>({});
+  const [familyName, setFamilyName] = useState("Family");
+  const [patientName, setPatientName] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -46,15 +51,19 @@ export default function NurseBookingDetailPage({ params }: BookingDetailPageProp
       setMessages(messageData ?? []);
 
       if (bookingData && uid) {
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, full_name")
-          .in("id", [uid, bookingData.family_id]);
+        const [{ data: profiles }, { data: family }] = await Promise.all([
+          supabase.from("profiles").select("id, full_name").in("id", [uid, bookingData.family_id]),
+          supabase.from("families").select("patient_name").eq("id", bookingData.family_id).maybeSingle()
+        ]);
+
         setSenderNames(
           Object.fromEntries(
-            (profiles ?? []).map((p) => [p.id as string, (p.full_name as string) ?? "User"])
+            (profiles ?? []).map((p) => [p.id as string, (p.full_name as string) ?? "Family"])
           )
         );
+        const familyProfile = (profiles ?? []).find((p) => p.id === bookingData.family_id);
+        setFamilyName(familyProfile?.full_name ?? "Family");
+        setPatientName(family?.patient_name ?? null);
       }
     }
     load();
@@ -75,11 +84,17 @@ export default function NurseBookingDetailPage({ params }: BookingDetailPageProp
 
   return (
     <main className="px-5 py-8">
+      <ScrollToHash hash="chat" />
       <div className="mx-auto flex max-w-md flex-col gap-5">
+        <BookingPartyCard
+          name={familyName}
+          subtitle={patientName ? `Patient: ${patientName}` : "Family booking request"}
+          badgeLabel="Family"
+        />
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold">Booking {booking.requested_date}</h1>
-            <p className="text-sm text-slate-600">Shift: {booking.shift}</p>
+            <p className="text-sm text-slate-600">{formatShiftLabel(booking.shift, booking.notes)}</p>
           </div>
           <BookingStatusBadge status={booking.status} />
         </div>

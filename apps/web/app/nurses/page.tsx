@@ -1,21 +1,15 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { NurseCard } from "@/components/nurse-card";
-import { NurseFilters } from "@/components/nurse-filters";
+import { NursesBrowseHeader } from "@/components/nurses-browse-header";
 import { NursesWelcomeBanner } from "@/components/nurses-welcome-banner";
 import { Button } from "@/components/ui/button";
 import { AvailabilitySlot, AvailabilityStatus, deriveAvailabilityStatus } from "@/lib/availability-status";
-import { formatRateRangeDisplay } from "@/lib/rate-ranges";
+import { formatDailyRateBandLabel, nurseMatchesDailyRateBand } from "@/lib/data/rates";
+import { findRegionForCity } from "@/lib/data/ph-locations";
 
 interface NursesPageProps {
   searchParams?: Record<string, string | string[] | undefined>;
-}
-
-function parseNumber(value?: string | string[]) {
-  if (typeof value !== "string") return null;
-  if (!value.length) return null;
-  const parsed = Number(value);
-  return Number.isNaN(parsed) ? null : parsed;
 }
 
 function parseString(value?: string | string[]) {
@@ -23,13 +17,13 @@ function parseString(value?: string | string[]) {
 }
 
 export default async function NursesPage({ searchParams }: NursesPageProps) {
+  const regionFilter = parseString(searchParams?.region);
   const cityFilter = parseString(searchParams?.city);
   const specializationsFilter = parseString(searchParams?.specializations)
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
-  const minDailyRateFilter = parseNumber(searchParams?.minDailyRate);
-  const maxDailyRateFilter = parseNumber(searchParams?.maxDailyRate);
+  const dailyRateBandFilter = parseString(searchParams?.dailyRateBand);
   const availabilityFilter = parseString(searchParams?.availability) as AvailabilityStatus | "";
   const providerTypeFilter = parseString(searchParams?.providerType);
   const showWelcome = parseString(searchParams?.welcome) === "1";
@@ -48,7 +42,9 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
 
   const { data: nurses } = await supabase
     .from("nurses")
-    .select("id, provider_type, specializations, years_experience, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, hourly_rate, profile_photo_url, profiles(full_name, city)")
+    .select(
+      "id, provider_type, specializations, years_experience, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, profiles(full_name, city, region)"
+    )
     .eq("verification_status", "verified");
   const nurseIds = (nurses ?? []).map((nurse) => nurse.id);
 
@@ -102,6 +98,10 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
       return { nurse, profile, availabilityStatus };
     })
     .filter(({ nurse, profile, availabilityStatus }) => {
+      if (regionFilter) {
+        const profileRegion = profile?.region || (profile?.city ? findRegionForCity(profile.city) : "");
+        if (profileRegion !== regionFilter) return false;
+      }
       if (cityFilter && profile?.city !== cityFilter) return false;
       if (providerTypeFilter && nurse.provider_type !== providerTypeFilter) return false;
       if (
@@ -110,13 +110,16 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
       ) {
         return false;
       }
-      if (typeof minDailyRateFilter === "number") {
-        const nurseMax = nurse.daily_rate_12hr_max ?? nurse.daily_rate_12hr ?? 0;
-        if (nurseMax < minDailyRateFilter) return false;
-      }
-      if (typeof maxDailyRateFilter === "number") {
-        const nurseMin = nurse.daily_rate_12hr ?? 0;
-        if (nurseMin > maxDailyRateFilter) return false;
+      if (
+        dailyRateBandFilter &&
+        !nurseMatchesDailyRateBand(
+          nurse.daily_rate_12hr,
+          nurse.daily_rate_12hr_max,
+          nurse.daily_rate_range,
+          dailyRateBandFilter
+        )
+      ) {
+        return false;
       }
       if (availabilityFilter && availabilityStatus !== availabilityFilter) return false;
       return true;
@@ -129,36 +132,32 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
 
   return (
     <main className="px-5 py-8">
-      <div className="mx-auto flex max-w-md flex-col gap-5">
-        <div>
-          <h1 className="text-2xl font-semibold">Browse verified nurses and caregivers</h1>
-          <p className="text-sm text-slate-600">Filter by location, specialization, daily rate, and availability.</p>
-        </div>
+      <div className="mx-auto flex w-full max-w-md flex-col gap-5">
+        <NursesBrowseHeader viewerRole={viewerRole} />
         {showWelcome ? <NursesWelcomeBanner /> : null}
-        <NurseFilters />
         <div className="space-y-4">
           {filteredNurses.map(({ nurse, profile, availabilityStatus }) => {
             const ratings = ratingsMap.get(nurse.id);
             return (
-            <NurseCard
-              key={nurse.id}
-              id={nurse.id}
-              name={profile?.full_name ?? "Verified Nurse"}
-              city={profile?.city ?? "Philippines"}
-              specializations={nurse.specializations ?? []}
-              yearsExperience={nurse.years_experience ?? 0}
-              dailyRateLabel={formatRateRangeDisplay(
-                nurse.daily_rate_range,
-                nurse.daily_rate_12hr,
-                nurse.daily_rate_12hr_max
-              )}
-              averageRating={ratings?.averageRating ?? null}
-              reviewCount={ratings?.reviewCount ?? 0}
-              verified
-              availabilityStatus={availabilityStatus}
-              imageUrl={nurse.profile_photo_url ?? undefined}
-              providerType={nurse.provider_type ?? "nurse"}
-            />
+              <NurseCard
+                key={nurse.id}
+                id={nurse.id}
+                name={profile?.full_name ?? "Verified Nurse"}
+                city={profile?.city ?? "Philippines"}
+                specializations={nurse.specializations ?? []}
+                yearsExperience={nurse.years_experience ?? 0}
+                dailyRateLabel={formatDailyRateBandLabel(
+                  nurse.daily_rate_range,
+                  nurse.daily_rate_12hr,
+                  nurse.daily_rate_12hr_max
+                )}
+                averageRating={ratings?.averageRating ?? null}
+                reviewCount={ratings?.reviewCount ?? 0}
+                verified
+                availabilityStatus={availabilityStatus}
+                imageUrl={nurse.profile_photo_url ?? undefined}
+                providerType={nurse.provider_type ?? "nurse"}
+              />
             );
           })}
           {filteredNurses.length === 0 ? (

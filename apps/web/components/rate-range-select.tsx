@@ -1,6 +1,6 @@
 "use client";
 
-import { RATE_RANGE_OPTIONS } from "@/lib/rate-ranges";
+import { DAILY_RATE_BANDS } from "@/lib/data/rates";
 import { Select } from "@/components/ui/select";
 
 interface RateRangeSelectProps {
@@ -29,7 +29,7 @@ export function RateRangeSelect({
       className={hasError ? "border-rose-500 focus:ring-rose-500" : undefined}
     >
       <option value="">{emptyLabel}</option>
-      {RATE_RANGE_OPTIONS.map((option) => (
+      {DAILY_RATE_BANDS.map((option) => (
         <option key={option.id} value={option.id}>
           {option.label}
         </option>
