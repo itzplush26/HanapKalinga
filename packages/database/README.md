@@ -40,6 +40,7 @@ After running the seed file:
 | 0008_nurse_docs_storage_policies.sql | Storage RLS for nurse document uploads |
 | 0009_nurse_rate_ranges.sql | Optional rate range metadata on nurses |
 | 0010_verification_notifications.sql | Notifications, audit logs, extended verification statuses |
+| 0011_booking_custom_shift.sql | Allow custom shift on bookings |
 
 ## Admin login troubleshooting
 

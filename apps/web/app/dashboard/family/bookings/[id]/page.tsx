@@ -1,8 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { BookingStatusBadge } from "@/components/booking-status-badge";
 import { BookingDetailsCard } from "@/components/booking-details-card";
+import { BookingPartyCard } from "@/components/booking-party-card";
 import { BookingReviewForm } from "@/components/booking-review-form";
 import { MessageThread } from "@/components/message-thread";
+import { ScrollToHash } from "@/components/scroll-to-hash";
+import { formatShiftLabel } from "@/lib/booking-notes";
 
 interface BookingDetailPageProps {
   params: { id: string };
@@ -32,6 +35,14 @@ export default async function FamilyBookingDetailPage({ params }: BookingDetailP
     );
   }
 
+  const { data: nurse } = await supabase
+    .from("nurses")
+    .select("provider_type, profile_photo_url, profiles(full_name, city)")
+    .eq("id", booking.nurse_id)
+    .maybeSingle();
+
+  const nurseProfile = Array.isArray(nurse?.profiles) ? nurse?.profiles[0] : nurse?.profiles;
+
   const participantIds = [auth.user?.id, booking.nurse_id].filter(Boolean) as string[];
   const { data: profiles } = await supabase
     .from("profiles")
@@ -42,8 +53,7 @@ export default async function FamilyBookingDetailPage({ params }: BookingDetailP
     (profiles ?? []).map((p) => [p.id as string, (p.full_name as string) ?? "User"])
   );
 
-  const nurseName =
-    (profiles ?? []).find((p) => p.id === booking.nurse_id)?.full_name ?? "your nurse";
+  const nurseName = nurseProfile?.full_name ?? senderNames[booking.nurse_id] ?? "Nurse";
 
   const { data: existingReview } = await supabase
     .from("reviews")
@@ -56,11 +66,18 @@ export default async function FamilyBookingDetailPage({ params }: BookingDetailP
 
   return (
     <main className="px-5 py-8">
+      <ScrollToHash hash="chat" />
       <div className="mx-auto flex max-w-md flex-col gap-5">
+        <BookingPartyCard
+          name={nurseName}
+          subtitle={nurseProfile?.city ?? "Philippines"}
+          imageUrl={nurse?.profile_photo_url}
+          badgeLabel={nurse?.provider_type === "caregiver" ? "Caregiver" : "Nurse"}
+        />
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold">Booking {booking.requested_date}</h1>
-            <p className="text-sm text-slate-600">Shift: {booking.shift}</p>
+            <p className="text-sm text-slate-600">{formatShiftLabel(booking.shift, booking.notes)}</p>
           </div>
           <BookingStatusBadge status={booking.status} />
         </div>
