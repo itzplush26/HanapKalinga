@@ -12,6 +12,7 @@ import { bookingRequestSchema } from "@/lib/validations/booking";
 import { SHIFT_LABELS, formatShiftLabel } from "@/lib/booking-notes";
 import { BOOKING_SKILLS } from "@/lib/constants";
 import { DAILY_RATE_BANDS } from "@/lib/data/rates";
+import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
 import { AvailableDateInput } from "@/components/available-date-input";
 import { mapSupabaseError } from "@/lib/user-errors";
 import { Button } from "@/components/ui/button";
@@ -125,7 +126,7 @@ function BookingForm() {
         name: profile?.full_name ?? "Verified Nurse",
         city: profile?.city ?? "Philippines",
         providerType: data.provider_type ?? "nurse",
-        imageUrl: data.profile_photo_url ?? undefined
+        imageUrl: resolveProfilePhotoUrl(data.profile_photo_url) ?? undefined
       });
 
       const today = new Date().toISOString().slice(0, 10);

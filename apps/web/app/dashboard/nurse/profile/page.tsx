@@ -247,6 +247,7 @@ export default function NurseProfilePage() {
           <DocumentUploader
             label="Profile photo"
             pathPrefix="profile-photo"
+            variant="photo"
             onUploaded={(url) => form.setValue("profile_photo_url", url)}
           />
           {providerType === "caregiver" ? (

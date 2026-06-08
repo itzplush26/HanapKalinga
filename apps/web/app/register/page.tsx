@@ -317,19 +317,14 @@ export default function RegisterPage() {
       }
 
       const credentialPrefix = cachedNurseProfile.providerType === "nurse" ? "prc" : "tesda";
-      const credentialUpload = await uploadNurseDocument(
-        supabase,
-        userId,
-        pendingCredentialFile,
-        credentialPrefix
-      );
+      const credentialUpload = await uploadNurseDocument(pendingCredentialFile, credentialPrefix, userId);
       if ("error" in credentialUpload) {
         setStatus(credentialUpload.error);
         setIsSubmitting(false);
         return;
       }
 
-      const nbiUpload = await uploadNurseDocument(supabase, userId, pendingNbiFile, "nbi");
+      const nbiUpload = await uploadNurseDocument(pendingNbiFile, "nbi", userId);
       if ("error" in nbiUpload) {
         setStatus(nbiUpload.error);
         setIsSubmitting(false);
