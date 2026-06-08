@@ -125,7 +125,7 @@ export async function buildInbox(
 
     for (const nurse of nurses ?? []) {
       const profile = Array.isArray(nurse.profiles) ? nurse.profiles[0] : nurse.profiles;
-      nameById.set(nurse.id as string, profile?.full_name ?? "Nurse");
+      nameById.set(nurse.id as string, profile?.full_name?.trim() || "Unknown User");
       photoById.set(nurse.id as string, resolveProfilePhotoUrl(nurse.profile_photo_url));
     }
   } else {
@@ -135,7 +135,7 @@ export async function buildInbox(
       .in("id", otherIds);
 
     for (const profile of profiles ?? []) {
-      nameById.set(profile.id as string, profile.full_name ?? "Family");
+      nameById.set(profile.id as string, profile.full_name?.trim() || "Unknown User");
     }
   }
 
@@ -148,7 +148,7 @@ export async function buildInbox(
         requestedDate: b.requested_date,
         shift: b.shift,
         status: b.status,
-        otherPartyName: nameById.get(b[otherColumn]) ?? (role === "family" ? "Nurse" : "Family"),
+        otherPartyName: nameById.get(b[otherColumn]) ?? "Unknown User",
         otherPartyId: b[otherColumn],
         otherPartyPhoto: photoById.get(b[otherColumn]) ?? null,
         lastMessage: latest?.content ?? null,

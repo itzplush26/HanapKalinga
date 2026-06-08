@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { VerificationStatusBanner } from "@/components/verification-status-banner";
 import { NotificationsPanel } from "@/components/notifications-panel";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/page-header";
 import type { VerificationStatus } from "@/lib/verification";
 
 export default async function NurseDashboardPage() {
@@ -21,12 +22,11 @@ export default async function NurseDashboardPage() {
     .limit(3);
 
   return (
-    <main className="px-5 py-8">
+    <>
+      <PageHeader title="Home" showBack={false} />
+      <main className="px-5 py-6">
       <div className="mx-auto flex max-w-md flex-col gap-6">
-        <div>
-          <h1 className="text-2xl font-semibold">Nurse dashboard</h1>
-          <p className="text-sm text-slate-600">Manage your profile, verification status, and bookings.</p>
-        </div>
+        <p className="text-sm text-slate-600">Manage your profile, verification status, and bookings.</p>
         <VerificationStatusBanner
           status={(nurse?.verification_status ?? "pending") as VerificationStatus}
           rejectionReason={nurse?.rejection_reason}
@@ -58,5 +58,6 @@ export default async function NurseDashboardPage() {
         </div>
       </div>
     </main>
+    </>
   );
 }

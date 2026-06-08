@@ -126,7 +126,7 @@ export function MessageThread({
       <div className="flex-1 space-y-3 overflow-y-auto p-4 text-sm">
         {messages.map((message) => {
           const isMine = message.sender_id === currentUserId;
-          const senderLabel = isMine ? "You" : senderNames[message.sender_id] ?? "Them";
+          const senderLabel = isMine ? "You" : senderNames[message.sender_id] ?? "Unknown User";
           return (
             <div
               key={message.id}
