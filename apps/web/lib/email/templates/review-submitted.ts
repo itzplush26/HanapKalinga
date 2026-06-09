@@ -1,3 +1,4 @@
+import { EMAIL_COLORS } from "@/lib/email/brand-colors";
 import { emailHeading, emailParagraph, escapeHtml, wrapEmailHtml } from "./layout";
 
 export interface ReviewSubmittedData {
@@ -14,7 +15,7 @@ export function reviewSubmittedEmail(data: ReviewSubmittedData) {
 
   const html = wrapEmailHtml(`
     ${emailHeading(`You received a new review, ${escapeHtml(data.nurseName)}!`)}
-    ${emailParagraph(`<span style="color:#f59e0b;font-size:18px;">${stars}</span> (${data.rating}/5)`)}
+    ${emailParagraph(`<span style="color:${EMAIL_COLORS.warning};font-size:18px;">${stars}</span> (${data.rating}/5)`)}
     ${commentBlock}
     ${emailParagraph("Thank you for providing trusted care on HanapKalinga. Keep up the great work!")}
   `);

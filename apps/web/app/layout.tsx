@@ -1,9 +1,13 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { Space_Grotesk, Manrope } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
+import { ThemeScript } from "@/components/theme-script";
 
-const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-display" });
-const manrope = Manrope({ subsets: ["latin"], variable: "--font-body" });
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-body",
+  weight: ["400", "500", "600", "700"]
+});
 
 export const metadata: Metadata = {
   title: "HanapKalinga",
@@ -16,8 +20,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={`${spaceGrotesk.variable} ${manrope.variable} bg-slate-50 text-slate-900`}>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <ThemeScript />
+      </head>
+      <body className={`${plusJakarta.variable} min-h-screen bg-bg text-text-primary`}>
         {children}
       </body>
     </html>

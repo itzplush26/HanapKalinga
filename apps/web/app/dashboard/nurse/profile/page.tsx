@@ -32,6 +32,7 @@ import {
 import type { VerificationStatus } from "@/lib/verification";
 import { DocumentExpiryCard } from "@/components/document-expiry-card";
 import { getDocumentExpiryItems, hasExpiredDocuments, type DocumentExpiryItem } from "@/lib/license-expiry";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function NurseProfilePage() {
   const supabase = createClient();
@@ -264,6 +265,8 @@ export default function NurseProfilePage() {
             displayName={displayName}
             onPhotoChange={handleProfilePhotoChange}
           />
+
+          <ThemeToggle />
 
           {documentExpiry.length > 0 ? (
             <DocumentExpiryCard documents={documentExpiry} showRenewCta={false} />

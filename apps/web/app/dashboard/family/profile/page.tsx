@@ -14,6 +14,7 @@ import { RegionCitySelects } from "@/components/region-city-selects";
 import { PageHeader } from "@/components/page-header";
 import { ProfilePhotoUploader } from "@/components/profile-photo-uploader";
 import { SignOutDialog } from "@/components/sign-out-dialog";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { resolveProfileDisplayName } from "@/lib/profile-display";
 import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
 import { z } from "zod";
@@ -144,6 +145,7 @@ export default function FamilyProfilePage() {
           displayName={displayName}
           onPhotoChange={handleProfilePhotoChange}
         />
+        <ThemeToggle />
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1">

@@ -1,4 +1,12 @@
-import { emailButton, emailHeading, emailParagraph, escapeHtml, wrapEmailHtml, appUrl } from "./layout";
+import {
+  appUrl,
+  emailButton,
+  emailDetailBox,
+  emailHeading,
+  emailParagraph,
+  escapeHtml,
+  wrapEmailHtml
+} from "./layout";
 
 export interface BookingRequestReceivedData {
   nurseName: string;
@@ -19,8 +27,7 @@ export function bookingRequestReceivedEmail(data: BookingRequestReceivedData) {
   const html = wrapEmailHtml(`
     ${emailHeading(`New booking request, ${escapeHtml(data.nurseName)}`)}
     ${emailParagraph("A family has sent you a new booking request on HanapKalinga.")}
-    <table role="presentation" width="100%" style="margin:16px 0;background:#f8fafc;border-radius:8px;padding:16px;">
-      <tr><td style="font-size:14px;color:#334155;line-height:1.8;">
+    ${emailDetailBox(`
         <strong>Contact:</strong> ${escapeHtml(data.familyContactName)}<br/>
         <strong>Patient:</strong> ${escapeHtml(data.patientName)}<br/>
         <strong>Date:</strong> ${escapeHtml(data.requestedDate)}<br/>
@@ -28,8 +35,7 @@ export function bookingRequestReceivedEmail(data: BookingRequestReceivedData) {
         <strong>Condition:</strong> ${escapeHtml(data.patientCondition)}<br/>
         <strong>Skills needed:</strong> ${skills}<br/>
         <strong>Budget:</strong> ${escapeHtml(data.budgetLabel)}
-      </td></tr>
-    </table>
+    `)}
     ${emailButton(url, "View booking request")}
   `);
 
