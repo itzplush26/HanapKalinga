@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { getUploadAuthContext } from "@/lib/storage/upload-auth";
 import { compressProfilePhoto } from "@/lib/storage/compress-image";
 
@@ -29,6 +30,7 @@ export async function POST(request: Request) {
     const storagePath = `${auth.userId}/avatar.${compressed.extension}`;
 
     const supabase = createClient();
+    const service = createServiceClient();
 
     console.info("[upload/photo]", {
       userId: auth.userId,
@@ -38,7 +40,7 @@ export async function POST(request: Request) {
       storagePath
     });
 
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError } = await service.storage
       .from(AVATARS_BUCKET)
       .upload(storagePath, compressed.buffer, {
         contentType: compressed.contentType,
@@ -52,7 +54,7 @@ export async function POST(request: Request) {
 
     const {
       data: { publicUrl }
-    } = supabase.storage.from(AVATARS_BUCKET).getPublicUrl(storagePath);
+    } = service.storage.from(AVATARS_BUCKET).getPublicUrl(storagePath);
 
     const { error: profileError } = await supabase
       .from("profiles")
