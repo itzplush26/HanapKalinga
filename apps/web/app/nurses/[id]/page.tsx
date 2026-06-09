@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { deriveAvailabilityStatus } from "@/lib/availability-status";
-import { formatDailyRateBandLabel } from "@/lib/data/rates";
+import { formatDailyRateBandLabel, formatHourlyRateBandLabel } from "@/lib/data/rates";
 
 interface NurseProfilePageProps {
   params: { id: string };
@@ -67,7 +67,7 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
       : availabilityStatus === "available_next_week"
         ? "bg-amber-100 text-amber-700"
         : "bg-rose-100 text-rose-700";
-  const hourlyRateLabel = formatDailyRateBandLabel(
+  const hourlyRateLabel = formatHourlyRateBandLabel(
     nurse.hourly_rate_range,
     nurse.hourly_rate,
     nurse.hourly_rate_max

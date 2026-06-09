@@ -5,9 +5,10 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
-import { signupOtpSchema, roleSchema, passwordSetupSchema } from "@/lib/validations/auth";
+import { signupCredentialsSchema, roleSchema } from "@/lib/validations/auth";
 import { fetchProfileRole, resolvePostLoginDestination } from "@/lib/post-auth";
 import { resolveAuthUserId } from "@/lib/auth-session";
+import { registerUserSession } from "@/lib/session-lock";
 import { mapSupabaseError } from "@/lib/user-errors";
 import { familyProfileSchema, nurseProfileFormSchema, type NurseProfileFormValues } from "@/lib/validations/profile";
 import { Button } from "@/components/ui/button";
@@ -19,10 +20,15 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { uploadNurseDocument } from "@/lib/upload-nurse-document";
 import { RegionCitySelects } from "@/components/region-city-selects";
 import { RateRangeSelect } from "@/components/rate-range-select";
-import { resolveRateRangeValues, type RateRangeId } from "@/lib/rate-ranges";
+import {
+  resolveDailyRateBandValues,
+  resolveHourlyRateBandValues,
+  type DailyRateBandId,
+  type HourlyRateBandId
+} from "@/lib/rate-ranges";
 import { PROVIDER_SPECIALIZATIONS } from "@/lib/constants";
 
-const SIGNUP_TOTAL_STEPS = 5;
+const SIGNUP_TOTAL_STEPS = 4;
 
 const SIGNUP_STAGE_KEYS = {
   step: "hanapkalinga.signup.step",
@@ -48,7 +54,6 @@ export default function RegisterPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [email, setEmail] = useState<string>("");
   const [signupUserId, setSignupUserId] = useState<string | null>(null);
-  const [cachedNurseProfile, setCachedNurseProfile] = useState<NurseProfileFormValues | null>(null);
   const [pendingCredentialFile, setPendingCredentialFile] = useState<File | null>(null);
   const [pendingNbiFile, setPendingNbiFile] = useState<File | null>(null);
   const [docErrors, setDocErrors] = useState<{ credential?: string; nbi?: string }>({});
@@ -66,14 +71,9 @@ export default function RegisterPage() {
     <span className="text-sm font-medium text-slate-700">{label}</span>
   );
 
-  const authForm = useForm({
-    resolver: zodResolver(signupOtpSchema),
-    defaultValues: { email: "", token: "" }
-  });
-
-  const passwordForm = useForm({
-    resolver: zodResolver(passwordSetupSchema),
-    defaultValues: { password: "", confirmPassword: "" }
+  const credentialsForm = useForm({
+    resolver: zodResolver(signupCredentialsSchema),
+    defaultValues: { email: "", password: "", confirmPassword: "" }
   });
 
   const roleForm = useForm({
@@ -117,259 +117,195 @@ export default function RegisterPage() {
     LEGACY_SIGNUP_KEYS.forEach((key) => window.sessionStorage.removeItem(key));
   }
 
-  async function handleAuthSubmit(values: any) {
+  async function handleCredentialsSubmit(values: {
+    email: string;
+    password: string;
+    confirmPassword: string;
+  }) {
     setStatus(null);
     setIsSubmitting(true);
-    if (step === 1) {
-      try {
-        const { data, error } = await supabase.auth.signInWithOtp({
-          email: values.email,
-          options: { shouldCreateUser: true }
-        });
-        if (error) {
-          console.error("signup.send_code.error", error);
-          setStatus(mapSupabaseError(error, "signup"));
-          setIsSubmitting(false);
-          return;
-        }
-        console.info("signup.send_code.success", data);
-      } catch (error) {
-        console.error("signup.send_code.exception", error);
-        setStatus("Unexpected error sending code.");
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: values.email,
+        password: values.password
+      });
+
+      if (error) {
+        console.error("signup.sign_up.error", error);
+        setStatus(mapSupabaseError(error, "signup"));
         setIsSubmitting(false);
         return;
       }
-      setEmail(values.email);
-      setStep(2);
-      setStatus("Check your email for the 6-digit code.");
-      setIsSubmitting(false);
-      return;
-    }
 
-    if (step === 2 && values.token) {
-      try {
-        const { data, error } = await supabase.auth.verifyOtp({
-          email,
-          token: values.token,
-          type: "email"
-        });
-        if (error) {
-          console.error("signup.verify_code.error", error);
-          setStatus(mapSupabaseError(error, "signup"));
-          setIsSubmitting(false);
-          return;
-        }
-        console.info("signup.verify_code.success", data);
-        if (data.session) {
-          await supabase.auth.setSession(data.session);
-        }
-        const userId = data?.user?.id ?? data.session?.user?.id ?? null;
-        if (userId) {
-          setSignupUserId(userId);
-          const { role: existingRole } = await fetchProfileRole(supabase, userId);
-          if (existingRole) {
-            clearSignupStage();
-            const destination = resolvePostLoginDestination(existingRole, null);
-            if (destination) {
-              window.location.href = destination;
-              return;
-            }
+      const userId = data.user?.id ?? data.session?.user?.id ?? null;
+      if (userId) {
+        setSignupUserId(userId);
+        await registerUserSession(supabase, userId, navigator.userAgent);
+
+        const { role: existingRole } = await fetchProfileRole(supabase, userId);
+        if (existingRole) {
+          clearSignupStage();
+          const destination = resolvePostLoginDestination(existingRole, null);
+          if (destination) {
+            window.location.href = destination;
+            return;
           }
         }
-      } catch (error) {
-        console.error("signup.verify_code.exception", error);
-        setStatus("Unexpected error verifying code.");
-        setIsSubmitting(false);
-        return;
       }
-      setStep(3);
+
+      setEmail(values.email);
+      credentialsForm.setValue("email", values.email);
+      setStep(2);
       setStatus(null);
-      setIsSubmitting(false);
-      return;
-    }
-
-    setIsSubmitting(false);
-  }
-
-  async function handleResend() {
-    if (!email) return;
-    setStatus(null);
-    setIsSubmitting(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithOtp({
-        email,
-        options: { shouldCreateUser: true }
-      });
-      if (error) {
-        console.error("signup.resend_code.error", error);
-      } else {
-        console.info("signup.resend_code.success", data);
-      }
-      setStatus(error ? mapSupabaseError(error, "signup") : "Code resent. Check your email.");
     } catch (error) {
-      console.error("signup.resend_code.exception", error);
-      setStatus("Unexpected error resending code.");
+      console.error("signup.sign_up.exception", error);
+      setStatus("Unexpected error creating account.");
     }
+
     setIsSubmitting(false);
   }
 
-  async function handleRoleSubmit(values: any) {
-    setRole(values.role);
-    setStep(4);
+  async function handleRoleSubmit(values: { role: string }) {
+    setRole(values.role as "family" | "nurse");
+    setStep(3);
   }
 
-  async function handleProfileSubmit(values: any) {
+  async function handleProfileSubmit(values: NurseProfileFormValues | Record<string, unknown>) {
     const userId = await resolveAuthUserId(supabase, signupUserId);
 
     if (!userId || !role) {
-      setStatus("Your session expired. Please verify your email code again (step 2).");
+      setStatus("Your session expired. Please sign up again from step 1.");
       return;
     }
 
+    setIsSubmitting(true);
+    setStatus(null);
+
     if (role === "family") {
+      const familyValues = values as {
+        firstName: string;
+        middleName?: string;
+        lastName: string;
+        phone?: string;
+        region: string;
+        city: string;
+        barangay: string;
+        address: string;
+      };
+
       await supabase.from("profiles").upsert({
         id: userId,
         role: "family",
-        full_name: [values.firstName, values.middleName, values.lastName]
-          .filter((part: string) => part?.trim())
+        full_name: [familyValues.firstName, familyValues.middleName, familyValues.lastName]
+          .filter((part) => part?.trim())
           .join(" "),
-        first_name: values.firstName,
-        middle_name: values.middleName?.trim() || null,
-        last_name: values.lastName,
-        phone: values.phone?.trim() || null,
-        region: values.region,
-        city: values.city,
-        barangay: values.barangay,
-        address: values.address
+        first_name: familyValues.firstName,
+        middle_name: familyValues.middleName?.trim() || null,
+        last_name: familyValues.lastName,
+        phone: familyValues.phone?.trim() || null,
+        region: familyValues.region,
+        city: familyValues.city,
+        barangay: familyValues.barangay,
+        address: familyValues.address
       });
 
       await supabase.from("families").upsert({
         id: userId,
-        address: values.address
-      });
-    } else if (role === "nurse") {
-      const nextDocErrors: { credential?: string; nbi?: string } = {};
-      if (!pendingCredentialFile) {
-        nextDocErrors.credential =
-          values.providerType === "caregiver"
-            ? "TESDA NC II certificate is required."
-            : "PRC license is required.";
-      }
-      if (!pendingNbiFile) {
-        nextDocErrors.nbi = "NBI clearance is required.";
-      }
-      if (Object.keys(nextDocErrors).length > 0) {
-        setDocErrors(nextDocErrors);
-        return;
-      }
-      setDocErrors({});
-
-      const fullName = [values.firstName, values.middleName, values.lastName]
-        .filter((part: string) => part?.trim())
-        .join(" ");
-
-      await supabase.from("profiles").upsert({
-        id: userId,
-        role: "nurse",
-        full_name: fullName,
-        first_name: values.firstName,
-        middle_name: values.middleName?.trim() || null,
-        last_name: values.lastName,
-        phone: null,
-        region: values.region,
-        city: values.city,
-        barangay: values.barangay,
-        address: null
+        address: familyValues.address
       });
 
-      setCachedNurseProfile(values);
-    }
-
-    setStep(5);
-    setStatus(null);
-  }
-
-  async function handlePasswordSubmit(values: { password: string; confirmPassword: string }) {
-    setStatus(null);
-    setIsSubmitting(true);
-
-    const userId = await resolveAuthUserId(supabase, signupUserId);
-
-    if (!userId || !role) {
-      setStatus("Session expired. Please start registration again.");
+      clearSignupStage();
       setIsSubmitting(false);
-      return;
-    }
-
-    const { error } = await supabase.auth.updateUser({ password: values.password });
-
-    if (error) {
-      setStatus(mapSupabaseError(error, "password"));
-      setIsSubmitting(false);
-      return;
-    }
-
-    if (role === "nurse") {
-      if (!cachedNurseProfile || !pendingCredentialFile || !pendingNbiFile) {
-        setStatus("Registration data was lost. Please go back and re-select your documents.");
-        setIsSubmitting(false);
-        return;
-      }
-
-      const credentialPrefix = cachedNurseProfile.providerType === "nurse" ? "prc" : "tesda";
-      const credentialUpload = await uploadNurseDocument(pendingCredentialFile, credentialPrefix, userId);
-      if ("error" in credentialUpload) {
-        setStatus(credentialUpload.error);
-        setIsSubmitting(false);
-        return;
-      }
-
-      const nbiUpload = await uploadNurseDocument(pendingNbiFile, "nbi", userId);
-      if ("error" in nbiUpload) {
-        setStatus(nbiUpload.error);
-        setIsSubmitting(false);
-        return;
-      }
-
-      const credentialField =
-        cachedNurseProfile.providerType === "nurse" ? "prc_document_url" : "tesda_document_url";
-      const hourlyRates = resolveRateRangeValues(
-        (cachedNurseProfile.hourlyRateRange || undefined) as RateRangeId | undefined
-      );
-      const dailyRates = resolveRateRangeValues(
-        (cachedNurseProfile.dailyRateRange || undefined) as RateRangeId | undefined
-      );
-      const { error: nurseError } = await supabase.from("nurses").upsert({
-        id: userId,
-        provider_type: cachedNurseProfile.providerType,
-        specializations: cachedNurseProfile.specializations,
-        bio: cachedNurseProfile.bio ?? null,
-        hourly_rate: hourlyRates.min,
-        hourly_rate_max: hourlyRates.max,
-        hourly_rate_range: cachedNurseProfile.hourlyRateRange || null,
-        daily_rate_12hr: dailyRates.min,
-        daily_rate_12hr_max: dailyRates.max,
-        daily_rate_range: cachedNurseProfile.dailyRateRange || null,
-        nbi_document_url: nbiUpload.path,
-        [credentialField]: credentialUpload.path,
-        verification_status: "pending"
-      });
-
-      if (nurseError) {
-        setStatus(mapSupabaseError(nurseError, "generic"));
-        setIsSubmitting(false);
-        return;
-      }
-    }
-
-    clearSignupStage();
-    setIsSubmitting(false);
-
-    if (role === "family") {
       window.location.href = "/dashboard/family?welcome=1";
       return;
     }
 
+    const nurseValues = values as NurseProfileFormValues;
+    const nextDocErrors: { credential?: string; nbi?: string } = {};
+    if (!pendingCredentialFile) {
+      nextDocErrors.credential =
+        nurseValues.providerType === "caregiver"
+          ? "TESDA NC II certificate is required."
+          : "PRC license is required.";
+    }
+    if (!pendingNbiFile) {
+      nextDocErrors.nbi = "NBI clearance is required.";
+    }
+    if (Object.keys(nextDocErrors).length > 0) {
+      setDocErrors(nextDocErrors);
+      setIsSubmitting(false);
+      return;
+    }
+    setDocErrors({});
+
+    const fullName = [nurseValues.firstName, nurseValues.middleName, nurseValues.lastName]
+      .filter((part) => part?.trim())
+      .join(" ");
+
+    await supabase.from("profiles").upsert({
+      id: userId,
+      role: "nurse",
+      full_name: fullName,
+      first_name: nurseValues.firstName,
+      middle_name: nurseValues.middleName?.trim() || null,
+      last_name: nurseValues.lastName,
+      phone: null,
+      region: nurseValues.region,
+      city: nurseValues.city,
+      barangay: nurseValues.barangay,
+      address: null
+    });
+
+    const credentialPrefix = nurseValues.providerType === "nurse" ? "prc" : "tesda";
+    const credentialUpload = await uploadNurseDocument(pendingCredentialFile!, credentialPrefix, userId);
+    if ("error" in credentialUpload) {
+      setStatus(credentialUpload.error);
+      setIsSubmitting(false);
+      return;
+    }
+
+    const nbiUpload = await uploadNurseDocument(pendingNbiFile!, "nbi", userId);
+    if ("error" in nbiUpload) {
+      setStatus(nbiUpload.error);
+      setIsSubmitting(false);
+      return;
+    }
+
+    const credentialField =
+      nurseValues.providerType === "nurse" ? "prc_document_url" : "tesda_document_url";
+    const hourlyRates = resolveHourlyRateBandValues(
+      (nurseValues.hourlyRateRange || undefined) as HourlyRateBandId | undefined
+    );
+    const dailyRates = resolveDailyRateBandValues(
+      (nurseValues.dailyRateRange || undefined) as DailyRateBandId | undefined
+    );
+    const submittedAt = new Date().toISOString();
+    const { error: nurseError } = await supabase.from("nurses").upsert({
+      id: userId,
+      provider_type: nurseValues.providerType,
+      specializations: nurseValues.specializations,
+      bio: nurseValues.bio ?? null,
+      hourly_rate: hourlyRates.min,
+      hourly_rate_max: hourlyRates.max,
+      hourly_rate_range: nurseValues.hourlyRateRange || null,
+      daily_rate_12hr: dailyRates.min,
+      daily_rate_12hr_max: dailyRates.max,
+      daily_rate_range: nurseValues.dailyRateRange || null,
+      nbi_document_url: nbiUpload.path,
+      [credentialField]: credentialUpload.path,
+      verification_status: "pending",
+      submitted_at: submittedAt
+    });
+
+    if (nurseError) {
+      setStatus(mapSupabaseError(nurseError, "generic"));
+      setIsSubmitting(false);
+      return;
+    }
+
+    clearSignupStage();
+    setIsSubmitting(false);
     window.location.href = "/dashboard/nurse";
   }
 
@@ -420,18 +356,17 @@ export default function RegisterPage() {
     }
     if (storedEmail) {
       setEmail(storedEmail);
-      authForm.setValue("email", storedEmail);
+      credentialsForm.setValue("email", storedEmail);
     }
     if (storedAuth) {
       try {
         const parsed = JSON.parse(storedAuth);
-        if (typeof parsed.email === "string") authForm.setValue("email", parsed.email);
-        if (typeof parsed.token === "string") authForm.setValue("token", parsed.token);
+        if (typeof parsed.email === "string") credentialsForm.setValue("email", parsed.email);
       } catch {
         // Ignore malformed auth cache.
       }
     }
-  }, [authForm, roleForm]);
+  }, [credentialsForm, roleForm]);
 
   useEffect(() => {
     window.sessionStorage.setItem(SIGNUP_STAGE_KEYS.step, String(step));
@@ -445,7 +380,7 @@ export default function RegisterPage() {
     if (email) window.sessionStorage.setItem(SIGNUP_STAGE_KEYS.email, email);
   }, [email]);
 
-  const authValues = authForm.watch();
+  const authValues = credentialsForm.watch();
   const familyValues = familyForm.watch();
   const nurseValues = nurseForm.watch();
 
@@ -488,53 +423,57 @@ export default function RegisterPage() {
           <p className="text-sm text-slate-600">Step {step} of {SIGNUP_TOTAL_STEPS}</p>
         </div>
 
-        {step <= 2 ? (
-          <form onSubmit={authForm.handleSubmit(handleAuthSubmit)} className="space-y-4">
-            {step === 1 ? (
-              <div className="space-y-2">
-                {requiredLabel("Email", !!authForm.formState.errors.email)}
-                <Input
-                  placeholder="you@email.com"
-                  {...authForm.register("email")}
-                  className={authForm.formState.errors.email ? "border-rose-500 focus:ring-rose-500" : undefined}
-                />
-                {authForm.formState.errors.email ? (
-                  <p className="text-xs text-rose-600">Enter a valid email address.</p>
-                ) : null}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {requiredLabel("6-digit code", !!authForm.formState.errors.token)}
-                <Input
-                  placeholder="6-digit code"
-                  maxLength={6}
-                  {...authForm.register("token")}
-                  className={authForm.formState.errors.token ? "border-rose-500 focus:ring-rose-500" : undefined}
-                />
-                {authForm.formState.errors.token ? (
-                  <p className="text-xs text-rose-600">Enter the 6-digit code.</p>
-                ) : null}
-              </div>
-            )}
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <Button type="submit" disabled={isSubmitting} className="sm:flex-1">
-                {isSubmitting ? "Sending..." : step === 1 ? "Send code" : "Verify code"}
-              </Button>
-              {step === 2 ? (
-                <button
-                  type="button"
-                  onClick={handleResend}
-                  className="text-sm font-medium text-brand-700 underline hover:text-brand-900 disabled:opacity-50 sm:px-2"
-                  disabled={isSubmitting}
-                >
-                  Resend code
-                </button>
+        {step === 1 ? (
+          <form onSubmit={credentialsForm.handleSubmit(handleCredentialsSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              {requiredLabel("Email", !!credentialsForm.formState.errors.email)}
+              <Input
+                placeholder="you@email.com"
+                autoComplete="email"
+                {...credentialsForm.register("email")}
+                className={
+                  credentialsForm.formState.errors.email ? "border-rose-500 focus:ring-rose-500" : undefined
+                }
+              />
+              {credentialsForm.formState.errors.email ? (
+                <p className="text-xs text-rose-600">Enter a valid email address.</p>
               ) : null}
             </div>
+            {requiredLabel("Password", !!credentialsForm.formState.errors.password)}
+            <PasswordInput
+              placeholder="At least 8 characters"
+              autoComplete="new-password"
+              {...credentialsForm.register("password")}
+              className={
+                credentialsForm.formState.errors.password ? "border-rose-500 focus:ring-rose-500" : undefined
+              }
+            />
+            {credentialsForm.formState.errors.password ? (
+              <p className="text-xs text-rose-600">{credentialsForm.formState.errors.password.message}</p>
+            ) : null}
+            {requiredLabel("Confirm password", !!credentialsForm.formState.errors.confirmPassword)}
+            <PasswordInput
+              placeholder="Confirm password"
+              autoComplete="new-password"
+              {...credentialsForm.register("confirmPassword")}
+              className={
+                credentialsForm.formState.errors.confirmPassword
+                  ? "border-rose-500 focus:ring-rose-500"
+                  : undefined
+              }
+            />
+            {credentialsForm.formState.errors.confirmPassword ? (
+              <p className="text-xs text-rose-600">
+                {credentialsForm.formState.errors.confirmPassword.message}
+              </p>
+            ) : null}
+            <Button type="submit" disabled={isSubmitting} className="w-full">
+              {isSubmitting ? "Creating account..." : "Continue"}
+            </Button>
           </form>
         ) : null}
 
-        {step === 3 ? (
+        {step === 2 ? (
           <form onSubmit={roleForm.handleSubmit(handleRoleSubmit)} className="space-y-4">
             <div className="grid gap-3">
               <button
@@ -566,7 +505,7 @@ export default function RegisterPage() {
           </form>
         ) : null}
 
-        {step === 4 && role === "family" ? (
+        {step === 3 && role === "family" ? (
           <form onSubmit={familyForm.handleSubmit(handleProfileSubmit)} className="space-y-3">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
@@ -627,11 +566,13 @@ export default function RegisterPage() {
                 className={familyForm.formState.errors.address ? "border-rose-500 focus:ring-rose-500" : undefined}
               />
             </div>
-            <Button type="submit">Continue</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Create account"}
+            </Button>
           </form>
         ) : null}
 
-        {step === 4 && role === "nurse" ? (
+        {step === 3 && role === "nurse" ? (
           <form onSubmit={nurseForm.handleSubmit(handleProfileSubmit)} className="space-y-3">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
@@ -728,6 +669,7 @@ export default function RegisterPage() {
             <div className="space-y-1">
               {optionalLabel("Expected hourly rate range (optional)")}
               <RateRangeSelect
+                variant="hourly"
                 value={nurseForm.watch("hourlyRateRange") ?? ""}
                 onChange={(value) =>
                   nurseForm.setValue(
@@ -741,6 +683,7 @@ export default function RegisterPage() {
             <div className="space-y-1">
               {optionalLabel("Expected daily rate range (optional)")}
               <RateRangeSelect
+                variant="daily"
                 value={nurseForm.watch("dailyRateRange") ?? ""}
                 onChange={(value) =>
                   nurseForm.setValue(
@@ -781,49 +724,8 @@ export default function RegisterPage() {
               }}
             />
             {docErrors.nbi ? <p className="text-xs text-rose-600">{docErrors.nbi}</p> : null}
-            <Button type="submit">Continue</Button>
-          </form>
-        ) : null}
-
-        {step === 5 ? (
-          <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)} className="space-y-4">
-            <p className="text-sm text-slate-600">
-              Create a password to sign in next time. You will not need an email code for login.
-            </p>
-            {requiredLabel("Password", !!passwordForm.formState.errors.password)}
-            <PasswordInput
-              placeholder="At least 8 characters"
-              autoComplete="new-password"
-              {...passwordForm.register("password")}
-              className={
-                passwordForm.formState.errors.password ? "border-rose-500 focus:ring-rose-500" : undefined
-              }
-            />
-            {passwordForm.formState.errors.password ? (
-              <p className="text-xs text-rose-600">{passwordForm.formState.errors.password.message}</p>
-            ) : null}
-            {requiredLabel("Confirm password", !!passwordForm.formState.errors.confirmPassword)}
-            <PasswordInput
-              placeholder="Confirm password"
-              autoComplete="new-password"
-              {...passwordForm.register("confirmPassword")}
-              className={
-                passwordForm.formState.errors.confirmPassword
-                  ? "border-rose-500 focus:ring-rose-500"
-                  : undefined
-              }
-            />
-            {passwordForm.formState.errors.confirmPassword ? (
-              <p className="text-xs text-rose-600">
-                {passwordForm.formState.errors.confirmPassword.message}
-              </p>
-            ) : null}
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting
-                ? role === "nurse"
-                  ? "Uploading documents..."
-                  : "Saving..."
-                : "Create account"}
+              {isSubmitting ? "Uploading documents..." : "Create account"}
             </Button>
           </form>
         ) : null}

@@ -1,5 +1,17 @@
 import { z } from "zod";
 
+export const signupCredentialsSchema = z
+  .object({
+    email: z.string().email(),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string().min(8, "Confirm your password")
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"]
+  });
+
+/** @deprecated OTP registration removed — use signupCredentialsSchema */
 export const signupOtpSchema = z.object({
   email: z.string().email(),
   token: z.preprocess(
@@ -8,7 +20,7 @@ export const signupOtpSchema = z.object({
   )
 });
 
-/** @deprecated Use signupOtpSchema for registration OTP steps */
+/** @deprecated Use signupCredentialsSchema */
 export const authSchema = signupOtpSchema;
 
 export const loginSchema = z.object({

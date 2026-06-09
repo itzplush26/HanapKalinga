@@ -1,24 +1,40 @@
 import {
   DAILY_RATE_BAND_IDS,
   DAILY_RATE_BANDS,
+  HOURLY_RATE_BAND_IDS,
+  HOURLY_RATE_BANDS,
   formatDailyRateBandLabel,
+  formatHourlyRateBandLabel,
   getDailyRateBand,
+  getHourlyRateBand,
   inferDailyRateBandId,
+  inferHourlyRateBandId,
   resolveDailyRateBandValues,
+  resolveHourlyRateBandValues,
   type DailyRateBand,
-  type DailyRateBandId
+  type DailyRateBandId,
+  type HourlyRateBand,
+  type HourlyRateBandId
 } from "@/lib/data/rates";
 
 export {
   DAILY_RATE_BAND_IDS,
   DAILY_RATE_BANDS,
+  HOURLY_RATE_BAND_IDS,
+  HOURLY_RATE_BANDS,
   formatDailyRateBandLabel,
+  formatHourlyRateBandLabel,
   getDailyRateBand,
+  getHourlyRateBand,
   inferDailyRateBandId,
+  inferHourlyRateBandId,
   nurseMatchesDailyRateBand,
   resolveDailyRateBandValues,
+  resolveHourlyRateBandValues,
   type DailyRateBand,
-  type DailyRateBandId
+  type DailyRateBandId,
+  type HourlyRateBand,
+  type HourlyRateBandId
 } from "@/lib/data/rates";
 
 /** @deprecated Use DAILY_RATE_BAND_IDS */

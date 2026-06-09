@@ -1,0 +1,81 @@
+---
+description: HanapKalinga CI gate — run all checks before finishing any task
+alwaysApply: true
+---
+
+# HanapKalinga — CI Gate
+
+After completing any change — no matter how small — run the full local CI
+check sequence before declaring the task done. Do not ask if you should run
+the checks. Never tell the user the task is complete if any check is failing.
+
+Run phases in order. Do not proceed to the next phase if the current one fails.
+
+## CI sequence (matches `.github/workflows/ci.yml`)
+
+### Phase 1 — Lint
+
+```bash
+npm install
+npm run lint
+```
+
+Zero warnings allowed. Fix every lint error and warning before Phase 2.
+
+### Phase 2 — Type check
+
+```bash
+cd packages/shared && npx tsc --noEmit
+cd apps/web && npx tsc --noEmit
+```
+
+Fix every TypeScript error. Do not use `@ts-ignore` or `any` unless unavoidable.
+
+### Phase 3 — Build
+
+```bash
+npm run build
+```
+
+Requires `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` for the
+web app build. If a new env var is needed, add it to `.env.example` with a
+placeholder and document it.
+
+### Phase 4 — Dependency audit
+
+```bash
+npm run audit:critical
+```
+
+### Phase 5 — Secrets scan
+
+Search for accidentally committed secrets before committing:
+
+```bash
+grep -r "sk_" --include="*.ts" --include="*.tsx" --include="*.js" .
+grep -r "SUPABASE_SERVICE_ROLE" --include="*.ts" --include="*.tsx" .
+grep -r "r2.cloudflarestorage.com" --include="*.ts" --include="*.tsx" .
+```
+
+Never commit values for `SUPABASE_SERVICE_ROLE_KEY`, `CLOUDFLARE_R2_*` keys,
+`RESEND_API_KEY`, or any token/password string.
+
+## Other rules
+
+- **Branches**: Never push to `main`. Use `fix/`, `feat/`, or `chore/` branches.
+- **Env vars**: Never hardcode secrets. Add new vars to `.env.example`.
+- **Migrations**: New schema changes only via new files in
+  `packages/database/supabase/migrations/` — never edit existing migrations.
+- **RLS**: Do not drop or modify existing RLS policies unless explicitly required.
+- **Logging**: No `console.log` in production code. `console.error` in server catch
+  blocks is allowed if it does not log sensitive data.
+
+## Pre-push summary
+
+After all phases pass, note CI results in the commit/PR description:
+
+- Phase 1 (Lint): PASSED
+- Phase 2 (Types): PASSED
+- Phase 3 (Build): PASSED
+- Phase 4 (Audit): PASSED
+- Phase 5 (Secrets): PASSED

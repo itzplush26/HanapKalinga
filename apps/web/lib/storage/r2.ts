@@ -40,14 +40,19 @@ export async function uploadToR2(
   const client = getR2Client();
   const key = destinationPath.replace(/^\/+/, "");
 
-  await client.send(
-    new PutObjectCommand({
-      Bucket: bucket,
-      Key: key,
-      Body: fileBuffer,
-      ContentType: contentType
-    })
-  );
+  try {
+    await client.send(
+      new PutObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        Body: fileBuffer,
+        ContentType: contentType
+      })
+    );
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "Unknown R2 upload error";
+    throw new Error(`R2 upload failed for ${bucket}/${key}: ${detail}`);
+  }
 
   return key;
 }

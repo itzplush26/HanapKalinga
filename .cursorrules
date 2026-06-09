@@ -1,0 +1,51 @@
+# HanapKalinga — Cursor Rules
+# Read automatically by Cursor. Also mirrored in .cursor/rules/hanapkalinga-ci-gate.mdc
+
+## RULE 1 — CI GATE
+
+After any change, run the full CI sequence before declaring done. Do not skip
+phases. Fix failures before moving on. Never say the task is complete while CI
+is failing.
+
+### Phase 1 — Lint
+  npm install
+  npm run lint
+
+### Phase 2 — Type check
+  cd packages/shared && npx tsc --noEmit
+  cd apps/web && npx tsc --noEmit
+
+### Phase 3 — Build
+  npm run build
+
+### Phase 4 — Dependency audit
+  npm run audit:critical
+
+### Phase 5 — Secrets scan
+  grep -r "sk_" --include="*.ts" --include="*.tsx" .
+  grep -r "SUPABASE_SERVICE_ROLE" --include="*.ts" --include="*.tsx" .
+
+## RULE 2 — Never commit directly to main
+
+Use fix/, feat/, or chore/ branches. Open a PR to merge.
+
+## RULE 3 — Environment variables
+
+Never hardcode secrets. Add new vars to .env.example with placeholders.
+
+## RULE 4 — Database migrations
+
+New files only in packages/database/supabase/migrations/. Never edit existing
+migrations.
+
+## RULE 5 — No console.log in production code
+
+console.error in server catch blocks is OK if it does not log sensitive data.
+
+## RULE 6 — RLS policies
+
+Do not drop or modify existing RLS policies unless the task requires it.
+
+## RULE 7 — Report CI failures clearly
+
+State which phase failed, the exact error, file/line, and what you are fixing.
