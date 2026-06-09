@@ -10,7 +10,7 @@ interface NurseCardProps {
   name: string;
   city: string;
   specializations: string[];
-  yearsExperience: number;
+  experienceLabel: string;
   dailyRateLabel: string | null;
   averageRating?: number | null;
   reviewCount?: number;
@@ -27,7 +27,7 @@ export function NurseCard({
   name,
   city,
   specializations,
-  yearsExperience,
+  experienceLabel,
   dailyRateLabel,
   averageRating,
   reviewCount = 0,
@@ -71,7 +71,7 @@ export function NurseCard({
               <div className="min-w-0">
                 <h3 className="line-clamp-2 text-base font-semibold leading-snug text-slate-900">{name}</h3>
                 <p className="mt-0.5 truncate text-sm text-slate-600">
-                  {city} • {yearsExperience} yrs exp
+                  {city} • {experienceLabel}
                 </p>
               </div>
               <Badge className="shrink-0 bg-slate-100 text-slate-700">

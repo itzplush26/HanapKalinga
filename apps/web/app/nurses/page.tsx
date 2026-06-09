@@ -7,7 +7,12 @@ import { Button } from "@/components/ui/button";
 import { AvailabilitySlot, AvailabilityStatus, deriveAvailabilityStatus } from "@/lib/availability-status";
 import { formatDailyRateBandLabel, nurseMatchesDailyRateBand } from "@/lib/data/rates";
 import { findRegionForCity } from "@/lib/data/ph-locations";
-import { resolveProfilePhotoUrl } from "@/lib/storage/r2";
+import {
+  formatYearsExperience,
+  resolveProfileCity,
+  resolveProfileDisplayName
+} from "@/lib/profile-display";
+import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
 
 interface NursesPageProps {
   searchParams?: Record<string, string | string[] | undefined>;
@@ -44,7 +49,7 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
   const { data: nurses } = await supabase
     .from("nurses")
     .select(
-      "id, provider_type, specializations, years_experience, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, profiles(full_name, city, region)"
+      "id, provider_type, specializations, years_experience, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, profiles(full_name, first_name, last_name, city, region, barangay)"
     )
     .eq("verification_status", "verified");
   const nurseIds = (nurses ?? []).map((nurse) => nurse.id);
@@ -143,10 +148,10 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
               <NurseCard
                 key={nurse.id}
                 id={nurse.id}
-                name={profile?.full_name ?? "Verified Nurse"}
-                city={profile?.city ?? "Philippines"}
+                name={resolveProfileDisplayName(profile)}
+                city={resolveProfileCity(profile?.city)}
                 specializations={nurse.specializations ?? []}
-                yearsExperience={nurse.years_experience ?? 0}
+                experienceLabel={formatYearsExperience(nurse.years_experience)}
                 dailyRateLabel={formatDailyRateBandLabel(
                   nurse.daily_rate_range,
                   nurse.daily_rate_12hr,

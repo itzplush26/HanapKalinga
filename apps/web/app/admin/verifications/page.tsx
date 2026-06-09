@@ -4,7 +4,10 @@ import { createServiceClient } from "@/lib/supabase/service";
 export const dynamic = "force-dynamic";
 import { AdminBreadcrumbs } from "@/components/admin/admin-breadcrumbs";
 import { AdminPageHeader } from "@/components/admin/admin-shell";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { VerificationStatusBadge } from "@/components/verification-status-badge";
+import { resolveProfileDisplayName } from "@/lib/profile-display";
+import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
 import {
   VERIFICATION_STATUS_LABELS,
   type VerificationStatus
@@ -30,7 +33,7 @@ export default async function AdminVerificationsPage({ searchParams }: AdminVeri
   let query = service
     .from("nurses")
     .select(
-      "id, provider_type, verification_status, submitted_at, profiles(full_name, city, region, phone)"
+      "id, provider_type, verification_status, submitted_at, profile_photo_url, profiles(full_name, first_name, last_name, city, region, phone)"
     )
     .order("submitted_at", { ascending: false });
 
@@ -93,9 +96,15 @@ export default async function AdminVerificationsPage({ searchParams }: AdminVeri
               className="block rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-brand-200 hover:shadow-sm"
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
+                <div className="flex items-start gap-3">
+                  <ProfileAvatar
+                    src={resolveProfilePhotoUrl(nurse.profile_photo_url)}
+                    name={resolveProfileDisplayName(profile, "Applicant")}
+                    size="sm"
+                  />
+                  <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-semibold text-slate-900">{profile?.full_name ?? "Applicant"}</p>
+                    <p className="font-semibold text-slate-900">{resolveProfileDisplayName(profile, "Applicant")}</p>
                     <VerificationStatusBadge status={nurse.verification_status as VerificationStatus} />
                   </div>
                   <p className="mt-1 text-sm text-slate-600">
@@ -104,6 +113,7 @@ export default async function AdminVerificationsPage({ searchParams }: AdminVeri
                   <p className="mt-1 text-xs text-slate-500">
                     Submitted {nurse.submitted_at ? new Date(nurse.submitted_at).toLocaleString() : "—"}
                   </p>
+                  </div>
                 </div>
                 <span className="text-sm font-medium text-brand-700">Review →</span>
               </div>

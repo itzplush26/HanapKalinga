@@ -6,7 +6,8 @@ import { BookingReviewForm } from "@/components/booking-review-form";
 import { MessageThread } from "@/components/message-thread";
 import { ScrollToHash } from "@/components/scroll-to-hash";
 import { formatShiftLabel } from "@/lib/booking-notes";
-import { resolveProfilePhotoUrl } from "@/lib/storage/r2";
+import { resolveProfileCity } from "@/lib/profile-display";
+import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
 import { PageHeader } from "@/components/page-header";
 
 interface BookingDetailPageProps {
@@ -75,7 +76,7 @@ export default async function FamilyBookingDetailPage({ params }: BookingDetailP
       <div className="mx-auto flex max-w-md flex-col gap-5">
         <BookingPartyCard
           name={nurseName}
-          subtitle={nurseProfile?.city ?? "Philippines"}
+          subtitle={resolveProfileCity(nurseProfile?.city)}
           imageUrl={resolveProfilePhotoUrl(nurse?.profile_photo_url)}
         />
         <div className="flex items-center justify-between">

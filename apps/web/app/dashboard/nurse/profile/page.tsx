@@ -11,11 +11,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { DocumentUploader } from "@/components/document-uploader";
+import { ProfilePhotoUploader } from "@/components/profile-photo-uploader";
 import { DocumentStatusRow } from "@/components/document-status-row";
 import { RegionCitySelects } from "@/components/region-city-selects";
 import { RateRangeSelect } from "@/components/rate-range-select";
 import { PageHeader } from "@/components/page-header";
-import { ProfileAvatar } from "@/components/profile-avatar";
+import { resolveProfileDisplayName } from "@/lib/profile-display";
 import { SignOutDialog } from "@/components/sign-out-dialog";
 import { VerificationStatusBanner } from "@/components/verification-status-banner";
 import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
@@ -215,6 +216,24 @@ export default function NurseProfilePage() {
   const nbiPath = form.watch("nbi_document_url") || initialNbiUrl;
   const showCredentialStatus = !!credentialPath && !canReuploadDocuments;
   const showNbiStatus = !!nbiPath && !canReuploadDocuments;
+  const displayName = resolveProfileDisplayName({
+    first_name: form.watch("firstName"),
+    last_name: form.watch("lastName")
+  });
+
+  async function handleProfilePhotoChange(url: string) {
+    form.setValue("profile_photo_url", url);
+    setProfilePhotoUrl(resolveProfilePhotoUrl(url));
+
+    const { data } = await supabase.auth.getUser();
+    const user = data.user;
+    if (!user) return;
+
+    await supabase.from("nurses").upsert({
+      id: user.id,
+      profile_photo_url: url
+    });
+  }
 
   return (
     <>
@@ -227,17 +246,11 @@ export default function NurseProfilePage() {
             variant="profile"
           />
 
-          <div className="flex items-center gap-4">
-            <ProfileAvatar
-              src={profilePhotoUrl}
-              name={form.watch("firstName") || form.watch("lastName") || "User"}
-              size="lg"
-            />
-            <div>
-              <p className="text-sm font-medium text-slate-900">Profile photo</p>
-              <p className="text-xs text-slate-500">Upload a clear photo of yourself.</p>
-            </div>
-          </div>
+          <ProfilePhotoUploader
+            photoUrl={profilePhotoUrl}
+            displayName={displayName}
+            onPhotoChange={handleProfilePhotoChange}
+          />
 
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <div className="space-y-1">
@@ -332,16 +345,6 @@ export default function NurseProfilePage() {
                 }
               />
             </div>
-
-            <DocumentUploader
-              label={profilePhotoUrl ? "Change profile photo" : "Profile photo"}
-              pathPrefix="profile-photo"
-              variant="photo"
-              onUploaded={(url) => {
-                form.setValue("profile_photo_url", url);
-                setProfilePhotoUrl(resolveProfilePhotoUrl(url));
-              }}
-            />
 
             {showCredentialStatus ? (
               <DocumentStatusRow

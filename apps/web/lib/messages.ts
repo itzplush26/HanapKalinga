@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { resolveProfilePhotoUrl } from "@/lib/storage/r2";
+import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
 
 export type InboxRow = {
   bookingId: string;
@@ -131,11 +131,12 @@ export async function buildInbox(
   } else {
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id, full_name")
+      .select("id, full_name, profile_photo_url")
       .in("id", otherIds);
 
     for (const profile of profiles ?? []) {
       nameById.set(profile.id as string, profile.full_name?.trim() || "Unknown User");
+      photoById.set(profile.id as string, resolveProfilePhotoUrl(profile.profile_photo_url));
     }
   }
 

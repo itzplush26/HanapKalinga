@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { User } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,6 +31,11 @@ function initialsFromName(name: string) {
 
 export function ProfileAvatar({ src, name = "", size = "md", className }: ProfileAvatarProps) {
   const [broken, setBroken] = useState(false);
+
+  useEffect(() => {
+    setBroken(false);
+  }, [src]);
+
   const showImage = !!src && !broken;
 
   return (
