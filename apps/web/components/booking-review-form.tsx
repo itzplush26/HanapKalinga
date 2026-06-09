@@ -1,26 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { StarRating } from "@/components/star-rating";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { mapSupabaseError } from "@/lib/user-errors";
-
 interface BookingReviewFormProps {
   bookingId: string;
   nurseId: string;
   nurseName: string;
-  reviewerId: string;
 }
 
 export function BookingReviewForm({
   bookingId,
   nurseId,
-  nurseName,
-  reviewerId
+  nurseName
 }: BookingReviewFormProps) {
-  const supabase = createClient();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [done, setDone] = useState(false);
@@ -35,18 +29,22 @@ export function BookingReviewForm({
     setError(null);
     setSubmitting(true);
 
-    const { error: insertError } = await supabase.from("reviews").insert({
-      booking_id: bookingId,
-      reviewer_id: reviewerId,
-      reviewee_id: nurseId,
-      rating,
-      comment: comment.trim() || null
+    const response = await fetch("/api/reviews", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        bookingId,
+        nurseId,
+        rating,
+        comment: comment.trim() || undefined
+      })
     });
 
     setSubmitting(false);
 
-    if (insertError) {
-      setError(mapSupabaseError(insertError, "generic"));
+    if (!response.ok) {
+      const payload = (await response.json()) as { error?: string };
+      setError(payload.error ?? "Failed to submit review.");
       return;
     }
 
@@ -68,7 +66,7 @@ export function BookingReviewForm({
       </h3>
       <StarRating value={rating} onChange={setRating} />
       <Textarea
-        placeholder="Share your experience (optional)"
+        placeholder="Tell others about your experience (optional)"
         value={comment}
         onChange={(event) => setComment(event.target.value)}
       />

@@ -6,13 +6,24 @@ import { BookingStatusBadge } from "@/components/booking-status-badge";
 import { BookingDetailsCard } from "@/components/booking-details-card";
 import { BookingPartyCard } from "@/components/booking-party-card";
 import { Button } from "@/components/ui/button";
+import { NurseMarkCompleteButton } from "@/components/booking-completion-actions";
+import { CancelBookingButton } from "@/components/cancel-booking-button";
+import { ReportUserMenu } from "@/components/report-user-menu";
 import { MessageThread } from "@/components/message-thread";
+import { getManilaDateString } from "@/lib/date-format";
 import { ScrollToHash } from "@/components/scroll-to-hash";
 import { formatShiftLabel } from "@/lib/booking-notes";
 import { PageHeader } from "@/components/page-header";
 import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
 
-type BookingStatus = "pending" | "accepted" | "declined" | "completed" | "cancelled";
+type BookingStatus =
+  | "pending"
+  | "accepted"
+  | "declined"
+  | "completed"
+  | "cancelled"
+  | "pending_completion"
+  | "disputed";
 
 interface BookingDetailPageProps {
   params: { id: string };
@@ -27,6 +38,7 @@ export default function NurseBookingDetailPage({ params }: BookingDetailPageProp
     shift: string;
     notes: string | null;
     family_id: string;
+    nurse_marked_complete?: boolean;
   } | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [userId, setUserId] = useState<string>("");
@@ -42,7 +54,7 @@ export default function NurseBookingDetailPage({ params }: BookingDetailPageProp
       setUserId(uid);
       const { data: bookingData } = await supabase
         .from("bookings")
-        .select("id, status, requested_date, shift, notes, family_id")
+        .select("id, status, requested_date, shift, notes, family_id, nurse_marked_complete")
         .eq("id", params.id)
         .single();
       setBooking(bookingData);
@@ -76,9 +88,23 @@ export default function NurseBookingDetailPage({ params }: BookingDetailPageProp
     load();
   }, [params.id, supabase]);
 
-  async function handleStatusUpdate(status: "accepted" | "declined") {
-    await supabase.from("bookings").update({ status }).eq("id", params.id);
-    setBooking((prev) => (prev ? { ...prev, status } : prev));
+  async function reloadBooking() {
+    const { data: bookingData } = await supabase
+      .from("bookings")
+      .select("id, status, requested_date, shift, notes, family_id, nurse_marked_complete")
+      .eq("id", params.id)
+      .single();
+    setBooking(bookingData);
+  }
+
+  async function handleAccept() {
+    await fetch(`/api/bookings/${params.id}/accept`, { method: "POST" });
+    await reloadBooking();
+  }
+
+  async function handleDecline() {
+    await fetch(`/api/bookings/${params.id}/decline`, { method: "POST" });
+    await reloadBooking();
   }
 
   if (!booking) {
@@ -88,6 +114,11 @@ export default function NurseBookingDetailPage({ params }: BookingDetailPageProp
       </main>
     );
   }
+
+  const canMarkComplete =
+    booking.status === "accepted" &&
+    !booking.nurse_marked_complete &&
+    booking.requested_date <= getManilaDateString();
 
   return (
     <>
@@ -105,17 +136,34 @@ export default function NurseBookingDetailPage({ params }: BookingDetailPageProp
             <h2 className="text-xl font-semibold">Booking {booking.requested_date}</h2>
             <p className="text-sm text-slate-600">{formatShiftLabel(booking.shift, booking.notes)}</p>
           </div>
-          <BookingStatusBadge status={booking.status} />
+          <div className="flex items-center gap-2">
+            <BookingStatusBadge status={booking.status} />
+            <ReportUserMenu
+              reportedUserId={booking.family_id}
+              reportedUserName={familyName}
+              bookingId={booking.id}
+            />
+          </div>
         </div>
         {booking.status === "pending" ? (
           <div className="flex gap-2">
-            <Button type="button" onClick={() => handleStatusUpdate("accepted")}>
+            <Button type="button" onClick={() => void handleAccept()}>
               Accept
             </Button>
-            <Button type="button" variant="outline" onClick={() => handleStatusUpdate("declined")}>
+            <Button type="button" variant="outline" onClick={() => void handleDecline()}>
               Decline
             </Button>
           </div>
+        ) : null}
+        {canMarkComplete ? (
+          <NurseMarkCompleteButton bookingId={booking.id} onUpdated={() => void reloadBooking()} />
+        ) : null}
+        {booking.status === "pending" || booking.status === "accepted" ? (
+          <CancelBookingButton
+            bookingId={booking.id}
+            cancelledBy="nurse"
+            onCancelled={() => void reloadBooking()}
+          />
         ) : null}
         <BookingDetailsCard notes={booking.notes} />
         <MessageThread

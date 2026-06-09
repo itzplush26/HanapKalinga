@@ -182,25 +182,20 @@ function BookingForm() {
         : {})
     };
 
-    const { data: booking, error } = await supabase
-      .from("bookings")
-      .insert({
-        family_id: user.id,
-        nurse_id: values.nurseId,
-        requested_date: values.requestedDate,
-        shift: values.shift,
-        notes: JSON.stringify(structuredRequest)
-      })
-      .select("id")
-      .single();
+    const response = await fetch("/api/bookings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(values)
+    });
 
-    if (error || !booking) {
-      setSubmitError(mapSupabaseError(error, "generic"));
+    const payload = (await response.json()) as { bookingId?: string; error?: string };
+    if (!response.ok || !payload.bookingId) {
+      setSubmitError(payload.error ?? "Failed to create booking.");
       return;
     }
 
     setSubmitted({
-      bookingId: booking.id,
+      bookingId: payload.bookingId,
       nurseName: nursePreview?.name ?? "your nurse",
       requestedDate: values.requestedDate,
       shift: values.shift

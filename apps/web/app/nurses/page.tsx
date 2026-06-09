@@ -13,6 +13,7 @@ import {
   resolveProfileDisplayName
 } from "@/lib/profile-display";
 import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
+import { hasExpiredDocuments } from "@/lib/license-expiry";
 
 interface NursesPageProps {
   searchParams?: Record<string, string | string[] | undefined>;
@@ -32,6 +33,7 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
   const dailyRateBandFilter = parseString(searchParams?.dailyRateBand);
   const availabilityFilter = parseString(searchParams?.availability) as AvailabilityStatus | "";
   const providerTypeFilter = parseString(searchParams?.providerType);
+  const searchQuery = parseString(searchParams?.q);
   const showWelcome = parseString(searchParams?.welcome) === "1";
 
   const supabase = createClient();
@@ -46,12 +48,26 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
     viewerRole = viewerProfile?.role ?? null;
   }
 
-  const { data: nurses } = await supabase
+  let nursesQuery = supabase
     .from("nurses")
     .select(
-      "id, provider_type, specializations, years_experience, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, profiles(full_name, first_name, last_name, city, region, barangay)"
+      "id, provider_type, specializations, years_experience, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry, profiles(full_name, first_name, last_name, city, region, barangay)"
     )
     .eq("verification_status", "verified");
+
+  if (searchQuery) {
+    nursesQuery = nursesQuery.textSearch("search_vector", searchQuery, {
+      type: "websearch",
+      config: "english"
+    });
+  }
+
+  const { data: nurses } = await nursesQuery;
+
+  const { data: blockedRows } = auth.user
+    ? await supabase.from("user_blocks").select("blocked_id").eq("blocker_id", auth.user.id)
+    : { data: [] };
+  const blockedIds = new Set((blockedRows ?? []).map((row) => row.blocked_id as string));
   const nurseIds = (nurses ?? []).map((nurse) => nurse.id);
 
   const { data: ratingRows } =
@@ -104,6 +120,8 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
       return { nurse, profile, availabilityStatus };
     })
     .filter(({ nurse, profile, availabilityStatus }) => {
+      if (blockedIds.has(nurse.id)) return false;
+      if (hasExpiredDocuments(nurse)) return false;
       if (regionFilter) {
         const profileRegion = profile?.region || (profile?.city ? findRegionForCity(profile.city) : "");
         if (profileRegion !== regionFilter) return false;
@@ -168,12 +186,28 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
           })}
           {filteredNurses.length === 0 ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
-              <p className="font-semibold text-slate-900">No matching verified providers yet</p>
-              <p className="mt-1">
-                {viewerRole === "family"
-                  ? "Try adjusting your filters or check back soon as new providers are verified."
-                  : "Try adjusting your filters to broaden your search."}
+              <p className="font-semibold text-slate-900">
+                {searchQuery
+                  ? "No nurses or caregivers found matching your search"
+                  : "No matching verified providers yet"}
               </p>
+              <p className="mt-1">
+                {searchQuery
+                  ? "Try a different search term or clear your filters."
+                  : viewerRole === "family"
+                    ? "Try adjusting your filters or check back soon as new providers are verified."
+                    : "Try adjusting your filters to broaden your search."}
+              </p>
+              {searchQuery ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button asChild variant="outline" size="sm">
+                    <Link href="/nurses">Clear search</Link>
+                  </Button>
+                  <Button asChild variant="outline" size="sm">
+                    <Link href="/nurses">Clear all filters</Link>
+                  </Button>
+                </div>
+              ) : null}
               {viewerRole === "family" ? (
                 <Button asChild className="mt-3" variant="outline">
                   <Link href="/dashboard/family">Back to dashboard</Link>

@@ -61,7 +61,8 @@ export default function AdminBookingDetailPage({ params }: AdminBookingDetailPag
   }, [params.id, supabase]);
 
   async function markCompleted() {
-    await supabase.from("bookings").update({ status: "completed" }).eq("id", params.id);
+    const response = await fetch(`/api/admin/bookings/${params.id}/complete`, { method: "POST" });
+    if (!response.ok) return;
     setBooking((prev) => (prev ? { ...prev, status: "completed" } : prev));
   }
 
@@ -84,9 +85,16 @@ export default function AdminBookingDetailPage({ params }: AdminBookingDetailPag
           <BookingStatusBadge status={booking.status} />
         </div>
         <BookingDetailsCard notes={booking.notes} />
-        <Button type="button" variant="outline" onClick={markCompleted}>
-          Mark completed
-        </Button>
+        {booking.status !== "completed" && booking.status !== "cancelled" ? (
+          <Button type="button" variant="outline" onClick={() => void markCompleted()}>
+            Mark completed
+          </Button>
+        ) : null}
+        {booking.status === "completed" ? (
+          <p className="text-sm text-slate-500">
+            Booking marked complete. Family will be prompted to leave a review.
+          </p>
+        ) : null}
         <MessageThread
           bookingId={booking.id}
           currentUserId={userId}

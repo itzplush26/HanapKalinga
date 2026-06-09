@@ -16,7 +16,7 @@ export default async function AdminVerificationDetailPage({ params }: AdminVerif
   const { data: nurse } = await supabase
     .from("nurses")
     .select(
-      "id, provider_type, verification_status, submitted_at, prc_document_url, tesda_document_url, nbi_document_url, profiles(full_name, city, region, barangay, phone)"
+      "id, provider_type, verification_status, submitted_at, prc_document_url, tesda_document_url, nbi_document_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry, profiles(full_name, city, region, barangay, phone)"
     )
     .eq("id", params.id)
     .maybeSingle();
@@ -80,6 +80,9 @@ export default async function AdminVerificationDetailPage({ params }: AdminVerif
         prcSignedUrl={prcSignedUrl}
         tesdaSignedUrl={tesdaSignedUrl}
         nbiSignedUrl={nbiSignedUrl}
+        prcLicenseExpiry={nurse.prc_license_expiry}
+        tesdaCertExpiry={nurse.tesda_cert_expiry}
+        nbiExpiry={nurse.nbi_expiry}
         auditLogs={auditLogs}
       />
     </main>

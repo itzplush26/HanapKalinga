@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 export interface Message {
   id: string;
@@ -18,6 +19,7 @@ interface MessageThreadProps {
   initialMessages: Message[];
   senderNames?: Record<string, string>;
   readOnly?: boolean;
+  className?: string;
 }
 
 export function MessageThread({
@@ -25,7 +27,8 @@ export function MessageThread({
   currentUserId,
   initialMessages,
   senderNames = {},
-  readOnly = false
+  readOnly = false,
+  className
 }: MessageThreadProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [draft, setDraft] = useState("");
@@ -122,7 +125,10 @@ export function MessageThread({
   }
 
   return (
-    <div id="chat" className="flex h-[420px] scroll-mt-24 flex-col rounded-2xl border border-slate-200 bg-white">
+    <div
+      id="chat"
+      className={cn("flex h-[420px] scroll-mt-24 flex-col rounded-2xl border border-slate-200 bg-white", className)}
+    >
       <div className="flex-1 space-y-3 overflow-y-auto p-4 text-sm">
         {messages.map((message) => {
           const isMine = message.sender_id === currentUserId;
