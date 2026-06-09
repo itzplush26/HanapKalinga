@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getUploadAuthContext } from "@/lib/storage/upload-auth";
 import { compressProfilePhoto } from "@/lib/storage/compress-image";
-import { getMediaBucket, getPublicMediaUrl, uploadToR2 } from "@/lib/storage/r2";
 
+const AVATARS_BUCKET = "avatars";
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 export async function POST(request: Request) {
@@ -26,29 +26,37 @@ export async function POST(request: Request) {
 
     const input = Buffer.from(await file.arrayBuffer());
     const compressed = await compressProfilePhoto(input);
-    const storagePath = `photos/${auth.userId}/${Date.now()}.${compressed.extension}`;
+    const storagePath = `${auth.userId}/avatar.${compressed.extension}`;
+
+    const supabase = createClient();
 
     console.info("[upload/photo]", {
       userId: auth.userId,
       fileSize: file.size,
-      contentType: file.type,
-      bucket: getMediaBucket(),
+      contentType: compressed.contentType,
+      bucket: AVATARS_BUCKET,
       storagePath
     });
 
-    await uploadToR2(
-      compressed.buffer,
-      storagePath,
-      getMediaBucket(),
-      compressed.contentType
-    );
+    const { error: uploadError } = await supabase.storage
+      .from(AVATARS_BUCKET)
+      .upload(storagePath, compressed.buffer, {
+        contentType: compressed.contentType,
+        upsert: true
+      });
 
-    const url = getPublicMediaUrl(storagePath);
+    if (uploadError) {
+      console.error("[upload/photo] storage upload failed", uploadError);
+      return NextResponse.json({ error: uploadError.message }, { status: 500 });
+    }
 
-    const supabase = createClient();
+    const {
+      data: { publicUrl }
+    } = supabase.storage.from(AVATARS_BUCKET).getPublicUrl(storagePath);
+
     const { error: profileError } = await supabase
       .from("profiles")
-      .update({ profile_photo_url: url })
+      .update({ profile_photo_url: publicUrl })
       .eq("id", auth.userId);
 
     if (profileError) {
@@ -59,7 +67,7 @@ export async function POST(request: Request) {
     if (auth.role === "nurse") {
       const { error: nurseError } = await supabase
         .from("nurses")
-        .update({ profile_photo_url: url })
+        .update({ profile_photo_url: publicUrl })
         .eq("id", auth.userId);
 
       if (nurseError) {
@@ -68,7 +76,7 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ url, path: storagePath });
+    return NextResponse.json({ url: publicUrl, path: storagePath });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Upload failed.";
     console.error("[upload/photo] failed", message, error);
