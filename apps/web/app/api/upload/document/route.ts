@@ -59,11 +59,21 @@ export async function POST(request: Request) {
     const storagePath = `${nurseId}/${documentType}/${Date.now()}.${extension}`;
     const buffer = Buffer.from(await file.arrayBuffer());
 
+    console.info("[upload/document]", {
+      nurseId,
+      documentType,
+      fileSize: file.size,
+      contentType: file.type,
+      bucket: getDocsBucket(),
+      storagePath
+    });
+
     const path = await uploadToR2(buffer, storagePath, getDocsBucket(), file.type);
 
     return NextResponse.json({ path });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Upload failed.";
+    console.error("[upload/document] failed", message, error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { AvailabilityStatus } from "@/lib/availability-status";
 import { cn } from "@/lib/utils";
 
@@ -36,14 +36,6 @@ export function NurseCard({
   imageUrl,
   providerType = "nurse"
 }: NurseCardProps) {
-  const initials =
-    name
-      .split(" ")
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase())
-      .join("") || "NL";
-
   const visibleSpecializations = specializations.slice(0, MAX_VISIBLE_SPECIALIZATIONS);
   const hiddenSpecializationCount = Math.max(0, specializations.length - MAX_VISIBLE_SPECIALIZATIONS);
 
@@ -65,14 +57,8 @@ export function NurseCard({
     <Link href={`/nurses/${id}`} className="block w-full">
       <Card className="w-full transition hover:shadow-md">
         <CardContent className="flex gap-3 p-4">
-          <div className="relative h-16 w-16 shrink-0">
-            <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-sm font-semibold text-slate-500">
-              {imageUrl ? (
-                <Image src={imageUrl} alt="" fill sizes="64px" className="object-cover" />
-              ) : (
-                <span aria-hidden="true">{initials}</span>
-              )}
-            </div>
+          <div className="relative shrink-0">
+            <ProfileAvatar src={imageUrl} name={name} size="md" />
             {verified ? (
               <span className="absolute -bottom-0.5 -right-0.5 rounded-full border border-white bg-emerald-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
                 ✓

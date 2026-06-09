@@ -27,6 +27,14 @@ export async function POST(request: Request) {
     const compressed = await compressProfilePhoto(input);
     const storagePath = `photos/${auth.userId}/${Date.now()}.${compressed.extension}`;
 
+    console.info("[upload/photo]", {
+      userId: auth.userId,
+      fileSize: file.size,
+      contentType: file.type,
+      bucket: getMediaBucket(),
+      storagePath
+    });
+
     await uploadToR2(
       compressed.buffer,
       storagePath,
@@ -39,6 +47,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ url, path: storagePath });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Upload failed.";
+    console.error("[upload/photo] failed", message, error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

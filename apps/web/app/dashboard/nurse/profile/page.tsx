@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { nurseProfileEditSchema, type NurseProfileEditValues } from "@/lib/validations/profile";
 import { Button } from "@/components/ui/button";
@@ -17,14 +15,18 @@ import { DocumentStatusRow } from "@/components/document-status-row";
 import { RegionCitySelects } from "@/components/region-city-selects";
 import { RateRangeSelect } from "@/components/rate-range-select";
 import { PageHeader } from "@/components/page-header";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { SignOutDialog } from "@/components/sign-out-dialog";
 import { VerificationStatusBanner } from "@/components/verification-status-banner";
 import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
 import { YEARS_EXPERIENCE_OPTIONS } from "@/lib/years-experience";
 import {
-  inferRateRangeId,
-  resolveRateRangeValues,
-  type RateRangeId
+  inferDailyRateBandId,
+  inferHourlyRateBandId,
+  resolveDailyRateBandValues,
+  resolveHourlyRateBandValues,
+  type DailyRateBandId,
+  type HourlyRateBandId
 } from "@/lib/rate-ranges";
 import type { VerificationStatus } from "@/lib/verification";
 
@@ -106,12 +108,12 @@ export default function NurseProfilePage() {
           specializations: (nurse?.specializations ?? []).join(", "),
           yearsExperience: nurse?.years_experience ?? 0,
           bio: nurse?.bio ?? "",
-          hourlyRateRange: inferRateRangeId(
+          hourlyRateRange: inferHourlyRateBandId(
             nurse?.hourly_rate,
             nurse?.hourly_rate_max,
             nurse?.hourly_rate_range
           ),
-          dailyRateRange: inferRateRangeId(
+          dailyRateRange: inferDailyRateBandId(
             nurse?.daily_rate_12hr,
             nurse?.daily_rate_12hr_max,
             nurse?.daily_rate_range
@@ -137,11 +139,11 @@ export default function NurseProfilePage() {
       .filter((item) => item && item.trim().length > 0)
       .join(" ");
 
-    const hourlyRates = resolveRateRangeValues(
-      (values.hourlyRateRange || undefined) as RateRangeId | undefined
+    const hourlyRates = resolveHourlyRateBandValues(
+      (values.hourlyRateRange || undefined) as HourlyRateBandId | undefined
     );
-    const dailyRates = resolveRateRangeValues(
-      (values.dailyRateRange || undefined) as RateRangeId | undefined
+    const dailyRates = resolveDailyRateBandValues(
+      (values.dailyRateRange || undefined) as DailyRateBandId | undefined
     );
 
     await supabase.from("profiles").upsert({
@@ -207,8 +209,10 @@ export default function NurseProfilePage() {
   const canReuploadDocuments =
     verificationStatus === "rejected" || verificationStatus === "resubmission_required";
   const credentialPath =
-    providerType === "caregiver" ? form.watch("tesda_document_url") : form.watch("prc_document_url");
-  const nbiPath = form.watch("nbi_document_url");
+    (providerType === "caregiver"
+      ? form.watch("tesda_document_url")
+      : form.watch("prc_document_url")) || initialCredentialUrl;
+  const nbiPath = form.watch("nbi_document_url") || initialNbiUrl;
   const showCredentialStatus = !!credentialPath && !canReuploadDocuments;
   const showNbiStatus = !!nbiPath && !canReuploadDocuments;
 
@@ -224,13 +228,11 @@ export default function NurseProfilePage() {
           />
 
           <div className="flex items-center gap-4">
-            <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100">
-              {profilePhotoUrl ? (
-                <Image src={profilePhotoUrl} alt="Profile photo" fill className="object-cover" unoptimized />
-              ) : (
-                <User className="h-8 w-8 text-slate-400" />
-              )}
-            </div>
+            <ProfileAvatar
+              src={profilePhotoUrl}
+              name={form.watch("firstName") || form.watch("lastName") || "User"}
+              size="lg"
+            />
             <div>
               <p className="text-sm font-medium text-slate-900">Profile photo</p>
               <p className="text-xs text-slate-500">Upload a clear photo of yourself.</p>
@@ -311,6 +313,7 @@ export default function NurseProfilePage() {
               <Label htmlFor="hourlyRateRange">Expected hourly rate range</Label>
               <RateRangeSelect
                 id="hourlyRateRange"
+                variant="hourly"
                 value={form.watch("hourlyRateRange") ?? ""}
                 onChange={(value) =>
                   form.setValue("hourlyRateRange", value as NurseProfileEditValues["hourlyRateRange"])
@@ -322,6 +325,7 @@ export default function NurseProfilePage() {
               <Label htmlFor="dailyRateRange">Expected daily rate range</Label>
               <RateRangeSelect
                 id="dailyRateRange"
+                variant="daily"
                 value={form.watch("dailyRateRange") ?? ""}
                 onChange={(value) =>
                   form.setValue("dailyRateRange", value as NurseProfileEditValues["dailyRateRange"])

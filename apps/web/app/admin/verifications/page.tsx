@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+
+export const dynamic = "force-dynamic";
 import { AdminBreadcrumbs } from "@/components/admin/admin-breadcrumbs";
 import { AdminPageHeader } from "@/components/admin/admin-shell";
 import { VerificationStatusBadge } from "@/components/verification-status-badge";
@@ -22,10 +24,10 @@ interface AdminVerificationsPageProps {
 }
 
 export default async function AdminVerificationsPage({ searchParams }: AdminVerificationsPageProps) {
-  const supabase = createClient();
+  const service = createServiceClient();
   const statusFilter = searchParams?.status ?? "all";
 
-  let query = supabase
+  let query = service
     .from("nurses")
     .select(
       "id, provider_type, verification_status, submitted_at, profiles(full_name, city, region, phone)"
@@ -38,7 +40,11 @@ export default async function AdminVerificationsPage({ searchParams }: AdminVeri
     query = query.eq("verification_status", statusFilter);
   }
 
-  const { data: nurses } = await query;
+  const { data: nurses, error } = await query;
+
+  if (error) {
+    console.error("admin.verifications.list", error);
+  }
 
   return (
     <main>
