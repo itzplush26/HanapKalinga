@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { signupCredentialsSchema, roleSchema } from "@/lib/validations/auth";
 import { fetchProfileRole, resolvePostLoginDestination } from "@/lib/post-auth";
 import { resolveAuthUserId } from "@/lib/auth-session";
-import { registerUserSession } from "@/lib/session-lock";
+import { establishUserSession } from "@/lib/session-lock";
 import { mapSupabaseError } from "@/lib/user-errors";
 import { familyProfileSchema, nurseProfileFormSchema, type NurseProfileFormValues } from "@/lib/validations/profile";
 import { Button } from "@/components/ui/button";
@@ -138,19 +138,36 @@ export default function RegisterPage() {
         return;
       }
 
-      const userId = data.user?.id ?? data.session?.user?.id ?? null;
-      if (userId) {
-        setSignupUserId(userId);
-        await registerUserSession(supabase, userId, navigator.userAgent);
+      if (data.session) {
+        await supabase.auth.setSession(data.session);
+      }
 
-        const { role: existingRole } = await fetchProfileRole(supabase, userId);
-        if (existingRole) {
-          clearSignupStage();
-          const destination = resolvePostLoginDestination(existingRole, null);
-          if (destination) {
-            window.location.href = destination;
-            return;
-          }
+      const userId = data.user?.id ?? data.session?.user?.id ?? null;
+      if (!userId) {
+        setStatus("Account could not be created. Please try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      setSignupUserId(userId);
+
+      if (!data.session) {
+        setStatus(
+          "Check your email for a confirmation link. After confirming, sign in to finish setting up your account."
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
+      await establishUserSession(supabase, userId, navigator.userAgent);
+
+      const { role: existingRole } = await fetchProfileRole(supabase, userId);
+      if (existingRole) {
+        clearSignupStage();
+        const destination = resolvePostLoginDestination(existingRole, null);
+        if (destination) {
+          window.location.href = destination;
+          return;
         }
       }
 
@@ -160,7 +177,12 @@ export default function RegisterPage() {
       setStatus(null);
     } catch (error) {
       console.error("signup.sign_up.exception", error);
-      setStatus("Unexpected error creating account.");
+      setStatus(
+        mapSupabaseError(
+          error instanceof Error ? { message: error.message } : undefined,
+          "signup"
+        )
+      );
     }
 
     setIsSubmitting(false);
@@ -214,6 +236,8 @@ export default function RegisterPage() {
         id: userId,
         address: familyValues.address
       });
+
+      await establishUserSession(supabase, userId, navigator.userAgent);
 
       clearSignupStage();
       setIsSubmitting(false);
@@ -303,6 +327,8 @@ export default function RegisterPage() {
       setIsSubmitting(false);
       return;
     }
+
+    await establishUserSession(supabase, userId, navigator.userAgent);
 
     clearSignupStage();
     setIsSubmitting(false);

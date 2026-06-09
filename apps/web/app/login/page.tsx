@@ -10,7 +10,7 @@ import { parseSafeRedirect } from "@/lib/auth-redirect";
 import { fetchProfileRole, resolvePostLoginDestination } from "@/lib/post-auth";
 import { APP_NAME } from "@/lib/constants";
 import { mapSupabaseError } from "@/lib/user-errors";
-import { registerUserSession } from "@/lib/session-lock";
+import { establishUserSession } from "@/lib/session-lock";
 import { Button } from "@/components/ui/button";
 import { Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -85,16 +85,11 @@ export default function LoginPage() {
         return;
       }
 
-      const sessionToken = await registerUserSession(
+      await establishUserSession(
         supabase,
         userId,
         typeof navigator !== "undefined" ? navigator.userAgent : undefined
       );
-      await fetch("/api/auth/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: sessionToken })
-      });
 
       const destination = resolvePostLoginDestination(role, safeRedirect);
 

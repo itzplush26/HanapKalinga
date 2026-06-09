@@ -8,6 +8,11 @@ export async function registerUserSession(
   userId: string,
   deviceInfo?: string
 ): Promise<string> {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user || auth.user.id !== userId) {
+    throw new Error("Cannot register session lock without an authenticated user.");
+  }
+
   const token = crypto.randomUUID();
 
   const { error } = await supabase.from("user_sessions").upsert({
@@ -24,6 +29,28 @@ export async function registerUserSession(
   if (typeof window !== "undefined") {
     window.localStorage.setItem(SESSION_TOKEN_STORAGE_KEY, token);
   }
+
+  return token;
+}
+
+/** Registers the session row and syncs the httpOnly cookie via the API route. */
+export async function establishUserSession(
+  supabase: SupabaseClient,
+  userId: string,
+  deviceInfo?: string
+): Promise<string | null> {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user || auth.user.id !== userId) {
+    return null;
+  }
+
+  const token = await registerUserSession(supabase, userId, deviceInfo);
+
+  await fetch("/api/auth/session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token })
+  });
 
   return token;
 }

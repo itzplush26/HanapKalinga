@@ -3,8 +3,8 @@
 import { useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
+  establishUserSession,
   handleSessionConflict,
-  registerUserSession,
   validateClientSession
 } from "@/lib/session-lock";
 
@@ -24,12 +24,7 @@ export function SessionGuard() {
       }
 
       if (result === "missing") {
-        const token = await registerUserSession(supabase, userId, navigator.userAgent);
-        await fetch("/api/auth/session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token })
-        });
+        await establishUserSession(supabase, userId, navigator.userAgent);
       }
     }
 
