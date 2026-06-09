@@ -2,15 +2,5 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "cd ../.. && npm ci",
   "buildCommand": "npm run build",
-  "framework": "nextjs",
-  "crons": [
-    {
-      "path": "/api/cron/auto-complete",
-      "schedule": "0 * * * *"
-    },
-    {
-      "path": "/api/cron/check-expiry",
-      "schedule": "0 1 * * *"
-    }
-  ]
+  "framework": "nextjs"
 }
