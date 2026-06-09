@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CheckCircle2, X } from "lucide-react";
+import { CheckCircle2, ChevronDown, X } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -24,6 +24,7 @@ export function NotificationsPanel() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [fadingIds, setFadingIds] = useState<Set<string>>(new Set());
+  const [open, setOpen] = useState(false);
   const dismissTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const loadNotifications = useCallback(async () => {
@@ -33,6 +34,9 @@ export function NotificationsPanel() {
       const payload = (await response.json()) as { notifications?: NotificationItem[] };
       const unread = (payload.notifications ?? []).filter((item) => !item.read_at);
       setNotifications(unread);
+      if (unread.length > 0) {
+        setOpen(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -89,56 +93,83 @@ export function NotificationsPanel() {
     };
   }, [notifications, dismissNotification]);
 
-  return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4">
-      <div>
-        <h2 className="text-sm font-semibold text-navy-900">Notifications</h2>
-        <p className="text-xs text-slate-500">
-          {notifications.length > 0 ? `${notifications.length} new` : "You're all caught up"}
-        </p>
-      </div>
+  const summary =
+    notifications.length > 0 ? `${notifications.length} new` : "You're all caught up";
 
-      {loading ? (
-        <div className="mt-4 space-y-3">
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-20 w-full" />
+  return (
+    <section className="rounded-2xl border border-border bg-surface">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left"
+        aria-expanded={open}
+      >
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold text-text-primary">Notifications</h2>
+          <p className="text-xs text-text-muted">{summary}</p>
         </div>
-      ) : notifications.length === 0 ? (
-        <div className="mt-4">
-          <EmptyState
-            icon={CheckCircle2}
-            title="You're all caught up"
-            description="New updates about bookings and verification will appear here."
-            className="py-8"
+        <div className="flex shrink-0 items-center gap-2">
+          {notifications.length > 0 ? (
+            <span className="rounded-full bg-primary-light px-2 py-0.5 text-[10px] font-semibold text-primary">
+              {notifications.length}
+            </span>
+          ) : null}
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 text-text-muted transition-transform",
+              open && "rotate-180"
+            )}
+            aria-hidden
           />
         </div>
-      ) : (
-        <ul className="mt-4 space-y-3">
-          {notifications.map((item) => (
-            <li
-              key={item.id}
-              className={cn(
-                "relative rounded-xl border border-brand-100 bg-brand-50/40 p-3 text-sm transition-opacity duration-[400ms]",
-                fadingIds.has(item.id) && "opacity-0"
-              )}
-            >
-              <button
-                type="button"
-                onClick={() => void dismissNotification(item.id)}
-                className="absolute right-2 top-2 rounded-lg p-1 text-slate-400 hover:bg-white hover:text-slate-600"
-                aria-label="Dismiss notification"
-              >
-                <X className="h-4 w-4" />
-              </button>
-              <div className="pr-6">
-                <p className="font-medium text-navy-900">{item.title}</p>
-                <p className="mt-1 text-slate-600">{item.body}</p>
-                <p className="mt-2 text-xs text-slate-500">{new Date(item.created_at).toLocaleString()}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+      </button>
+
+      {open ? (
+        <div className="border-t border-border px-3 pb-3 pt-2">
+          {loading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-14 w-full" />
+              <Skeleton className="h-14 w-full" />
+            </div>
+          ) : notifications.length === 0 ? (
+            <EmptyState
+              icon={CheckCircle2}
+              title="You're all caught up"
+              description="New updates about bookings and verification will appear here."
+              className="border-0 bg-surface-alt py-4"
+              compact
+            />
+          ) : (
+            <ul className="space-y-2">
+              {notifications.map((item) => (
+                <li
+                  key={item.id}
+                  className={cn(
+                    "relative rounded-xl border border-info-border bg-info-bg/40 p-2.5 text-sm transition-opacity duration-[400ms]",
+                    fadingIds.has(item.id) && "opacity-0"
+                  )}
+                >
+                  <button
+                    type="button"
+                    onClick={() => void dismissNotification(item.id)}
+                    className="absolute right-1.5 top-1.5 rounded-lg p-1 text-text-muted hover:bg-surface hover:text-text-secondary"
+                    aria-label="Dismiss notification"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                  <div className="pr-6">
+                    <p className="text-sm font-medium text-text-primary">{item.title}</p>
+                    <p className="mt-0.5 text-xs text-text-secondary">{item.body}</p>
+                    <p className="mt-1.5 text-[11px] text-text-muted">
+                      {new Date(item.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : null}
     </section>
   );
 }
