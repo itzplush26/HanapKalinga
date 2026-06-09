@@ -135,7 +135,7 @@ export function BottomNav({ role }: BottomNavProps) {
       className="fixed bottom-0 left-0 right-0 z-20 border-t border-nav-border bg-nav-bg pb-[env(safe-area-inset-bottom)]"
       aria-label="Main navigation"
     >
-      <div className="mx-auto flex h-16 max-w-md">
+      <div className="mx-auto flex h-16 w-full max-w-md px-1 sm:max-w-lg md:max-w-2xl md:px-4 lg:max-w-3xl">
         {tabs.map((tab) => {
           const active = tab.match(pathname);
           const Icon = tab.icon;
@@ -145,8 +145,9 @@ export function BottomNav({ role }: BottomNavProps) {
             <Link
               key={tab.href}
               href={tab.href}
-              className="relative flex flex-1 flex-col items-center justify-center gap-1 px-0.5"
+              className="relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 overflow-visible px-0.5 md:px-2"
               aria-current={active ? "page" : undefined}
+              title={tab.label}
             >
               <Icon
                 className={cn(
@@ -158,14 +159,14 @@ export function BottomNav({ role }: BottomNavProps) {
               />
               <span
                 className={cn(
-                  "text-[10px] leading-none",
+                  "w-full whitespace-nowrap text-center leading-none [font-size:10px]",
                   active ? "font-semibold text-nav-active" : "font-normal text-nav-inactive"
                 )}
               >
                 {tab.label}
               </span>
               {showBadge ? (
-                <span className="absolute right-3 top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-[10px] font-semibold text-on-primary">
+                <span className="absolute right-1 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-[10px] font-semibold text-on-primary md:right-3">
                   {unreadTotal > 9 ? "9+" : unreadTotal}
                 </span>
               ) : null}
