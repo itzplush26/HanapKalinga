@@ -114,16 +114,6 @@ export default function FamilyProfilePage() {
 
   async function handleProfilePhotoChange(url: string) {
     setProfilePhotoStored(url);
-
-    const { data } = await supabase.auth.getUser();
-    const user = data.user;
-    if (!user) return;
-
-    await supabase.from("profiles").upsert({
-      id: user.id,
-      profile_photo_url: url,
-      role: "family"
-    });
   }
 
   if (loading) {
@@ -146,7 +136,11 @@ export default function FamilyProfilePage() {
       <div className="mx-auto flex max-w-md flex-col gap-5">
         <p className="text-sm text-slate-600">Update your contact and location details.</p>
         <ProfilePhotoUploader
-          photoUrl={resolveProfilePhotoUrl(profilePhotoStored)}
+          photoUrl={
+            profilePhotoStored?.startsWith("http")
+              ? profilePhotoStored
+              : resolveProfilePhotoUrl(profilePhotoStored)
+          }
           displayName={displayName}
           onPhotoChange={handleProfilePhotoChange}
         />

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { getUploadAuthContext } from "@/lib/storage/upload-auth";
 import { compressProfilePhoto } from "@/lib/storage/compress-image";
 import { getMediaBucket, getPublicMediaUrl, uploadToR2 } from "@/lib/storage/r2";
@@ -43,6 +44,29 @@ export async function POST(request: Request) {
     );
 
     const url = getPublicMediaUrl(storagePath);
+
+    const supabase = createClient();
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ profile_photo_url: url })
+      .eq("id", auth.userId);
+
+    if (profileError) {
+      console.error("[upload/photo] profile update failed", profileError);
+      return NextResponse.json({ error: profileError.message }, { status: 500 });
+    }
+
+    if (auth.role === "nurse") {
+      const { error: nurseError } = await supabase
+        .from("nurses")
+        .update({ profile_photo_url: url })
+        .eq("id", auth.userId);
+
+      if (nurseError) {
+        console.error("[upload/photo] nurse update failed", nurseError);
+        return NextResponse.json({ error: nurseError.message }, { status: 500 });
+      }
+    }
 
     return NextResponse.json({ url, path: storagePath });
   } catch (error) {

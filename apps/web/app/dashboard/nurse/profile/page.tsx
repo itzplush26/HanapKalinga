@@ -74,7 +74,7 @@ export default function NurseProfilePage() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("first_name, middle_name, last_name, full_name, phone, region, city, barangay, address")
+        .select("first_name, middle_name, last_name, full_name, phone, region, city, barangay, address, profile_photo_url")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -95,7 +95,9 @@ export default function NurseProfilePage() {
         setProviderType((nurse?.provider_type ?? "nurse") as "nurse" | "caregiver");
         setInitialCredentialUrl(credentialUrl);
         setInitialNbiUrl(nurse?.nbi_document_url ?? "");
-        setProfilePhotoUrl(resolveProfilePhotoUrl(nurse?.profile_photo_url ?? null));
+        setProfilePhotoUrl(
+          resolveProfilePhotoUrl(nurse?.profile_photo_url ?? profile?.profile_photo_url ?? null)
+        );
         form.reset({
           firstName: profile?.first_name ?? nameParts[0] ?? "",
           middleName: profile?.middle_name ?? "",
@@ -119,7 +121,7 @@ export default function NurseProfilePage() {
             nurse?.daily_rate_12hr_max,
             nurse?.daily_rate_range
           ),
-          profile_photo_url: nurse?.profile_photo_url ?? "",
+          profile_photo_url: nurse?.profile_photo_url ?? profile?.profile_photo_url ?? "",
           prc_document_url: nurse?.prc_document_url ?? "",
           tesda_document_url: nurse?.tesda_document_url ?? "",
           nbi_document_url: nurse?.nbi_document_url ?? ""
@@ -223,16 +225,7 @@ export default function NurseProfilePage() {
 
   async function handleProfilePhotoChange(url: string) {
     form.setValue("profile_photo_url", url);
-    setProfilePhotoUrl(resolveProfilePhotoUrl(url));
-
-    const { data } = await supabase.auth.getUser();
-    const user = data.user;
-    if (!user) return;
-
-    await supabase.from("nurses").upsert({
-      id: user.id,
-      profile_photo_url: url
-    });
+    setProfilePhotoUrl(url.startsWith("http") ? url : resolveProfilePhotoUrl(url));
   }
 
   return (

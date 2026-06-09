@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 export type UploadAuthContext = {
   userId: string;
   isAdmin: boolean;
+  role: string | null;
 };
 
 export async function getUploadAuthContext(): Promise<UploadAuthContext | null> {
@@ -21,6 +22,7 @@ export async function getUploadAuthContext(): Promise<UploadAuthContext | null> 
 
   return {
     userId: auth.user.id,
-    isAdmin: profile?.role === "admin"
+    isAdmin: profile?.role === "admin",
+    role: profile?.role ?? null
   };
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -29,18 +28,6 @@ const statusStyles: Record<VerificationStatus, string> = {
   resubmission_required: "border-amber-200 bg-amber-50 text-amber-900"
 };
 
-const APPROVED_CONGRATS_KEY = "hk_verification_approved_congrats_dismissed";
-
-export function getApprovedCongratsDismissed(): boolean {
-  if (typeof window === "undefined") return true;
-  return window.localStorage.getItem(APPROVED_CONGRATS_KEY) === "1";
-}
-
-export function dismissApprovedCongrats(): void {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(APPROVED_CONGRATS_KEY, "1");
-}
-
 export function VerificationStatusBanner({
   status,
   rejectionReason,
@@ -51,14 +38,6 @@ export function VerificationStatusBanner({
   const progressIndex = getVerificationProgressIndex(key);
   const showProgress =
     variant === "dashboard" && (key === "pending" || key === "under_review");
-  const showApprovedOnly = variant === "dashboard" && key === "verified";
-  const [showCongrats, setShowCongrats] = useState(false);
-
-  useEffect(() => {
-    if (variant === "dashboard" && key === "verified") {
-      setShowCongrats(!getApprovedCongratsDismissed());
-    }
-  }, [key, variant]);
 
   if (variant === "profile") {
     if (key === "verified") {
@@ -81,6 +60,10 @@ export function VerificationStatusBanner({
     return null;
   }
 
+  if (variant === "dashboard" && key === "verified") {
+    return null;
+  }
+
   return (
     <div className={cn("relative rounded-2xl border p-4 text-sm", statusStyles[key] ?? statusStyles.pending)}>
       {onDismiss ? (
@@ -96,14 +79,7 @@ export function VerificationStatusBanner({
 
       <div className="flex flex-wrap items-center justify-between gap-2 pr-8">
         <p className="font-medium">Verification status</p>
-        {showApprovedOnly ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white">
-            <Check className="h-3.5 w-3.5" />
-            Verified &amp; Approved
-          </span>
-        ) : (
-          <VerificationStatusBadge status={key} />
-        )}
+        <VerificationStatusBadge status={key} />
       </div>
 
       {showProgress ? (
@@ -133,13 +109,6 @@ export function VerificationStatusBanner({
         {key === "under_review" && (
           <p>An administrator is currently reviewing your verification documents.</p>
         )}
-        {showApprovedOnly && showCongrats ? <p>Your profile is now visible to families.</p> : null}
-        {showApprovedOnly && (
-          <p>
-            Congratulations! Your account has been successfully verified. You now have full access to all platform
-            features.
-          </p>
-        )}
         {key === "rejected" && (
           <>
             <p>Unfortunately, your verification request was not approved.</p>
@@ -163,11 +132,9 @@ export function VerificationStatusBanner({
         )}
       </div>
 
-      {!showApprovedOnly ? (
-        <p className="mt-3 text-xs opacity-80">
-          Current status: {VERIFICATION_STATUS_LABELS[key] ?? status}
-        </p>
-      ) : null}
+      <p className="mt-3 text-xs opacity-80">
+        Current status: {VERIFICATION_STATUS_LABELS[key] ?? status}
+      </p>
     </div>
   );
 }
