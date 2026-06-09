@@ -7,11 +7,16 @@ import type { VerificationStatus } from "@/lib/verification";
 export default async function AdminDashboardPage() {
   const supabase = createClient();
 
+  const in30Days = new Date();
+  in30Days.setDate(in30Days.getDate() + 30);
+  const expiryCutoff = in30Days.toISOString().slice(0, 10);
+
   const [
     { count: pendingCount },
     { count: underReviewCount },
     { count: bookingCount },
-    { count: newSignupCount }
+    { count: newSignupCount },
+    { count: expiryCount }
   ] = await Promise.all([
     supabase.from("nurses").select("id", { count: "exact", head: true }).eq("verification_status", "pending"),
     supabase
@@ -19,7 +24,11 @@ export default async function AdminDashboardPage() {
       .select("id", { count: "exact", head: true })
       .eq("verification_status", "under_review"),
     supabase.from("bookings").select("id", { count: "exact", head: true }),
-    supabase.from("profiles").select("id", { count: "exact", head: true })
+    supabase.from("profiles").select("id", { count: "exact", head: true }),
+    supabase
+      .from("nurses")
+      .select("id", { count: "exact", head: true })
+      .or(`prc_license_expiry.lte.${expiryCutoff},tesda_cert_expiry.lte.${expiryCutoff},nbi_expiry.lte.${expiryCutoff}`)
   ]);
 
   const cards = [
@@ -34,7 +43,12 @@ export default async function AdminDashboardPage() {
       href: "/admin/verifications?status=under_review"
     },
     { label: "Total bookings", value: bookingCount ?? 0, href: "/admin/bookings" },
-    { label: "Total signups", value: newSignupCount ?? 0, href: "/admin/nurses" }
+    { label: "Total signups", value: newSignupCount ?? 0, href: "/admin/nurses" },
+    {
+      label: "Licenses expiring (30d)",
+      value: expiryCount ?? 0,
+      href: "/admin/nurses?expiring=1"
+    }
   ];
 
   return (

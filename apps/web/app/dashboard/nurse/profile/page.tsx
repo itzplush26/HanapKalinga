@@ -30,6 +30,8 @@ import {
   type HourlyRateBandId
 } from "@/lib/rate-ranges";
 import type { VerificationStatus } from "@/lib/verification";
+import { DocumentExpiryCard } from "@/components/document-expiry-card";
+import { getDocumentExpiryItems, hasExpiredDocuments, type DocumentExpiryItem } from "@/lib/license-expiry";
 
 export default function NurseProfilePage() {
   const supabase = createClient();
@@ -41,6 +43,7 @@ export default function NurseProfilePage() {
   const [initialCredentialUrl, setInitialCredentialUrl] = useState("");
   const [initialNbiUrl, setInitialNbiUrl] = useState("");
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
+  const [documentExpiry, setDocumentExpiry] = useState<DocumentExpiryItem[]>([]);
 
   const form = useForm<NurseProfileEditValues>({
     resolver: zodResolver(nurseProfileEditSchema),
@@ -81,7 +84,7 @@ export default function NurseProfilePage() {
       const { data: nurse } = await supabase
         .from("nurses")
         .select(
-          "provider_type, verification_status, rejection_reason, submitted_at, prc_license_no, specializations, years_experience, bio, hourly_rate, hourly_rate_max, hourly_rate_range, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, prc_document_url, tesda_document_url, nbi_document_url"
+          "provider_type, verification_status, rejection_reason, submitted_at, prc_license_no, specializations, years_experience, bio, hourly_rate, hourly_rate_max, hourly_rate_range, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, prc_document_url, tesda_document_url, nbi_document_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry"
         )
         .eq("id", user.id)
         .maybeSingle();
@@ -93,6 +96,7 @@ export default function NurseProfilePage() {
         setRejectionReason(nurse?.rejection_reason ?? null);
         setSubmittedAt(nurse?.submitted_at ?? null);
         setProviderType((nurse?.provider_type ?? "nurse") as "nurse" | "caregiver");
+        setDocumentExpiry(getDocumentExpiryItems(nurse ?? {}));
         setInitialCredentialUrl(credentialUrl);
         setInitialNbiUrl(nurse?.nbi_document_url ?? "");
         setProfilePhotoUrl(
@@ -168,9 +172,17 @@ export default function NurseProfilePage() {
     const documentsChanged =
       (credentialUrl && credentialUrl !== initialCredentialUrl) ||
       (values.nbi_document_url && values.nbi_document_url !== initialNbiUrl);
+    const docsExpired = hasExpiredDocuments({
+      provider_type: providerType,
+      prc_license_expiry: documentExpiry.find((d) => d.key === "prc")?.date,
+      tesda_cert_expiry: documentExpiry.find((d) => d.key === "tesda")?.date,
+      nbi_expiry: documentExpiry.find((d) => d.key === "nbi")?.date
+    });
     const shouldResubmit =
       documentsChanged &&
-      (verificationStatus === "rejected" || verificationStatus === "resubmission_required");
+      (docsExpired ||
+        verificationStatus === "rejected" ||
+        verificationStatus === "resubmission_required");
 
     await supabase.from("nurses").upsert({
       id: user.id,
@@ -209,8 +221,16 @@ export default function NurseProfilePage() {
     setSaved(true);
   }
 
+  const documentsExpired = hasExpiredDocuments({
+    provider_type: providerType,
+    prc_license_expiry: documentExpiry.find((d) => d.key === "prc")?.date,
+    tesda_cert_expiry: documentExpiry.find((d) => d.key === "tesda")?.date,
+    nbi_expiry: documentExpiry.find((d) => d.key === "nbi")?.date
+  });
   const canReuploadDocuments =
-    verificationStatus === "rejected" || verificationStatus === "resubmission_required";
+    documentsExpired ||
+    verificationStatus === "rejected" ||
+    verificationStatus === "resubmission_required";
   const credentialPath =
     (providerType === "caregiver"
       ? form.watch("tesda_document_url")
@@ -245,7 +265,11 @@ export default function NurseProfilePage() {
             onPhotoChange={handleProfilePhotoChange}
           />
 
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          {documentExpiry.length > 0 ? (
+            <DocumentExpiryCard documents={documentExpiry} showRenewCta={false} />
+          ) : null}
+
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4" id="documents">
             <div className="space-y-1">
               <Label htmlFor="firstName">First name</Label>
               <Input id="firstName" placeholder="First name" {...form.register("firstName")} />

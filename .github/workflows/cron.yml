@@ -1,0 +1,44 @@
+name: scheduled jobs
+
+on:
+  schedule:
+    # Daily at 02:00 UTC — document expiry alerts + booking auto-complete
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scheduled:
+    name: run production cron endpoints
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check document expiry
+        env:
+          APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          test -n "${APP_URL}" || { echo "NEXT_PUBLIC_APP_URL secret is not set"; exit 1; }
+          test -n "${CRON_SECRET}" || { echo "CRON_SECRET secret is not set"; exit 1; }
+          curl -sSf -X GET "${APP_URL}/api/cron/check-expiry" \
+            -H "Authorization: Bearer ${CRON_SECRET}"
+
+      - name: Auto-complete stale bookings
+        env:
+          APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -sSf -X GET "${APP_URL}/api/cron/auto-complete" \
+            -H "Authorization: Bearer ${CRON_SECRET}"
+
+      - name: Supabase heartbeat (prevent free-tier pause)
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          test -n "${SUPABASE_URL}" || { echo "NEXT_PUBLIC_SUPABASE_URL secret is not set"; exit 1; }
+          test -n "${SUPABASE_ANON_KEY}" || { echo "NEXT_PUBLIC_SUPABASE_ANON_KEY secret is not set"; exit 1; }
+          curl -sSf -X GET "${SUPABASE_URL}/rest/v1/" \
+            -H "apikey: ${SUPABASE_ANON_KEY}"

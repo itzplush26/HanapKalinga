@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ArrowLeft, SlidersHorizontal } from "lucide-react";
 import { NurseFilters } from "@/components/nurse-filters";
+import { NurseSearchInput } from "@/components/nurse-search-input";
+import { Suspense } from "react";
 import { cn } from "@/lib/utils";
 
 interface NursesBrowseHeaderProps {
@@ -31,6 +33,9 @@ export function NursesBrowseHeader({ viewerRole }: NursesBrowseHeaderProps) {
         <ArrowLeft className="h-4 w-4" />
         {backLabel}
       </Link>
+      <Suspense fallback={null}>
+        <NurseSearchInput />
+      </Suspense>
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Browse verified nurses and caregivers</h1>

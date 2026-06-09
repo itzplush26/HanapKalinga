@@ -13,7 +13,8 @@ const ADMIN_LINKS = [
   },
   { href: "/admin/nurses", label: "Nurses", match: (path: string) => path === "/admin/nurses" },
   { href: "/admin/families", label: "Families", match: (path: string) => path === "/admin/families" },
-  { href: "/admin/bookings", label: "Bookings", match: (path: string) => path.startsWith("/admin/bookings") }
+  { href: "/admin/bookings", label: "Bookings", match: (path: string) => path.startsWith("/admin/bookings") },
+  { href: "/admin/reports", label: "Reports", match: (path: string) => path.startsWith("/admin/reports") }
 ];
 
 export function AdminNav() {

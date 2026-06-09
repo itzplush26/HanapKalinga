@@ -148,12 +148,15 @@ export function DashboardNav({ role }: DashboardNavProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 py-1 text-[10px] font-medium",
-                active ? "text-brand-700" : "text-slate-500"
+                "relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 py-1 text-[10px] font-medium min-[380px]:text-xs md:flex-row md:gap-1.5",
+                active ? "text-brand-600" : "text-slate-500"
               )}
             >
-              <Icon className={cn("h-5 w-5", active ? "fill-brand-100" : "")} strokeWidth={active ? 2.25 : 2} />
-              <span className="truncate">{item.label}</span>
+              <Icon
+                className={cn("h-5 w-5 shrink-0", active ? "text-brand-600" : "")}
+                strokeWidth={active ? 2.25 : 2}
+              />
+              <span className="hidden truncate min-[380px]:inline">{item.label}</span>
               {showBadge ? (
                 <span className="absolute right-2 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-semibold text-white">
                   {unreadTotal > 9 ? "9+" : unreadTotal}
