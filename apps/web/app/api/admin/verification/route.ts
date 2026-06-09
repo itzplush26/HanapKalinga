@@ -136,7 +136,7 @@ export async function POST(request: Request) {
       const mailResult = await sendMail({
         to: recipientEmail,
         subject: `[HanapKalinga] ${notification.title}`,
-        text: `${notification.body}\n\nSign in to view your dashboard: ${process.env.NEXT_PUBLIC_APP_URL ?? "https://hanapkalinga.ph"}/dashboard/nurse`
+        text: `${notification.body}\n\nSign in to view your dashboard: ${process.env.NEXT_PUBLIC_APP_URL ?? "https://hanapkalinga.com"}`
       });
       emailSent = mailResult.sent;
       emailError = mailResult.error;

@@ -10,6 +10,7 @@ import { MessageThread } from "@/components/message-thread";
 import { ScrollToHash } from "@/components/scroll-to-hash";
 import { formatShiftLabel } from "@/lib/booking-notes";
 import { PageHeader } from "@/components/page-header";
+import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
 
 type BookingStatus = "pending" | "accepted" | "declined" | "completed" | "cancelled";
 
@@ -31,6 +32,7 @@ export default function NurseBookingDetailPage({ params }: BookingDetailPageProp
   const [userId, setUserId] = useState<string>("");
   const [senderNames, setSenderNames] = useState<Record<string, string>>({});
   const [familyName, setFamilyName] = useState("Unknown User");
+  const [familyPhotoUrl, setFamilyPhotoUrl] = useState<string | null>(null);
   const [patientName, setPatientName] = useState<string | null>(null);
 
   useEffect(() => {
@@ -53,7 +55,10 @@ export default function NurseBookingDetailPage({ params }: BookingDetailPageProp
 
       if (bookingData && uid) {
         const [{ data: profiles }, { data: family }] = await Promise.all([
-          supabase.from("profiles").select("id, full_name").in("id", [uid, bookingData.family_id]),
+          supabase
+            .from("profiles")
+            .select("id, full_name, profile_photo_url")
+            .in("id", [uid, bookingData.family_id]),
           supabase.from("families").select("patient_name").eq("id", bookingData.family_id).maybeSingle()
         ]);
 
@@ -64,6 +69,7 @@ export default function NurseBookingDetailPage({ params }: BookingDetailPageProp
         );
         const familyProfile = (profiles ?? []).find((p) => p.id === bookingData.family_id);
         setFamilyName(familyProfile?.full_name?.trim() || "Unknown User");
+        setFamilyPhotoUrl(resolveProfilePhotoUrl(familyProfile?.profile_photo_url ?? null));
         setPatientName(family?.patient_name ?? null);
       }
     }
@@ -92,6 +98,7 @@ export default function NurseBookingDetailPage({ params }: BookingDetailPageProp
         <BookingPartyCard
           name={familyName}
           subtitle={patientName ? `Patient: ${patientName}` : "Booking request"}
+          imageUrl={familyPhotoUrl}
         />
         <div className="flex items-center justify-between">
           <div>

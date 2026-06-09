@@ -12,7 +12,10 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RegionCitySelects } from "@/components/region-city-selects";
 import { PageHeader } from "@/components/page-header";
+import { ProfilePhotoUploader } from "@/components/profile-photo-uploader";
 import { SignOutDialog } from "@/components/sign-out-dialog";
+import { resolveProfileDisplayName } from "@/lib/profile-display";
+import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
 import { z } from "zod";
 
 type FamilyProfileValues = z.infer<typeof familyProfileSchema>;
@@ -21,6 +24,7 @@ export default function FamilyProfilePage() {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [profilePhotoStored, setProfilePhotoStored] = useState<string | null>(null);
   const form = useForm<FamilyProfileValues>({
     resolver: zodResolver(familyProfileSchema),
     defaultValues: {
@@ -46,12 +50,13 @@ export default function FamilyProfilePage() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("first_name, middle_name, last_name, full_name, phone, region, city, barangay, address")
+        .select("first_name, middle_name, last_name, full_name, phone, region, city, barangay, address, profile_photo_url")
         .eq("id", user.id)
         .maybeSingle();
 
       if (profile) {
         const nameParts = profile.full_name?.split(" ") ?? [];
+        setProfilePhotoStored(profile.profile_photo_url ?? null);
         form.reset({
           firstName: profile.first_name ?? nameParts[0] ?? "",
           middleName: profile.middle_name ?? "",
@@ -90,6 +95,7 @@ export default function FamilyProfilePage() {
       city: values.city,
       barangay: values.barangay,
       address: values.address,
+      profile_photo_url: profilePhotoStored,
       role: "family"
     });
 
@@ -99,6 +105,25 @@ export default function FamilyProfilePage() {
     });
 
     setSaved(true);
+  }
+
+  const displayName = resolveProfileDisplayName({
+    first_name: form.watch("firstName"),
+    last_name: form.watch("lastName")
+  });
+
+  async function handleProfilePhotoChange(url: string) {
+    setProfilePhotoStored(url);
+
+    const { data } = await supabase.auth.getUser();
+    const user = data.user;
+    if (!user) return;
+
+    await supabase.from("profiles").upsert({
+      id: user.id,
+      profile_photo_url: url,
+      role: "family"
+    });
   }
 
   if (loading) {
@@ -120,6 +145,11 @@ export default function FamilyProfilePage() {
       <main className="px-5 py-6">
       <div className="mx-auto flex max-w-md flex-col gap-5">
         <p className="text-sm text-slate-600">Update your contact and location details.</p>
+        <ProfilePhotoUploader
+          photoUrl={resolveProfilePhotoUrl(profilePhotoStored)}
+          displayName={displayName}
+          onPhotoChange={handleProfilePhotoChange}
+        />
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1">
