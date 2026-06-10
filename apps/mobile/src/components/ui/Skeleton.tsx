@@ -11,6 +11,7 @@ interface SkeletonProps {
   width?: number;
   height?: number;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 }
 
 export function Skeleton({
@@ -18,6 +19,7 @@ export function Skeleton({
   width,
   height,
   style,
+  testID,
 }: SkeletonProps) {
   const opacity = useRef(new Animated.Value(0.3)).current;
 
@@ -42,6 +44,7 @@ export function Skeleton({
 
   return (
     <Animated.View
+      testID={testID}
       style={[
         styles.base,
         variantStyles[variant],
