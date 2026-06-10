@@ -12,16 +12,6 @@
     "test": "jest",
     "test:watch": "jest --watch"
   },
-  "jest": {
-    "preset": "@testing-library/react-native",
-    "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/$1",
-      "^@hanapkalinga/shared/(.*)$": "<rootDir>/../../packages/shared/src/$1"
-    },
-    "transformIgnorePatterns": [
-      "node_modules/(?!(@react-native|react-native|expo|@expo|@unimodules|unimodules|expo-asset|expo-constants|expo-font|expo-linking|expo-secure-store|expo-splash-screen|expo-status-bar|expo-router|@react-navigation|@supabase|react-native-url-polyfill|lucide-react-native)/)"
-    ]
-  },
   "dependencies": {
     "@expo-google-fonts/manrope": "^0.4.2",
     "@expo-google-fonts/space-grotesk": "^0.4.1",
@@ -54,6 +44,8 @@
     "@testing-library/react-native": "^14.0.0",
     "@types/jest": "^30.0.0",
     "jest": "^30.4.2",
+    "jest-environment-node": "^30.4.1",
+    "jest-mock": "^30.4.1",
     "typescript": "~5.5.4"
   }
 }
