@@ -12,6 +12,10 @@ import { establishUserSession } from "@/lib/session-lock";
 import { mapSupabaseError } from "@/lib/user-errors";
 import { familyProfileSchema, nurseProfileFormSchema, type NurseProfileFormValues } from "@/lib/validations/profile";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
+import { TermsAcceptanceModal } from "@/components/terms-acceptance-modal";
+import { hasValidTermsAcceptance, recordTermsAcceptance } from "@/lib/terms-acceptance";
+import { mapUploadErrorMessage } from "@/lib/storage/parse-upload-response";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -58,6 +62,14 @@ export default function RegisterPage() {
   const [pendingNbiFile, setPendingNbiFile] = useState<File | null>(null);
   const [docErrors, setDocErrors] = useState<{ credential?: string; nbi?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSavingRole, setIsSavingRole] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [pendingCredentials, setPendingCredentials] = useState<{
+    email: string;
+    password: string;
+    confirmPassword: string;
+  } | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const supabase = createClient();
 
   const requiredLabel = (label: string, hasError?: boolean) => (
@@ -118,6 +130,22 @@ export default function RegisterPage() {
   }
 
   async function handleCredentialsSubmit(values: {
+    email: string;
+    password: string;
+    confirmPassword: string;
+  }) {
+    setStatus(null);
+
+    if (!hasValidTermsAcceptance()) {
+      setPendingCredentials(values);
+      setShowTermsModal(true);
+      return;
+    }
+
+    await performSignUp(values);
+  }
+
+  async function performSignUp(values: {
     email: string;
     password: string;
     confirmPassword: string;
@@ -189,8 +217,30 @@ export default function RegisterPage() {
   }
 
   async function handleRoleSubmit(values: { role: string }) {
-    setRole(values.role as "family" | "nurse");
+    const userId = await resolveAuthUserId(supabase, signupUserId);
+    if (!userId) {
+      setStatus("Your session expired. Please sign up again from step 1.");
+      return;
+    }
+
+    setIsSavingRole(true);
+    setStatus(null);
+
+    const nextRole = values.role as "family" | "nurse";
+    const { error } = await supabase.from("profiles").upsert({
+      id: userId,
+      role: nextRole
+    });
+
+    if (error) {
+      setStatus(mapSupabaseError(error, "generic"));
+      setIsSavingRole(false);
+      return;
+    }
+
+    setRole(nextRole);
     setStep(3);
+    setIsSavingRole(false);
   }
 
   async function handleProfileSubmit(values: NurseProfileFormValues | Record<string, unknown>) {
@@ -282,19 +332,33 @@ export default function RegisterPage() {
     });
 
     const credentialPrefix = nurseValues.providerType === "nurse" ? "prc" : "tesda";
+    const credentialLabel =
+      nurseValues.providerType === "caregiver" ? "TESDA certificate" : "PRC license";
+
+    setUploadProgress(`Uploading ${credentialLabel}...`);
     const credentialUpload = await uploadNurseDocument(pendingCredentialFile!, credentialPrefix, userId);
     if ("error" in credentialUpload) {
-      setStatus(credentialUpload.error);
+      setStatus(mapUploadErrorMessage(credentialUpload.error));
+      setDocErrors((prev) => ({
+        ...prev,
+        credential: mapUploadErrorMessage(credentialUpload.error)
+      }));
+      setUploadProgress(null);
       setIsSubmitting(false);
       return;
     }
 
+    setUploadProgress("Uploading NBI clearance...");
     const nbiUpload = await uploadNurseDocument(pendingNbiFile!, "nbi", userId);
     if ("error" in nbiUpload) {
-      setStatus(nbiUpload.error);
+      setStatus(mapUploadErrorMessage(nbiUpload.error));
+      setDocErrors((prev) => ({ ...prev, nbi: mapUploadErrorMessage(nbiUpload.error) }));
+      setUploadProgress(null);
       setIsSubmitting(false);
       return;
     }
+
+    setUploadProgress("Saving your profile...");
 
     const credentialField =
       nurseValues.providerType === "nurse" ? "prc_document_url" : "tesda_document_url";
@@ -331,8 +395,18 @@ export default function RegisterPage() {
     await establishUserSession(supabase, userId, navigator.userAgent);
 
     clearSignupStage();
+    setUploadProgress(null);
     setIsSubmitting(false);
     window.location.href = "/dashboard/nurse";
+  }
+
+  function handleTermsAccepted() {
+    recordTermsAcceptance();
+    setShowTermsModal(false);
+    if (pendingCredentials && step === 1) {
+      void performSignUp(pendingCredentials);
+    }
+    setPendingCredentials(null);
   }
 
   useEffect(() => {
@@ -493,9 +567,14 @@ export default function RegisterPage() {
                 {credentialsForm.formState.errors.confirmPassword.message}
               </p>
             ) : null}
-            <Button type="submit" disabled={isSubmitting} className="w-full">
-              {isSubmitting ? "Creating account..." : "Continue"}
-            </Button>
+            <LoadingButton
+              type="submit"
+              loading={isSubmitting}
+              loadingText="Creating account..."
+              className="w-full"
+            >
+              Continue
+            </LoadingButton>
           </form>
         ) : null}
 
@@ -527,7 +606,9 @@ export default function RegisterPage() {
                 <p className="text-sm text-slate-600">RN, PDN, or TESDA NC II caregiver</p>
               </button>
             </div>
-            <Button type="submit">Continue</Button>
+            <LoadingButton type="submit" loading={isSavingRole} loadingText="Saving..." className="w-full">
+              Continue
+            </LoadingButton>
           </form>
         ) : null}
 
@@ -592,9 +673,14 @@ export default function RegisterPage() {
                 className={familyForm.formState.errors.address ? "border-rose-500 focus:ring-rose-500" : undefined}
               />
             </div>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Create account"}
-            </Button>
+            <LoadingButton
+              type="submit"
+              loading={isSubmitting}
+              loadingText="Setting up your account..."
+              className="w-full"
+            >
+              Create account
+            </LoadingButton>
           </form>
         ) : null}
 
@@ -750,18 +836,42 @@ export default function RegisterPage() {
               }}
             />
             {docErrors.nbi ? <p className="text-xs text-rose-600">{docErrors.nbi}</p> : null}
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Uploading documents..." : "Create account"}
-            </Button>
+            <LoadingButton
+              type="submit"
+              loading={isSubmitting}
+              loadingText="Uploading documents..."
+              className="w-full"
+            >
+              Create account
+            </LoadingButton>
+            {uploadProgress ? (
+              <p className="text-center text-xs text-text-secondary">{uploadProgress}</p>
+            ) : null}
           </form>
         ) : null}
 
-        {status ? <p className="text-sm text-slate-600">{status}</p> : null}
-        <p className="text-xs text-slate-500">
-          By continuing you agree to <Link href="/terms" className="underline">Terms</Link> and
-          <Link href="/privacy" className="underline"> Privacy Policy</Link>.
+        {status ? <p className="text-sm text-rose-600">{status}</p> : null}
+        <p className="text-xs text-text-muted">
+          By continuing you agree to our{" "}
+          <button type="button" className="underline" onClick={() => setShowTermsModal(true)}>
+            Terms of Service
+          </button>{" "}
+          and{" "}
+          <Link href="/privacy" target="_blank" className="underline">
+            Privacy Policy
+          </Link>
+          .
         </p>
       </div>
+
+      <TermsAcceptanceModal
+        open={showTermsModal}
+        onAccept={handleTermsAccepted}
+        onDecline={() => {
+          setShowTermsModal(false);
+          setPendingCredentials(null);
+        }}
+      />
     </main>
   );
 }

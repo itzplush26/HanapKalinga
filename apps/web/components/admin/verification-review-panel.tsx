@@ -285,6 +285,7 @@ export function VerificationReviewPanel({
         description="Document expiry dates will be saved and used for renewal reminders. The applicant will be verified and notified."
         confirmLabel="Approve"
         loading={loading}
+        loadingText="Verifying..."
         onConfirm={() => (canApprove ? submitAction("approve") : undefined)}
         onCancel={() => setConfirmAction(null)}
       />
@@ -295,6 +296,7 @@ export function VerificationReviewPanel({
         confirmLabel="Reject"
         destructive
         loading={loading}
+        loadingText="Rejecting..."
         onConfirm={() => submitAction("reject")}
         onCancel={() => setConfirmAction(null)}
       />

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { StarRating } from "@/components/star-rating";
-import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Textarea } from "@/components/ui/textarea";
 interface BookingReviewFormProps {
   bookingId: string;
@@ -71,9 +71,14 @@ export function BookingReviewForm({
         onChange={(event) => setComment(event.target.value)}
       />
       {error ? <p className="text-xs text-rose-600">{error}</p> : null}
-      <Button type="button" onClick={handleSubmit} disabled={submitting}>
-        {submitting ? "Submitting..." : "Submit review"}
-      </Button>
+      <LoadingButton
+        type="button"
+        loading={submitting}
+        loadingText="Submitting review..."
+        onClick={() => void handleSubmit()}
+      >
+        Submit review
+      </LoadingButton>
     </div>
   );
 }

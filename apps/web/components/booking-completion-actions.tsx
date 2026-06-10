@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -32,9 +33,9 @@ export function NurseMarkCompleteButton({ bookingId, onUpdated }: NurseMarkCompl
   }
 
   return (
-    <Button type="button" onClick={() => void markComplete()} disabled={loading}>
-      {loading ? "Saving..." : "Mark shift complete"}
-    </Button>
+    <LoadingButton type="button" loading={loading} loadingText="Submitting..." onClick={() => void markComplete()}>
+      Mark shift complete
+    </LoadingButton>
   );
 }
 

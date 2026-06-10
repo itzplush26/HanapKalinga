@@ -1,5 +1,11 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = {
+  description:
+    "Browse verified nurses and caregivers in your city. Filter by specialization, availability, and rate. Connect directly with PRC-licensed nurses and TESDA-certified caregivers across the Philippines."
+};
 import { NurseCard } from "@/components/nurse-card";
 import { NursesBrowseHeader } from "@/components/nurses-browse-header";
 import { NursesWelcomeBanner } from "@/components/nurses-welcome-banner";

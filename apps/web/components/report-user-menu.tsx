@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 
@@ -116,13 +117,15 @@ export function ReportUserMenu({ reportedUserId, reportedUserName, bookingId }: 
                   <Button type="button" variant="outline" onClick={() => setOpen(null)}>
                     Cancel
                   </Button>
-                  <Button
+                  <LoadingButton
                     type="button"
+                    loading={loading}
+                    loadingText="Submitting..."
                     onClick={() => void submitReport()}
-                    disabled={loading || description.trim().length < 50}
+                    disabled={description.trim().length < 50}
                   >
                     Submit report
-                  </Button>
+                  </LoadingButton>
                 </div>
               </>
             ) : (

@@ -38,13 +38,17 @@ export function ShareProfileButton({ profileUrl, nurseName, variant = "button" }
 
   if (variant === "card") {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-4">
-        <h3 className="text-sm font-semibold text-navy-900">Share your profile</h3>
-        <p className="mt-1 text-xs text-slate-500">
+      <div className="rounded-2xl border border-border bg-surface p-4">
+        <h3 className="text-sm font-semibold text-text-primary">Share your profile</h3>
+        <p className="mt-1 text-xs text-text-muted">
           Sharing on Facebook nursing groups can help you find more clients.
         </p>
         <div className="mt-3 flex gap-2">
-          <input readOnly value={profileUrl} className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2 text-xs" />
+          <input
+            readOnly
+            value={profileUrl}
+            className="min-w-0 flex-1 rounded-xl border border-border bg-surface-alt px-3 py-2 text-xs text-text-primary"
+          />
           <Button type="button" size="sm" variant="outline" onClick={() => void copyLink()}>
             {copied ? "Copied" : "Copy"}
           </Button>
