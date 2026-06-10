@@ -11,7 +11,7 @@ import { fetchProfileRole, resolvePostLoginDestination } from "@/lib/post-auth";
 import { APP_NAME } from "@/lib/constants";
 import { mapSupabaseError } from "@/lib/user-errors";
 import { establishUserSession } from "@/lib/session-lock";
-import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -152,9 +152,14 @@ export default function LoginPage() {
               <p className="text-xs text-rose-600">{form.formState.errors.password.message}</p>
             ) : null}
           </div>
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? "Signing in..." : "Log in"}
-          </Button>
+          <LoadingButton
+            type="submit"
+            className="w-full"
+            loading={isSubmitting}
+            loadingText="Signing in..."
+          >
+            Log in
+          </LoadingButton>
         </form>
         <p className="text-center text-xs text-slate-500">
           <Link href="/login/forgot-password" className="underline">

@@ -20,11 +20,11 @@ export const VERIFICATION_STATUS_LABELS: Record<VerificationStatus, string> = {
 };
 
 export const VERIFICATION_STATUS_BADGE_CLASSES: Record<VerificationStatus, string> = {
-  pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  under_review: "bg-blue-100 text-blue-800 border-blue-200",
-  verified: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  rejected: "bg-rose-100 text-rose-800 border-rose-200",
-  resubmission_required: "bg-amber-100 text-amber-800 border-amber-200"
+  pending: "bg-warning-bg text-warning border-warning-border",
+  under_review: "bg-info-bg text-info border-info-border",
+  verified: "bg-success-bg text-success border-success-border",
+  rejected: "bg-error-bg text-error border-error-border",
+  resubmission_required: "bg-warning-bg text-warning border-warning-border"
 };
 
 export const VERIFICATION_PROGRESS_STEPS: {
@@ -101,3 +101,7 @@ export function actionToStatus(action: VerificationAction): VerificationStatus {
 }
 
 export const ACTIVE_VERIFICATION_STATUSES: VerificationStatus[] = ["pending", "under_review"];
+
+export function isVerifiedProvider(status: VerificationStatus): boolean {
+  return status === "verified";
+}

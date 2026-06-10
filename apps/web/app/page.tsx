@@ -1,9 +1,15 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { getPostLoginPath } from "@/lib/auth-redirect";
 import type { AuthRole } from "@/lib/auth-redirect";
+
+export const metadata: Metadata = {
+  description:
+    "Find verified private duty nurses and TESDA NC II caregivers across the Philippines. Browse profiles, check availability, and connect directly. Free to use, no agency fees."
+};
 
 export default async function HomePage() {
   const supabase = createClient();

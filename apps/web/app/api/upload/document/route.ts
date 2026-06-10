@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUploadAuthContext } from "@/lib/storage/upload-auth";
 import { getDocsBucket, uploadToR2 } from "@/lib/storage/r2";
+import { getR2ConfigError } from "@/lib/storage/r2-config";
 import { MAX_DOCUMENT_SIZE_BYTES } from "@/lib/constants";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
@@ -25,6 +26,12 @@ function extensionForType(contentType: string, fileName: string): string {
 
 export async function POST(request: Request) {
   try {
+    const configError = getR2ConfigError();
+    if (configError) {
+      console.error("[upload/document] configuration error", configError);
+      return NextResponse.json({ error: configError }, { status: 503 });
+    }
+
     const auth = await getUploadAuthContext();
     if (!auth) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });

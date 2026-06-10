@@ -29,7 +29,8 @@ import {
   type DailyRateBandId,
   type HourlyRateBandId
 } from "@/lib/rate-ranges";
-import type { VerificationStatus } from "@/lib/verification";
+import { DocumentPendingRow } from "@/components/document-pending-row";
+import { isVerifiedProvider, type VerificationStatus } from "@/lib/verification";
 import { DocumentExpiryCard } from "@/components/document-expiry-card";
 import { getDocumentExpiryItems, hasExpiredDocuments, type DocumentExpiryItem } from "@/lib/license-expiry";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -237,8 +238,11 @@ export default function NurseProfilePage() {
       ? form.watch("tesda_document_url")
       : form.watch("prc_document_url")) || initialCredentialUrl;
   const nbiPath = form.watch("nbi_document_url") || initialNbiUrl;
+  const isVerified = isVerifiedProvider(verificationStatus);
   const showCredentialStatus = !!credentialPath && !canReuploadDocuments;
   const showNbiStatus = !!nbiPath && !canReuploadDocuments;
+  const credentialLabel =
+    providerType === "caregiver" ? "TESDA NC II Certificate" : "PRC License";
   const displayName = resolveProfileDisplayName({
     first_name: form.watch("firstName"),
     last_name: form.watch("lastName")
@@ -268,7 +272,7 @@ export default function NurseProfilePage() {
 
           <ThemeToggle />
 
-          {documentExpiry.length > 0 ? (
+          {isVerified && documentExpiry.length > 0 ? (
             <DocumentExpiryCard documents={documentExpiry} showRenewCta={false} />
           ) : null}
 
@@ -367,33 +371,35 @@ export default function NurseProfilePage() {
             </div>
 
             {showCredentialStatus ? (
-              <DocumentStatusRow
-                label={providerType === "caregiver" ? "TESDA NC II Certificate" : "PRC License"}
-                path={credentialPath}
-                submittedAt={submittedAt}
-              />
-            ) : providerType === "caregiver" ? (
-              <DocumentUploader
-                label="TESDA NC II Certificate"
-                pathPrefix="tesda"
-                onUploaded={(url) => form.setValue("tesda_document_url", url)}
-              />
+              <DocumentStatusRow label={credentialLabel} path={credentialPath} submittedAt={submittedAt} />
+            ) : canReuploadDocuments ? (
+              providerType === "caregiver" ? (
+                <DocumentUploader
+                  label="TESDA NC II Certificate"
+                  pathPrefix="tesda"
+                  onUploaded={(url) => form.setValue("tesda_document_url", url)}
+                />
+              ) : (
+                <DocumentUploader
+                  label="PRC License"
+                  pathPrefix="prc"
+                  onUploaded={(url) => form.setValue("prc_document_url", url)}
+                />
+              )
             ) : (
-              <DocumentUploader
-                label="PRC License"
-                pathPrefix="prc"
-                onUploaded={(url) => form.setValue("prc_document_url", url)}
-              />
+              <DocumentPendingRow label={credentialLabel} />
             )}
 
             {showNbiStatus ? (
               <DocumentStatusRow label="NBI Clearance" path={nbiPath} submittedAt={submittedAt} />
-            ) : (
+            ) : canReuploadDocuments ? (
               <DocumentUploader
                 label="NBI Clearance"
                 pathPrefix="nbi"
                 onUploaded={(url) => form.setValue("nbi_document_url", url)}
               />
+            ) : (
+              <DocumentPendingRow label="NBI Clearance" />
             )}
 
             {saved ? <p className="text-sm text-emerald-700">Profile saved successfully.</p> : null}

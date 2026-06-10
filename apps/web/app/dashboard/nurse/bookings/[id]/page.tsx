@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { BookingStatusBadge } from "@/components/booking-status-badge";
 import { BookingDetailsCard } from "@/components/booking-details-card";
 import { BookingPartyCard } from "@/components/booking-party-card";
-import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { NurseMarkCompleteButton } from "@/components/booking-completion-actions";
 import { CancelBookingButton } from "@/components/cancel-booking-button";
 import { ReportUserMenu } from "@/components/report-user-menu";
@@ -46,6 +46,8 @@ export default function NurseBookingDetailPage({ params }: BookingDetailPageProp
   const [familyName, setFamilyName] = useState("Unknown User");
   const [familyPhotoUrl, setFamilyPhotoUrl] = useState<string | null>(null);
   const [patientName, setPatientName] = useState<string | null>(null);
+  const [accepting, setAccepting] = useState(false);
+  const [declining, setDeclining] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -98,13 +100,23 @@ export default function NurseBookingDetailPage({ params }: BookingDetailPageProp
   }
 
   async function handleAccept() {
-    await fetch(`/api/bookings/${params.id}/accept`, { method: "POST" });
-    await reloadBooking();
+    setAccepting(true);
+    try {
+      await fetch(`/api/bookings/${params.id}/accept`, { method: "POST" });
+      await reloadBooking();
+    } finally {
+      setAccepting(false);
+    }
   }
 
   async function handleDecline() {
-    await fetch(`/api/bookings/${params.id}/decline`, { method: "POST" });
-    await reloadBooking();
+    setDeclining(true);
+    try {
+      await fetch(`/api/bookings/${params.id}/decline`, { method: "POST" });
+      await reloadBooking();
+    } finally {
+      setDeclining(false);
+    }
   }
 
   if (!booking) {
@@ -147,12 +159,23 @@ export default function NurseBookingDetailPage({ params }: BookingDetailPageProp
         </div>
         {booking.status === "pending" ? (
           <div className="flex gap-2">
-            <Button type="button" onClick={() => void handleAccept()}>
+            <LoadingButton
+              type="button"
+              loading={accepting}
+              loadingText="Accepting..."
+              onClick={() => void handleAccept()}
+            >
               Accept
-            </Button>
-            <Button type="button" variant="outline" onClick={() => void handleDecline()}>
+            </LoadingButton>
+            <LoadingButton
+              type="button"
+              variant="outline"
+              loading={declining}
+              loadingText="Declining..."
+              onClick={() => void handleDecline()}
+            >
               Decline
-            </Button>
+            </LoadingButton>
           </div>
         ) : null}
         {canMarkComplete ? (

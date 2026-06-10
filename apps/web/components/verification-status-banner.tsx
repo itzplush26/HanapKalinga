@@ -21,11 +21,11 @@ interface VerificationStatusBannerProps {
 }
 
 const statusStyles: Record<VerificationStatus, string> = {
-  pending: "border-yellow-200 bg-yellow-50 text-yellow-900",
-  under_review: "border-blue-200 bg-blue-50 text-blue-900",
-  verified: "border-emerald-200 bg-emerald-50 text-emerald-900",
-  rejected: "border-rose-200 bg-rose-50 text-rose-900",
-  resubmission_required: "border-amber-200 bg-amber-50 text-amber-900"
+  pending: "border-warning-border bg-warning-bg text-text-primary",
+  under_review: "border-info-border bg-info-bg text-text-primary",
+  verified: "border-success-border bg-success-bg text-text-primary",
+  rejected: "border-error-border bg-error-bg text-text-primary",
+  resubmission_required: "border-warning-border bg-warning-bg text-text-primary"
 };
 
 export function VerificationStatusBanner({
@@ -51,7 +51,7 @@ export function VerificationStatusBanner({
 
     if (key === "pending" || key === "under_review") {
       return (
-        <div className="inline-flex items-center rounded-full bg-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700">
+        <div className="inline-flex items-center rounded-full bg-surface-alt px-3 py-1.5 text-sm font-medium text-text-secondary">
           Verification Pending
         </div>
       );
@@ -90,10 +90,10 @@ export function VerificationStatusBanner({
               className={cn(
                 "rounded-full px-3 py-1 text-xs font-medium",
                 index < progressIndex
-                  ? "bg-emerald-100 text-emerald-800"
+                  ? "bg-success-bg text-success"
                   : index === progressIndex
                     ? VERIFICATION_STATUS_BADGE_CLASSES[key === "under_review" ? "under_review" : "pending"]
-                    : "bg-white/70 text-slate-400"
+                    : "bg-surface-alt text-text-muted"
               )}
             >
               {step.label}

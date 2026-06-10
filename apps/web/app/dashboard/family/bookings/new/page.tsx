@@ -16,6 +16,7 @@ import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
 import { AvailableDateInput } from "@/components/available-date-input";
 import { mapSupabaseError } from "@/lib/user-errors";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -83,6 +84,7 @@ function BookingForm() {
   const [hasAvailabilitySet, setHasAvailabilitySet] = useState(false);
   const [submitted, setSubmitted] = useState<SuccessState | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<BookingRequestValues>({
     resolver: zodResolver(bookingRequestSchema),
@@ -165,9 +167,13 @@ function BookingForm() {
 
   async function handleSubmit(values: BookingRequestValues) {
     setSubmitError(null);
+    setIsSubmitting(true);
     const { data } = await supabase.auth.getUser();
     const user = data.user;
-    if (!user) return;
+    if (!user) {
+      setIsSubmitting(false);
+      return;
+    }
 
     const structuredRequest = {
       patientCondition: values.patientCondition,
@@ -191,6 +197,7 @@ function BookingForm() {
     const payload = (await response.json()) as { bookingId?: string; error?: string };
     if (!response.ok || !payload.bookingId) {
       setSubmitError(payload.error ?? "Failed to create booking.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -200,6 +207,7 @@ function BookingForm() {
       requestedDate: values.requestedDate,
       shift: values.shift
     });
+    setIsSubmitting(false);
   }
 
   const selectedSkills = form.watch("requiredSkills");
@@ -333,9 +341,9 @@ function BookingForm() {
         {...form.register("additionalInstructions")}
       />
       {submitError ? <p className="text-sm text-rose-600">{submitError}</p> : null}
-      <Button type="submit" disabled={!nursePreview}>
+      <LoadingButton type="submit" loading={isSubmitting} loadingText="Sending request..." disabled={!nursePreview}>
         Send booking request
-      </Button>
+      </LoadingButton>
     </form>
   );
 }

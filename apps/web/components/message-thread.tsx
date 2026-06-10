@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +32,7 @@ export function MessageThread({
 }: MessageThreadProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const supabase = createClient();
 
@@ -100,6 +101,7 @@ export function MessageThread({
 
     setMessages((prev) => [...prev, optimisticMessage]);
     setDraft("");
+    setSending(true);
 
     const { data, error } = await supabase
       .from("messages")
@@ -114,8 +116,11 @@ export function MessageThread({
     if (error || !data) {
       setMessages((prev) => prev.filter((message) => message.id !== optimisticId));
       setDraft(content);
+      setSending(false);
       return;
     }
+
+    setSending(false);
 
     setMessages((prev) => {
       const withoutOptimistic = prev.filter((message) => message.id !== optimisticId);
@@ -169,9 +174,9 @@ export function MessageThread({
               }
             }}
           />
-          <Button type="button" onClick={() => void handleSend()}>
+          <LoadingButton type="button" loading={sending} loadingText="Sending..." onClick={() => void handleSend()}>
             Send
-          </Button>
+          </LoadingButton>
         </div>
       )}
     </div>

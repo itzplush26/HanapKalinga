@@ -1,4 +1,5 @@
 import { validateDocumentFile } from "@/lib/storage/validate-document";
+import { mapUploadErrorMessage, parseUploadJsonResponse } from "@/lib/storage/parse-upload-response";
 
 export async function uploadDocumentViaApi(
   file: File,
@@ -7,7 +8,7 @@ export async function uploadDocumentViaApi(
 ): Promise<{ path: string } | { error: string }> {
   const validationError = validateDocumentFile(file);
   if (validationError) {
-    return { error: validationError };
+    return { error: mapUploadErrorMessage(validationError) };
   }
 
   const formData = new FormData();
@@ -15,15 +16,21 @@ export async function uploadDocumentViaApi(
   formData.append("documentType", documentType);
   formData.append("nurseId", nurseId);
 
-  const response = await fetch("/api/upload/document", {
-    method: "POST",
-    body: formData
-  });
+  let response: Response;
+  try {
+    response = await fetch("/api/upload/document", {
+      method: "POST",
+      body: formData
+    });
+  } catch (error) {
+    console.error("[upload/document] network error", error);
+    return { error: "Upload failed — please check your connection and try again." };
+  }
 
-  const payload = (await response.json()) as { path?: string; error?: string };
+  const payload = await parseUploadJsonResponse(response);
 
   if (!response.ok || !payload.path) {
-    return { error: payload.error ?? "Upload failed." };
+    return { error: mapUploadErrorMessage(payload.error ?? "Upload failed.") };
   }
 
   return { path: payload.path };
@@ -34,22 +41,34 @@ export async function uploadPhotoViaApi(
 ): Promise<{ url: string; path: string } | { error: string }> {
   const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
   if (!allowedTypes.includes(file.type)) {
-    return { error: "Use a JPG, PNG, or WebP image." };
+    return { error: "Invalid file type — please upload a PDF or image." };
   }
 
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch("/api/upload/photo", {
-    method: "POST",
-    body: formData
-  });
-
-  const payload = (await response.json()) as { url?: string; path?: string; error?: string };
-
-  if (!response.ok || !payload.url) {
-    return { error: payload.error ?? "Upload failed." };
+  let response: Response;
+  try {
+    response = await fetch("/api/upload/photo", {
+      method: "POST",
+      body: formData
+    });
+  } catch (error) {
+    console.error("[upload/photo] network error", error);
+    return { error: "Upload failed — please check your connection and try again." };
   }
 
-  return { url: payload.url, path: payload.path! };
+  const raw = await response.text();
+  let payload: { url?: string; path?: string; error?: string };
+  try {
+    payload = JSON.parse(raw) as { url?: string; path?: string; error?: string };
+  } catch {
+    return { error: mapUploadErrorMessage("Upload failed — please check your file and try again.") };
+  }
+
+  if (!response.ok || !payload.url) {
+    return { error: mapUploadErrorMessage(payload.error ?? "Upload failed.") };
+  }
+
+  return { url: payload.url, path: payload.path ?? payload.url };
 }

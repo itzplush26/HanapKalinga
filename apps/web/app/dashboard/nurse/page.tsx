@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { Calendar } from "lucide-react";
-import type { VerificationStatus } from "@/lib/verification";
+import { isVerifiedProvider, type VerificationStatus } from "@/lib/verification";
 import { appUrl } from "@/lib/email/templates/layout";
 import { DocumentExpiryCard } from "@/components/document-expiry-card";
 import { getDocumentExpiryItems } from "@/lib/license-expiry";
@@ -42,10 +42,12 @@ export default async function NurseDashboardPage() {
     .order("created_at", { ascending: false })
     .limit(3);
 
+  const verificationStatus = (nurse?.verification_status ?? "pending") as VerificationStatus;
+  const isVerified = isVerifiedProvider(verificationStatus);
   const documentExpiry = getDocumentExpiryItems(nurse ?? {});
-  const showExpiryCard = documentExpiry.some(
-    (item) => item.status === "expired" || item.status === "expiring_soon"
-  );
+  const showExpiryCard =
+    isVerified &&
+    documentExpiry.some((item) => item.status === "expired" || item.status === "expiring_soon");
 
   const profileUrl = nurse?.profile_slug
     ? appUrl(`/nurses/${nurse.profile_slug}`)
@@ -57,10 +59,7 @@ export default async function NurseDashboardPage() {
       <main className="px-5 py-6">
         <div className="mx-auto flex max-w-md flex-col gap-6">
           <p className="text-sm text-slate-600">Manage your profile, verification status, and bookings.</p>
-          <VerificationStatusBanner
-            status={(nurse?.verification_status ?? "pending") as VerificationStatus}
-            rejectionReason={nurse?.rejection_reason}
-          />
+          <VerificationStatusBanner status={verificationStatus} rejectionReason={nurse?.rejection_reason} />
           <NurseOnboardingChecklist
             data={{
               hasPhoto: Boolean(profile?.profile_photo_url),
@@ -71,11 +70,11 @@ export default async function NurseDashboardPage() {
                   nurse.hourly_rate_range
               ),
               hasAvailability: (availability?.length ?? 0) > 0,
-              verificationStatus: (nurse?.verification_status ?? "pending") as VerificationStatus,
+              verificationStatus,
               rejectionReason: nurse?.rejection_reason
             }}
           />
-          {nurse?.profile_slug || profile?.full_name ? (
+          {isVerified && (nurse?.profile_slug || profile?.full_name) ? (
             <ShareProfileButton profileUrl={profileUrl} nurseName={profile?.full_name ?? "Nurse"} variant="card" />
           ) : null}
           {showExpiryCard ? <DocumentExpiryCard documents={documentExpiry} /> : null}
