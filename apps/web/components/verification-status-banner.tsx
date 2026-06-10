@@ -1,16 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Check, X } from "lucide-react";
+import { Check, Clock, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  VERIFICATION_STATUS_BADGE_CLASSES,
   VERIFICATION_STATUS_LABELS,
   VERIFICATION_PROGRESS_STEPS,
   getVerificationProgressIndex,
   type VerificationStatus
 } from "@/lib/verification";
-import { VerificationStatusBadge } from "@/components/verification-status-badge";
 import { Button } from "@/components/ui/button";
 
 interface VerificationStatusBannerProps {
@@ -20,13 +18,70 @@ interface VerificationStatusBannerProps {
   onDismiss?: () => void;
 }
 
-const statusStyles: Record<VerificationStatus, string> = {
-  pending: "border-warning-border bg-warning-bg text-text-primary",
-  under_review: "border-info-border bg-info-bg text-text-primary",
-  verified: "border-success-border bg-success-bg text-text-primary",
-  rejected: "border-error-border bg-error-bg text-text-primary",
-  resubmission_required: "border-warning-border bg-warning-bg text-text-primary"
+const cardAccentClass: Partial<Record<VerificationStatus, string>> = {
+  pending: "verification-status-card--pending",
+  under_review: "verification-status-card--under_review",
+  rejected: "verification-status-card--rejected",
+  resubmission_required: "verification-status-card--resubmission_required"
 };
+
+function VerificationProgressSteps({ status }: { status: VerificationStatus }) {
+  const progressIndex = getVerificationProgressIndex(status);
+
+  function pillClass(index: number): string {
+    const isApprovedStep = index === VERIFICATION_PROGRESS_STEPS.length - 1;
+    if (isApprovedStep && progressIndex >= index) {
+      return "verification-step-pill--approved";
+    }
+    if (index < progressIndex) {
+      return "verification-step-pill--completed";
+    }
+    if (index === progressIndex) {
+      return "verification-step-pill--active";
+    }
+    return "verification-step-pill--future";
+  }
+
+  function pillIcon(index: number) {
+    const isApprovedStep = index === VERIFICATION_PROGRESS_STEPS.length - 1;
+    if (isApprovedStep && progressIndex >= index) {
+      return <Check className="h-3 w-3 shrink-0" aria-hidden />;
+    }
+    if (index < progressIndex) {
+      return <Check className="h-3 w-3 shrink-0" aria-hidden />;
+    }
+    if (index === progressIndex) {
+      return status === "under_review" ? (
+        <Loader2 className="h-3 w-3 shrink-0 animate-spin" aria-hidden />
+      ) : (
+        <Clock className="h-3 w-3 shrink-0" aria-hidden />
+      );
+    }
+    return null;
+  }
+
+  return (
+    <ol className="mt-4 flex flex-wrap items-center gap-y-2">
+      {VERIFICATION_PROGRESS_STEPS.map((step, index) => (
+        <li key={step.key} className="flex items-center">
+          {index > 0 ? (
+            <span
+              className={cn(
+                "verification-step-connector",
+                index <= progressIndex && "verification-step-connector--completed"
+              )}
+              aria-hidden
+            />
+          ) : null}
+          <span className={cn("verification-step-pill", pillClass(index))}>
+            {pillIcon(index)}
+            {step.label}
+          </span>
+        </li>
+      ))}
+    </ol>
+  );
+}
 
 export function VerificationStatusBanner({
   status,
@@ -35,14 +90,12 @@ export function VerificationStatusBanner({
   onDismiss
 }: VerificationStatusBannerProps) {
   const key = status as VerificationStatus;
-  const progressIndex = getVerificationProgressIndex(key);
-  const showProgress =
-    variant === "dashboard" && (key === "pending" || key === "under_review");
+  const showProgress = variant === "dashboard" && (key === "pending" || key === "under_review");
 
   if (variant === "profile") {
     if (key === "verified") {
       return (
-        <div className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white">
+        <div className="inline-flex items-center gap-2 rounded-full bg-success px-3 py-1.5 text-sm font-medium text-white">
           <Check className="h-4 w-4" />
           Verified
         </div>
@@ -65,12 +118,17 @@ export function VerificationStatusBanner({
   }
 
   return (
-    <div className={cn("relative rounded-2xl border p-4 text-sm", statusStyles[key] ?? statusStyles.pending)}>
+    <div
+      className={cn(
+        "verification-status-card relative",
+        cardAccentClass[key] ?? "verification-status-card--pending"
+      )}
+    >
       {onDismiss ? (
         <button
           type="button"
           onClick={onDismiss}
-          className="absolute right-3 top-3 rounded-full p-1 text-slate-500 hover:bg-white/60"
+          className="absolute right-3 top-3 rounded-full p-1 text-text-muted hover:bg-surface-alt"
           aria-label="Dismiss notification"
         >
           <X className="h-4 w-4" />
@@ -79,30 +137,12 @@ export function VerificationStatusBanner({
 
       <div className="flex flex-wrap items-center justify-between gap-2 pr-8">
         <p className="font-medium">Verification status</p>
-        <VerificationStatusBadge status={key} />
+        <span className="verification-status-badge">{VERIFICATION_STATUS_LABELS[key] ?? status}</span>
       </div>
 
-      {showProgress ? (
-        <ol className="mt-4 flex flex-wrap gap-2">
-          {VERIFICATION_PROGRESS_STEPS.map((step, index) => (
-            <li
-              key={step.key}
-              className={cn(
-                "rounded-full px-3 py-1 text-xs font-medium",
-                index < progressIndex
-                  ? "bg-success-bg text-success"
-                  : index === progressIndex
-                    ? VERIFICATION_STATUS_BADGE_CLASSES[key === "under_review" ? "under_review" : "pending"]
-                    : "bg-surface-alt text-text-muted"
-              )}
-            >
-              {step.label}
-            </li>
-          ))}
-        </ol>
-      ) : null}
+      {showProgress ? <VerificationProgressSteps status={key} /> : null}
 
-      <div className="mt-3 space-y-2">
+      <div className="mt-3 space-y-2 text-text-secondary">
         {key === "pending" && (
           <p>Your documents are pending review. This usually takes 1–3 business days.</p>
         )}
@@ -132,7 +172,7 @@ export function VerificationStatusBanner({
         )}
       </div>
 
-      <p className="mt-3 text-xs opacity-80">
+      <p className="mt-3 text-xs text-text-muted">
         Current status: {VERIFICATION_STATUS_LABELS[key] ?? status}
       </p>
     </div>

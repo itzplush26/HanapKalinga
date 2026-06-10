@@ -40,6 +40,22 @@
   --color-border: #e2e8f0;
   --color-border-focus: #0d9488;
 
+  /* Verification status card (Section 17) */
+  --color-verification-badge-bg: #fef3c7;
+  --color-verification-badge-text: #92400e;
+  --color-verification-badge-border: #fcd34d;
+  --color-verification-step-completed-bg: #ccfbf1;
+  --color-verification-step-completed-text: #0f766e;
+  --color-verification-step-completed-border: #0d9488;
+  --color-verification-step-active-bg: #fef3c7;
+  --color-verification-step-active-text: #92400e;
+  --color-verification-step-active-border: #fcd34d;
+  --color-verification-step-future-text: #94a3b8;
+  --color-verification-step-future-border: #cbd5e1;
+  --color-verification-step-approved-bg: #d1fae5;
+  --color-verification-step-approved-text: #065f46;
+  --color-verification-step-approved-border: #059669;
+
   /* Nav */
   --color-nav-bg: #ffffff;
   --color-nav-active: #0d9488;
@@ -82,6 +98,21 @@ html.dark {
 
   --color-border: #2d4a63;
   --color-border-focus: #14b8a6;
+
+  --color-verification-badge-bg: #2d2000;
+  --color-verification-badge-text: #fbbf24;
+  --color-verification-badge-border: color-mix(in srgb, #fbbf24 30%, transparent);
+  --color-verification-step-completed-bg: #134e4a;
+  --color-verification-step-completed-text: #14b8a6;
+  --color-verification-step-completed-border: #14b8a6;
+  --color-verification-step-active-bg: #2d2000;
+  --color-verification-step-active-text: #fbbf24;
+  --color-verification-step-active-border: #fbbf24;
+  --color-verification-step-future-text: #64748b;
+  --color-verification-step-future-border: #2d4a63;
+  --color-verification-step-approved-bg: #064e3b;
+  --color-verification-step-approved-text: #34d399;
+  --color-verification-step-approved-border: #34d399;
 
   --color-nav-bg: #162636;
   --color-nav-active: #14b8a6;

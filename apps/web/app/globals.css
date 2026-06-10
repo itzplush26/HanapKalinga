@@ -50,3 +50,65 @@ main {
     background-color: color-mix(in srgb, var(--color-surface) 90%, transparent);
   }
 }
+
+@layer components {
+  .verification-status-card {
+    @apply rounded-2xl border border-border bg-surface p-4 text-sm text-text-primary;
+    border-left-width: 3px;
+  }
+
+  .verification-status-card--pending,
+  .verification-status-card--under_review,
+  .verification-status-card--resubmission_required {
+    border-left-color: var(--color-warning);
+  }
+
+  .verification-status-card--rejected {
+    border-left-color: var(--color-error);
+  }
+
+  .verification-status-badge {
+    @apply inline-flex items-center rounded-full border px-2.5 py-0.5 font-medium;
+    font-size: 11px;
+    background-color: var(--color-verification-badge-bg);
+    color: var(--color-verification-badge-text);
+    border-color: var(--color-verification-badge-border);
+  }
+
+  .verification-step-pill {
+    @apply inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-200;
+  }
+
+  .verification-step-pill--completed {
+    background-color: var(--color-verification-step-completed-bg);
+    color: var(--color-verification-step-completed-text);
+    border-color: var(--color-verification-step-completed-border);
+  }
+
+  .verification-step-pill--active {
+    background-color: var(--color-verification-step-active-bg);
+    color: var(--color-verification-step-active-text);
+    border-color: var(--color-verification-step-active-border);
+  }
+
+  .verification-step-pill--future {
+    @apply bg-transparent;
+    color: var(--color-verification-step-future-text);
+    border-color: var(--color-verification-step-future-border);
+  }
+
+  .verification-step-pill--approved {
+    background-color: var(--color-verification-step-approved-bg);
+    color: var(--color-verification-step-approved-text);
+    border-color: var(--color-verification-step-approved-border);
+  }
+
+  .verification-step-connector {
+    @apply h-px w-5 shrink-0;
+    background-color: var(--color-border);
+  }
+
+  .verification-step-connector--completed {
+    background-color: var(--color-primary);
+  }
+}
