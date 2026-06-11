@@ -12,6 +12,7 @@ import {
   Manrope_600SemiBold,
 } from '@expo-google-fonts/manrope';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
+import { AuthProvider } from '../src/contexts/AuthContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -37,15 +38,17 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <StatusBar style="dark" />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" options={{ title: 'Home' }} />
-        <Stack.Screen name="(auth)" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="(public)" />
-        <Stack.Screen name="(family)" />
-        <Stack.Screen name="(nurse)" />
-        <Stack.Screen name="(admin)" />
-      </Stack>
+      <AuthProvider>
+        <StatusBar style="dark" />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" options={{ title: 'Home' }} />
+          <Stack.Screen name="(auth)" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="(public)" />
+          <Stack.Screen name="(family)" />
+          <Stack.Screen name="(nurse)" />
+          <Stack.Screen name="(admin)" />
+        </Stack>
+      </AuthProvider>
     </ErrorBoundary>
   );
 }
