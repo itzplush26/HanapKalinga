@@ -9,7 +9,7 @@ interface UseSupabaseQueryResult<T> {
 }
 
 export function useSupabaseQuery<T>(
-  queryBuilder: (() => PostgrestFilterBuilder<any, any, T[], unknown>) | null,
+  queryBuilder: (() => PostgrestFilterBuilder<any, any, any, any>) | null,
   deps: unknown[] = []
 ): UseSupabaseQueryResult<T> {
   const [data, setData] = useState<T | null>(null);

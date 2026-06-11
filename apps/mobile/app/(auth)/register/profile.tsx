@@ -93,7 +93,7 @@ export default function RegisterProfileScreen() {
         city: city || null,
         barangay: barangay || null,
         address: address.trim() || null,
-      });
+      } as any);
 
       if (profileError) {
         setError(profileError.message);
@@ -106,7 +106,7 @@ export default function RegisterProfileScreen() {
         const { error: familyError } = await supabase.from('families').upsert({
           id: user.id,
           patient_name: patientName.trim() || null,
-        });
+        } as any);
 
         if (familyError) {
           setError(familyError.message);
@@ -156,7 +156,7 @@ export default function RegisterProfileScreen() {
           bio: bio.trim() || null,
           hourly_rate: hourlyRate ? parseInt(hourlyRate, 10) : null,
           daily_rate_12hr: dailyRate ? parseInt(dailyRate, 10) : null,
-        });
+        } as any);
 
         if (nurseError) {
           setError(nurseError.message);

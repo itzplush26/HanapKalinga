@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { loginSchema } from '@hanapkalinga/shared/validations';
+import type { UserRole } from '@hanapkalinga/shared/types';
 import { supabase } from '../../src/lib/supabase';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { ScreenWrapper } from '../../src/components/ScreenWrapper';
@@ -56,7 +57,7 @@ export default function LoginScreen() {
           .single();
 
         if (profile) {
-          router.replace(getRedirectPath(profile.role));
+          router.replace(getRedirectPath((profile as { role: UserRole }).role));
         } else {
           router.replace('/');
         }

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { APP_NAME } from '@hanapkalinga/shared/constants';
 import { useAuth } from '../src/contexts/AuthContext';
 import { ScreenWrapper } from '../src/components/ScreenWrapper';
@@ -17,7 +17,7 @@ export default function LandingScreen() {
   useEffect(() => {
     if (isLoading) return;
     if (user && profile) {
-      const redirectMap: Record<string, string> = {
+      const redirectMap: Record<string, Href> = {
         family: '/(family)',
         nurse: '/(nurse)',
         admin: '/(admin)',

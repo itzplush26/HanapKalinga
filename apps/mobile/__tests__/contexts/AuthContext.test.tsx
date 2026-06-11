@@ -27,9 +27,9 @@ function TestConsumer() {
       <Text testID="loading">{isLoading ? 'loading' : 'loaded'}</Text>
       <Text testID="user">{user?.id ?? 'null'}</Text>
       <Text testID="profile">{profile?.role ?? 'null'}</Text>
-      <Text testID="getRedirectPath-family">{getRedirectPath('family')}</Text>
-      <Text testID="getRedirectPath-nurse">{getRedirectPath('nurse')}</Text>
-      <Text testID="getRedirectPath-admin">{getRedirectPath('admin')}</Text>
+      <Text testID="getRedirectPath-family">{getRedirectPath('family') as string}</Text>
+      <Text testID="getRedirectPath-nurse">{getRedirectPath('nurse') as string}</Text>
+      <Text testID="getRedirectPath-admin">{getRedirectPath('admin') as string}</Text>
     </>
   );
 }

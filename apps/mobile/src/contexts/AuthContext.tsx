@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import type { Href } from 'expo-router';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
 import type { Profile, UserRole } from '@hanapkalinga/shared/types';
@@ -9,7 +10,7 @@ interface AuthContextValue {
   isLoading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
-  getRedirectPath: (role: UserRole) => string;
+  getRedirectPath: (role: UserRole) => Href;
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -18,7 +19,7 @@ const AuthContext = createContext<AuthContextValue>({
   isLoading: true,
   signOut: async () => {},
   refreshProfile: async () => {},
-  getRedirectPath: () => '/',
+  getRedirectPath: () => '/' as Href,
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -53,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
   }, []);
 
-  const getRedirectPath = useCallback((role: UserRole) => {
+  const getRedirectPath = useCallback((role: UserRole): Href => {
     switch (role) {
       case 'family': return '/(family)';
       case 'nurse': return '/(nurse)';
