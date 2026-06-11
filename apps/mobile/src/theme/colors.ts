@@ -1,0 +1,35 @@
+export const colors = {
+  brand: {
+    50: "#f0f7ff",
+    100: "#dcecff",
+    200: "#b8d9ff",
+    300: "#85beff",
+    400: "#4a98ff",
+    500: "#1f6fff",
+    600: "#1455e0",
+    700: "#113fb3",
+    800: "#0f2f85",
+    900: "#0d2466",
+  },
+  ink: "#0f172a",
+  body: "#334155",
+  muted: "#64748b",
+  hairline: "#e2e8f0",
+  canvas: "#ffffff",
+  surface: {
+    soft: "#f0f7ff",
+    strong: "#f1f5f9",
+    dark: "#0d2466",
+  },
+  signature: {
+    cream: "#f0f7ff",
+    yellow: "#fde68a",
+    mustard: "#fbbf24",
+  },
+  semantic: {
+    link: "#1f6fff",
+    info: "#1f6fff",
+    success: "#059669",
+    error: "#dc2626",
+  },
+} as const;
