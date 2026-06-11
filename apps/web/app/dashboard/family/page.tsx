@@ -31,30 +31,31 @@ export default async function FamilyDashboardPage({ searchParams }: FamilyDashbo
   ]);
 
   const completedIds = (completedBookings ?? []).map((b) => b.id);
-  const { data: existingReviews } = completedIds.length
-    ? await supabase.from("reviews").select("booking_id").in("booking_id", completedIds)
-    : { data: [] };
+  const [{ data: existingReviews }, { data: completedWithNurses }] = await Promise.all([
+    completedIds.length
+      ? supabase.from("reviews").select("booking_id").in("booking_id", completedIds)
+      : Promise.resolve({ data: [] }),
+    completedIds.length
+      ? supabase
+          .from("bookings")
+          .select("id, status, requested_date, nurse_id, nurses(profile_photo_url, profiles(full_name))")
+          .in("id", completedIds)
+      : Promise.resolve({ data: [] })
+  ]);
 
   const reviewedIds = new Set((existingReviews ?? []).map((r) => r.booking_id));
 
-  const pendingReviewBookings = (completedBookings ?? []).filter((b) => !reviewedIds.has(b.id));
-
-  const nurseIds = [...new Set(pendingReviewBookings.map((b) => b.nurse_id))];
-  const { data: nurses } = nurseIds.length
-    ? await supabase
-        .from("nurses")
-        .select("id, profile_photo_url, profiles(full_name)")
-        .in("id", nurseIds)
-    : { data: [] };
+  const pendingReviewBookings = (completedWithNurses ?? []).filter((b) => !reviewedIds.has(b.id));
 
   const nurseById = new Map(
-    (nurses ?? []).map((n) => {
-      const profile = Array.isArray(n.profiles) ? n.profiles[0] : n.profiles;
+    pendingReviewBookings.map((booking) => {
+      const nurse = Array.isArray(booking.nurses) ? booking.nurses[0] : booking.nurses;
+      const profile = Array.isArray(nurse?.profiles) ? nurse?.profiles[0] : nurse?.profiles;
       return [
-        n.id as string,
+        booking.nurse_id as string,
         {
           name: profile?.full_name?.trim() || "Nurse",
-          photo: resolveProfilePhotoUrl(n.profile_photo_url)
+          photo: resolveProfilePhotoUrl(nurse?.profile_photo_url)
         }
       ];
     })

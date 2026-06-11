@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { getCachedVerifiedNurses } from "@/lib/nurses/cached-browse";
 
 export const metadata: Metadata = {
   description:
@@ -54,21 +55,20 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
     viewerRole = viewerProfile?.role ?? null;
   }
 
-  let nursesQuery = supabase
-    .from("nurses")
-    .select(
-      "id, provider_type, specializations, years_experience, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry, profiles(full_name, first_name, last_name, city, region, barangay)"
-    )
-    .eq("verification_status", "verified");
-
-  if (searchQuery) {
-    nursesQuery = nursesQuery.textSearch("search_vector", searchQuery, {
-      type: "websearch",
-      config: "english"
-    });
-  }
-
-  const { data: nurses } = await nursesQuery;
+  const nurses = searchQuery
+    ? (
+        await supabase
+          .from("nurses")
+          .select(
+            "id, provider_type, specializations, years_experience, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry, profiles(full_name, first_name, last_name, city, region, barangay)"
+          )
+          .eq("verification_status", "verified")
+          .textSearch("search_vector", searchQuery, {
+            type: "websearch",
+            config: "english"
+          })
+      ).data ?? []
+    : await getCachedVerifiedNurses();
 
   const { data: blockedRows } = auth.user
     ? await supabase.from("user_blocks").select("blocked_id").eq("blocker_id", auth.user.id)

@@ -24,13 +24,9 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { uploadNurseDocument } from "@/lib/upload-nurse-document";
 import { RegionCitySelects } from "@/components/region-city-selects";
 import { RateRangeSelect } from "@/components/rate-range-select";
-import {
-  resolveDailyRateBandValues,
-  resolveHourlyRateBandValues,
-  type DailyRateBandId,
-  type HourlyRateBandId
-} from "@/lib/rate-ranges";
+import type { DailyRateBandId, HourlyRateBandId } from "@/lib/rate-ranges";
 import { PROVIDER_SPECIALIZATIONS } from "@/lib/constants";
+import { ensureNurseProfile } from "@/lib/nurse/ensure-profile";
 
 const SIGNUP_TOTAL_STEPS = 4;
 
@@ -227,15 +223,26 @@ export default function RegisterPage() {
     setStatus(null);
 
     const nextRole = values.role as "family" | "nurse";
-    const { error } = await supabase.from("profiles").upsert({
+    const { error: profileError } = await supabase.from("profiles").upsert({
       id: userId,
       role: nextRole
     });
 
-    if (error) {
-      setStatus(mapSupabaseError(error, "generic"));
+    if (profileError) {
+      console.error("signup.profiles_role.error", profileError);
+      setStatus(mapSupabaseError(profileError, "generic"));
       setIsSavingRole(false);
       return;
+    }
+
+    if (nextRole === "nurse") {
+      const { error: nurseError } = await ensureNurseProfile(supabase, userId, "nurse");
+      if (nurseError) {
+        console.error("signup.nurses_stub.error", nurseError);
+        setStatus(mapSupabaseError(nurseError, "generic"));
+        setIsSavingRole(false);
+        return;
+      }
     }
 
     setRole(nextRole);
@@ -266,7 +273,7 @@ export default function RegisterPage() {
         address: string;
       };
 
-      await supabase.from("profiles").upsert({
+      const { error: profileError } = await supabase.from("profiles").upsert({
         id: userId,
         role: "family",
         full_name: [familyValues.firstName, familyValues.middleName, familyValues.lastName]
@@ -282,10 +289,24 @@ export default function RegisterPage() {
         address: familyValues.address
       });
 
-      await supabase.from("families").upsert({
+      if (profileError) {
+        console.error("signup.family_profiles.error", profileError);
+        setStatus(mapSupabaseError(profileError, "generic"));
+        setIsSubmitting(false);
+        return;
+      }
+
+      const { error: familyError } = await supabase.from("families").upsert({
         id: userId,
         address: familyValues.address
       });
+
+      if (familyError) {
+        console.error("signup.families.error", familyError);
+        setStatus(mapSupabaseError(familyError, "generic"));
+        setIsSubmitting(false);
+        return;
+      }
 
       await establishUserSession(supabase, userId, navigator.userAgent);
 
@@ -312,24 +333,6 @@ export default function RegisterPage() {
       return;
     }
     setDocErrors({});
-
-    const fullName = [nurseValues.firstName, nurseValues.middleName, nurseValues.lastName]
-      .filter((part) => part?.trim())
-      .join(" ");
-
-    await supabase.from("profiles").upsert({
-      id: userId,
-      role: "nurse",
-      full_name: fullName,
-      first_name: nurseValues.firstName,
-      middle_name: nurseValues.middleName?.trim() || null,
-      last_name: nurseValues.lastName,
-      phone: null,
-      region: nurseValues.region,
-      city: nurseValues.city,
-      barangay: nurseValues.barangay,
-      address: null
-    });
 
     const credentialPrefix = nurseValues.providerType === "nurse" ? "prc" : "tesda";
     const credentialLabel =
@@ -360,34 +363,21 @@ export default function RegisterPage() {
 
     setUploadProgress("Saving your profile...");
 
-    const credentialField =
-      nurseValues.providerType === "nurse" ? "prc_document_url" : "tesda_document_url";
-    const hourlyRates = resolveHourlyRateBandValues(
-      (nurseValues.hourlyRateRange || undefined) as HourlyRateBandId | undefined
-    );
-    const dailyRates = resolveDailyRateBandValues(
-      (nurseValues.dailyRateRange || undefined) as DailyRateBandId | undefined
-    );
-    const submittedAt = new Date().toISOString();
-    const { error: nurseError } = await supabase.from("nurses").upsert({
-      id: userId,
-      provider_type: nurseValues.providerType,
-      specializations: nurseValues.specializations,
-      bio: nurseValues.bio ?? null,
-      hourly_rate: hourlyRates.min,
-      hourly_rate_max: hourlyRates.max,
-      hourly_rate_range: nurseValues.hourlyRateRange || null,
-      daily_rate_12hr: dailyRates.min,
-      daily_rate_12hr_max: dailyRates.max,
-      daily_rate_range: nurseValues.dailyRateRange || null,
-      nbi_document_url: nbiUpload.path,
-      [credentialField]: credentialUpload.path,
-      verification_status: "pending",
-      submitted_at: submittedAt
+    const completeResponse = await fetch("/api/register/nurse", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...nurseValues,
+        prcDocumentPath: nurseValues.providerType === "nurse" ? credentialUpload.path : undefined,
+        tesdaDocumentPath: nurseValues.providerType === "caregiver" ? credentialUpload.path : undefined,
+        nbiDocumentPath: nbiUpload.path
+      })
     });
 
-    if (nurseError) {
-      setStatus(mapSupabaseError(nurseError, "generic"));
+    const completePayload = (await completeResponse.json()) as { error?: string };
+    if (!completeResponse.ok) {
+      console.error("signup.nurses_finalize.error", completePayload.error);
+      setStatus(completePayload.error ?? "Could not complete registration. Please try again.");
       setIsSubmitting(false);
       return;
     }

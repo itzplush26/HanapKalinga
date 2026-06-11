@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { resolveNurseId } from "@/lib/nurse/resolve";
 import { ShareProfileButton } from "@/components/share-profile-button";
 import { ReviewBreakdown } from "@/components/review-breakdown";
@@ -16,8 +17,22 @@ import { deriveAvailabilityStatus } from "@/lib/availability-status";
 import { formatDailyRateBandLabel, formatHourlyRateBandLabel } from "@/lib/data/rates";
 import { Star } from "lucide-react";
 
+export const revalidate = 3600;
+
 interface NurseProfilePageProps {
   params: { id: string };
+}
+
+export async function generateStaticParams() {
+  const service = createServiceClient();
+  const { data } = await service
+    .from("nurses")
+    .select("id, profile_slug")
+    .eq("verification_status", "verified");
+
+  return (data ?? []).map((nurse) => ({
+    id: nurse.profile_slug ?? nurse.id
+  }));
 }
 
 export async function generateMetadata({ params }: NurseProfilePageProps): Promise<Metadata> {
@@ -75,28 +90,28 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
     );
   }
 
-  const { data: nurse } = await supabase
-    .from("nurses")
-    .select(
-      "id, provider_type, profile_slug, specializations, years_experience, bio, hourly_rate, hourly_rate_max, hourly_rate_range, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profiles(full_name, city, barangay, region)"
-    )
-    .eq("id", nurseId)
-    .single();
-
-  const { data: availability } = await supabase
-    .from("availability")
-    .select("date, shift, is_open")
-    .eq("nurse_id", nurseId)
-    .eq("is_open", true)
-    .gte("date", new Date().toISOString().slice(0, 10))
-    .order("date", { ascending: true })
-    .limit(14);
-
-  const { data: reviews } = await supabase
-    .from("reviews")
-    .select("id, rating, comment, created_at, reviewer_id, profiles!reviewer_id(full_name)")
-    .eq("reviewee_id", nurseId)
-    .order("created_at", { ascending: false });
+  const [{ data: nurse }, { data: availability }, { data: reviews }] = await Promise.all([
+    supabase
+      .from("nurses")
+      .select(
+        "id, provider_type, profile_slug, specializations, years_experience, bio, hourly_rate, hourly_rate_max, hourly_rate_range, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, profiles(full_name, city, barangay, region)"
+      )
+      .eq("id", nurseId)
+      .single(),
+    supabase
+      .from("availability")
+      .select("date, shift, is_open")
+      .eq("nurse_id", nurseId)
+      .eq("is_open", true)
+      .gte("date", new Date().toISOString().slice(0, 10))
+      .order("date", { ascending: true })
+      .limit(14),
+    supabase
+      .from("reviews")
+      .select("id, rating, comment, created_at, reviewer_id, profiles!reviewer_id(full_name)")
+      .eq("reviewee_id", nurseId)
+      .order("created_at", { ascending: false })
+  ]);
 
   const { data: ratingRow } = await supabase
     .from("nurse_ratings")
