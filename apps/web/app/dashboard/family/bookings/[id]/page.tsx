@@ -18,19 +18,21 @@ interface BookingDetailPageProps {
 
 export default async function FamilyBookingDetailPage({ params }: BookingDetailPageProps) {
   const supabase = createClient();
-  const { data: booking } = await supabase
-    .from("bookings")
-    .select("id, status, requested_date, shift, notes, nurse_id")
-    .eq("id", params.id)
-    .single();
-
-  const { data: messages } = await supabase
-    .from("messages")
-    .select("id, sender_id, content, created_at")
-    .eq("booking_id", params.id)
-    .order("created_at", { ascending: true });
-
-  const { data: auth } = await supabase.auth.getUser();
+  const [{ data: booking }, { data: messages }, { data: auth }] = await Promise.all([
+    supabase
+      .from("bookings")
+      .select(
+        "id, status, requested_date, shift, notes, nurse_id, nurses(provider_type, profile_photo_url, profiles(full_name, city))"
+      )
+      .eq("id", params.id)
+      .single(),
+    supabase
+      .from("messages")
+      .select("id, sender_id, content, created_at")
+      .eq("booking_id", params.id)
+      .order("created_at", { ascending: true }),
+    supabase.auth.getUser()
+  ]);
 
   if (!booking) {
     return (
@@ -40,12 +42,7 @@ export default async function FamilyBookingDetailPage({ params }: BookingDetailP
     );
   }
 
-  const { data: nurse } = await supabase
-    .from("nurses")
-    .select("provider_type, profile_photo_url, profiles(full_name, city)")
-    .eq("id", booking.nurse_id)
-    .maybeSingle();
-
+  const nurse = Array.isArray(booking.nurses) ? booking.nurses[0] : booking.nurses;
   const nurseProfile = Array.isArray(nurse?.profiles) ? nurse?.profiles[0] : nurse?.profiles;
 
   const participantIds = [auth.user?.id, booking.nurse_id].filter(Boolean) as string[];

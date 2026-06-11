@@ -34,10 +34,13 @@ import { isVerifiedProvider, type VerificationStatus } from "@/lib/verification"
 import { DocumentExpiryCard } from "@/components/document-expiry-card";
 import { getDocumentExpiryItems, hasExpiredDocuments, type DocumentExpiryItem } from "@/lib/license-expiry";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { ensureNurseProfile } from "@/lib/nurse/ensure-profile";
+import { mapSupabaseError } from "@/lib/user-errors";
 
 export default function NurseProfilePage() {
   const supabase = createClient();
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>("pending");
   const [rejectionReason, setRejectionReason] = useState<string | null>(null);
   const [submittedAt, setSubmittedAt] = useState<string | null>(null);
@@ -140,6 +143,7 @@ export default function NurseProfilePage() {
 
   async function handleSubmit(values: NurseProfileEditValues) {
     setSaved(false);
+    setSaveError(null);
     const { data } = await supabase.auth.getUser();
     const user = data.user;
     if (!user) return;
@@ -155,7 +159,7 @@ export default function NurseProfilePage() {
       (values.dailyRateRange || undefined) as DailyRateBandId | undefined
     );
 
-    await supabase.from("profiles").upsert({
+    const { error: profileError } = await supabase.from("profiles").upsert({
       id: user.id,
       full_name: fullName,
       first_name: values.firstName,
@@ -168,6 +172,19 @@ export default function NurseProfilePage() {
       address: values.address || null,
       role: "nurse"
     });
+
+    if (profileError) {
+      console.error("nurse_profile.profiles.error", profileError);
+      setSaveError(mapSupabaseError(profileError, "generic"));
+      return;
+    }
+
+    const { error: nurseStubError } = await ensureNurseProfile(supabase, user.id, providerType);
+    if (nurseStubError) {
+      console.error("nurse_profile.nurses_stub.error", nurseStubError);
+      setSaveError(mapSupabaseError(nurseStubError, "generic"));
+      return;
+    }
 
     const credentialUrl =
       providerType === "caregiver" ? values.tesda_document_url : values.prc_document_url;
@@ -186,31 +203,41 @@ export default function NurseProfilePage() {
         verificationStatus === "rejected" ||
         verificationStatus === "resubmission_required");
 
-    await supabase.from("nurses").upsert({
-      id: user.id,
-      prc_license_no: values.prcLicenseNo || null,
-      specializations: values.specializations.split(",").map((item: string) => item.trim()),
-      years_experience: values.yearsExperience,
-      bio: values.bio || null,
-      hourly_rate: hourlyRates.min,
-      hourly_rate_max: hourlyRates.max,
-      hourly_rate_range: values.hourlyRateRange || null,
-      daily_rate_12hr: dailyRates.min,
-      daily_rate_12hr_max: dailyRates.max,
-      daily_rate_range: values.dailyRateRange || null,
-      profile_photo_url: values.profile_photo_url || null,
-      prc_document_url: providerType === "nurse" ? values.prc_document_url || null : null,
-      tesda_document_url: providerType === "caregiver" ? values.tesda_document_url || null : null,
-      nbi_document_url: values.nbi_document_url || null,
-      ...(shouldResubmit
-        ? {
-            verification_status: "pending",
-            rejection_reason: null,
-            verified_at: null,
-            submitted_at: new Date().toISOString()
-          }
-        : {})
-    });
+    const { error: nurseError } = await supabase.from("nurses").upsert(
+      {
+        id: user.id,
+        provider_type: providerType,
+        prc_license_no: values.prcLicenseNo || null,
+        specializations: values.specializations.split(",").map((item: string) => item.trim()),
+        years_experience: values.yearsExperience,
+        bio: values.bio || null,
+        hourly_rate: hourlyRates.min,
+        hourly_rate_max: hourlyRates.max,
+        hourly_rate_range: values.hourlyRateRange || null,
+        daily_rate_12hr: dailyRates.min,
+        daily_rate_12hr_max: dailyRates.max,
+        daily_rate_range: values.dailyRateRange || null,
+        profile_photo_url: values.profile_photo_url || null,
+        prc_document_url: providerType === "nurse" ? values.prc_document_url || null : null,
+        tesda_document_url: providerType === "caregiver" ? values.tesda_document_url || null : null,
+        nbi_document_url: values.nbi_document_url || null,
+        ...(shouldResubmit
+          ? {
+              verification_status: "pending",
+              rejection_reason: null,
+              verified_at: null,
+              submitted_at: new Date().toISOString()
+            }
+          : {})
+      },
+      { onConflict: "id" }
+    );
+
+    if (nurseError) {
+      console.error("nurse_profile.nurses.error", nurseError);
+      setSaveError(mapSupabaseError(nurseError, "generic"));
+      return;
+    }
 
     if (shouldResubmit) {
       setVerificationStatus("pending");
@@ -220,6 +247,11 @@ export default function NurseProfilePage() {
     }
 
     setProfilePhotoUrl(resolveProfilePhotoUrl(values.profile_photo_url || null));
+
+    if (verificationStatus === "verified") {
+      void fetch("/api/revalidate/nurse", { method: "POST" });
+    }
+
     setSaved(true);
   }
 
@@ -402,6 +434,7 @@ export default function NurseProfilePage() {
               <DocumentPendingRow label="NBI Clearance" />
             )}
 
+            {saveError ? <p className="text-sm text-rose-600">{saveError}</p> : null}
             {saved ? <p className="text-sm text-emerald-700">Profile saved successfully.</p> : null}
             <Button type="submit" className="w-full">
               Save

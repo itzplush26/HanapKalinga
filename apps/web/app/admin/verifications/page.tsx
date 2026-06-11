@@ -1,53 +1,58 @@
-import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/service";
-
-export const dynamic = "force-dynamic";
 import { AdminBreadcrumbs } from "@/components/admin/admin-breadcrumbs";
 import { AdminPageHeader } from "@/components/admin/admin-shell";
-import { ProfileAvatar } from "@/components/profile-avatar";
-import { VerificationStatusBadge } from "@/components/verification-status-badge";
-import { resolveProfileDisplayName } from "@/lib/profile-display";
-import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
 import {
-  VERIFICATION_STATUS_LABELS,
-  type VerificationStatus
-} from "@/lib/verification";
+  VerificationQueue,
+  type VerificationQueueNurse
+} from "@/components/admin/verification-queue";
+import type { VerificationStatus } from "@/lib/verification";
 
-const STATUS_TABS: { value: VerificationStatus | "all"; label: string }[] = [
-  { value: "all", label: "All active" },
-  { value: "pending", label: VERIFICATION_STATUS_LABELS.pending },
-  { value: "under_review", label: VERIFICATION_STATUS_LABELS.under_review },
-  { value: "verified", label: VERIFICATION_STATUS_LABELS.verified },
-  { value: "rejected", label: VERIFICATION_STATUS_LABELS.rejected },
-  { value: "resubmission_required", label: VERIFICATION_STATUS_LABELS.resubmission_required }
-];
+export const dynamic = "force-dynamic";
 
-interface AdminVerificationsPageProps {
-  searchParams?: { status?: string };
-}
-
-export default async function AdminVerificationsPage({ searchParams }: AdminVerificationsPageProps) {
+export default async function AdminVerificationsPage() {
   const service = createServiceClient();
-  const statusFilter = searchParams?.status ?? "all";
 
-  let query = service
+  const { data: nurses, error } = await service
     .from("nurses")
     .select(
-      "id, provider_type, verification_status, submitted_at, profile_photo_url, profiles(full_name, first_name, last_name, city, region, phone)"
+      "id, provider_type, verification_status, submitted_at, profile_photo_url, prc_document_url, tesda_document_url, nbi_document_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry, bio, specializations, daily_rate_range, hourly_rate_range, profiles(full_name, first_name, last_name, city, region, profile_photo_url)"
     )
     .order("submitted_at", { ascending: false });
-
-  if (statusFilter === "all") {
-    query = query.in("verification_status", ["pending", "under_review"]);
-  } else {
-    query = query.eq("verification_status", statusFilter);
-  }
-
-  const { data: nurses, error } = await query;
 
   if (error) {
     console.error("admin.verifications.list", error);
   }
+
+  const emailEntries = await Promise.all(
+    (nurses ?? []).map(async (nurse) => {
+      const { data } = await service.auth.admin.getUserById(nurse.id);
+      return [nurse.id, data.user?.email ?? null] as const;
+    })
+  );
+  const emailMap = new Map(emailEntries);
+
+  const queueNurses: VerificationQueueNurse[] = (nurses ?? []).map((nurse) => {
+    const profile = Array.isArray(nurse.profiles) ? nurse.profiles[0] : nurse.profiles;
+    return {
+      id: nurse.id,
+      provider_type: nurse.provider_type,
+      verification_status: nurse.verification_status as VerificationStatus,
+      submitted_at: nurse.submitted_at,
+      profile_photo_url: nurse.profile_photo_url,
+      prc_document_url: nurse.prc_document_url,
+      tesda_document_url: nurse.tesda_document_url,
+      nbi_document_url: nurse.nbi_document_url,
+      prc_license_expiry: nurse.prc_license_expiry,
+      tesda_cert_expiry: nurse.tesda_cert_expiry,
+      nbi_expiry: nurse.nbi_expiry,
+      bio: nurse.bio,
+      specializations: nurse.specializations,
+      daily_rate_range: nurse.daily_rate_range,
+      hourly_rate_range: nurse.hourly_rate_range,
+      email: emailMap.get(nurse.id) ?? null,
+      profiles: profile ?? null
+    };
+  });
 
   return (
     <main>
@@ -65,67 +70,7 @@ export default async function AdminVerificationsPage({ searchParams }: AdminVeri
         }
       />
 
-      <div className="mb-5 flex flex-wrap gap-2">
-        {STATUS_TABS.map((tab) => {
-          const active = statusFilter === tab.value;
-          const href =
-            tab.value === "all" ? "/admin/verifications" : `/admin/verifications?status=${tab.value}`;
-          return (
-            <Link
-              key={tab.value}
-              href={href}
-              className={
-                active
-                  ? "rounded-full bg-brand-600 px-3 py-1.5 text-xs font-medium text-white"
-                  : "rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
-              }
-            >
-              {tab.label}
-            </Link>
-          );
-        })}
-      </div>
-
-      <div className="space-y-3">
-        {(nurses ?? []).map((nurse) => {
-          const profile = Array.isArray(nurse.profiles) ? nurse.profiles[0] : nurse.profiles;
-          return (
-            <Link
-              key={nurse.id}
-              href={`/admin/verifications/${nurse.id}`}
-              className="block rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-brand-200 hover:shadow-sm"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-start gap-3">
-                  <ProfileAvatar
-                    src={resolveProfilePhotoUrl(nurse.profile_photo_url)}
-                    name={resolveProfileDisplayName(profile, "Applicant")}
-                    size="sm"
-                  />
-                  <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-semibold text-slate-900">{resolveProfileDisplayName(profile, "Applicant")}</p>
-                    <VerificationStatusBadge status={nurse.verification_status as VerificationStatus} />
-                  </div>
-                  <p className="mt-1 text-sm text-slate-600">
-                    {profile?.city ?? "—"} • {nurse.provider_type === "caregiver" ? "Caregiver" : "Nurse"}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Submitted {nurse.submitted_at ? new Date(nurse.submitted_at).toLocaleString() : "—"}
-                  </p>
-                  </div>
-                </div>
-                <span className="text-sm font-medium text-brand-700">Review →</span>
-              </div>
-            </Link>
-          );
-        })}
-        {(nurses ?? []).length === 0 ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
-            No applications in this queue.
-          </div>
-        ) : null}
-      </div>
+      <VerificationQueue initialNurses={queueNurses} />
     </main>
   );
 }

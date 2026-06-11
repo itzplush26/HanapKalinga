@@ -138,6 +138,14 @@ const config: Config = {
         base: ["16px", { lineHeight: "1.6" }],
         sm: ["14px", { lineHeight: "1.5" }],
         xs: ["12px", { lineHeight: "1.4" }]
+      },
+      keyframes: {
+        shimmer: {
+          "100%": { transform: "translateX(100%)" }
+        }
+      },
+      animation: {
+        shimmer: "shimmer 1.5s infinite"
       }
     }
   },
