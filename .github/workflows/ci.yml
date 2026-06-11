@@ -121,7 +121,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: npm audit
-        run: npm audit --audit-level=critical
+        run: npm run audit:critical
 
   phase5-ci-summary:
     name: phase 5 - ci summary

@@ -26,6 +26,9 @@ export function mapSupabaseError(
 
   if (combined.includes("row-level security") || combined.includes("permission denied")) {
     if (context === "profile") return PROFILE_LOAD_MESSAGE;
+    if (context === "signup") {
+      return "Your account was created but sign-in did not complete. Try signing in, or confirm your email first.";
+    }
     return "You do not have permission to perform this action.";
   }
 

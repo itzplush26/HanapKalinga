@@ -1,6 +1,6 @@
 "use client";
 
-import { RATE_RANGE_OPTIONS } from "@/lib/rate-ranges";
+import { DAILY_RATE_BANDS, HOURLY_RATE_BANDS } from "@/lib/data/rates";
 import { Select } from "@/components/ui/select";
 
 interface RateRangeSelectProps {
@@ -10,6 +10,7 @@ interface RateRangeSelectProps {
   hasError?: boolean;
   disabled?: boolean;
   emptyLabel?: string;
+  variant?: "hourly" | "daily";
 }
 
 export function RateRangeSelect({
@@ -18,8 +19,11 @@ export function RateRangeSelect({
   id,
   hasError,
   disabled,
-  emptyLabel = "Select expected rate range (optional)"
+  emptyLabel = "Select expected rate range (optional)",
+  variant = "daily"
 }: RateRangeSelectProps) {
+  const options = variant === "hourly" ? HOURLY_RATE_BANDS : DAILY_RATE_BANDS;
+
   return (
     <Select
       id={id}
@@ -29,7 +33,7 @@ export function RateRangeSelect({
       className={hasError ? "border-rose-500 focus:ring-rose-500" : undefined}
     >
       <option value="">{emptyLabel}</option>
-      {RATE_RANGE_OPTIONS.map((option) => (
+      {options.map((option) => (
         <option key={option.id} value={option.id}>
           {option.label}
         </option>

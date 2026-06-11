@@ -1,10 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { CheckCircle2, ChevronDown, X } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AUTO_DISMISS_MS,
+  FADE_OUT_MS,
+  shouldAutoDismissNotification
+} from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 
 interface NotificationItem {
   id: string;
+  type: string;
   title: string;
   body: string;
   read_at: string | null;
@@ -14,94 +23,153 @@ interface NotificationItem {
 export function NotificationsPanel() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fadingIds, setFadingIds] = useState<Set<string>>(new Set());
+  const [open, setOpen] = useState(false);
+  const dismissTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const loadNotifications = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch("/api/notifications");
       const payload = (await response.json()) as { notifications?: NotificationItem[] };
-      setNotifications(payload.notifications ?? []);
+      const unread = (payload.notifications ?? []).filter((item) => !item.read_at);
+      setNotifications(unread);
+      if (unread.length > 0) {
+        setOpen(true);
+      }
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const dismissNotification = useCallback(async (id: string, animate = true) => {
+    const timer = dismissTimers.current.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      dismissTimers.current.delete(id);
+    }
+
+    if (animate) {
+      setFadingIds((prev) => new Set(prev).add(id));
+      await new Promise((resolve) => setTimeout(resolve, FADE_OUT_MS));
+    }
+
+    await fetch("/api/notifications", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notificationId: id })
+    });
+
+    setFadingIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+    setNotifications((prev) => prev.filter((item) => item.id !== id));
   }, []);
 
   useEffect(() => {
     loadNotifications();
   }, [loadNotifications]);
 
-  async function markRead(id: string) {
-    await fetch("/api/notifications", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ notificationId: id })
-    });
-    setNotifications((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, read_at: new Date().toISOString() } : item))
-    );
-  }
+  useEffect(() => {
+    const timers = dismissTimers.current;
 
-  async function markAllRead() {
-    await fetch("/api/notifications", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ markAllRead: true })
-    });
-    setNotifications((prev) => prev.map((item) => ({ ...item, read_at: item.read_at ?? new Date().toISOString() })));
-  }
+    for (const item of notifications) {
+      if (!shouldAutoDismissNotification(item.type)) continue;
+      if (timers.has(item.id)) continue;
 
-  const unreadCount = notifications.filter((item) => !item.read_at).length;
+      const timer = setTimeout(() => {
+        void dismissNotification(item.id);
+      }, AUTO_DISMISS_MS);
+      timers.set(item.id, timer);
+    }
+
+    return () => {
+      for (const timer of timers.values()) {
+        clearTimeout(timer);
+      }
+      timers.clear();
+    };
+  }, [notifications, dismissNotification]);
+
+  const summary =
+    notifications.length > 0 ? `${notifications.length} new` : "You're all caught up";
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-semibold text-slate-900">Notifications</h2>
-          <p className="text-xs text-slate-500">
-            {unreadCount > 0 ? `${unreadCount} unread` : "You're all caught up"}
-          </p>
+    <section className="rounded-2xl border border-border bg-surface">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left"
+        aria-expanded={open}
+      >
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold text-text-primary">Notifications</h2>
+          <p className="text-xs text-text-muted">{summary}</p>
         </div>
-        {unreadCount > 0 ? (
-          <button type="button" onClick={markAllRead} className="text-xs font-medium text-brand-700 hover:underline">
-            Mark all read
-          </button>
-        ) : null}
-      </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {notifications.length > 0 ? (
+            <span className="rounded-full bg-primary-light px-2 py-0.5 text-[10px] font-semibold text-primary">
+              {notifications.length}
+            </span>
+          ) : null}
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 text-text-muted transition-transform",
+              open && "rotate-180"
+            )}
+            aria-hidden
+          />
+        </div>
+      </button>
 
-      {loading ? (
-        <p className="mt-4 text-sm text-slate-500">Loading notifications...</p>
-      ) : notifications.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-500">No notifications yet.</p>
-      ) : (
-        <ul className="mt-4 space-y-3">
-          {notifications.map((item) => (
-            <li
-              key={item.id}
-              className={cn(
-                "rounded-xl border p-3 text-sm",
-                item.read_at ? "border-slate-100 bg-slate-50" : "border-brand-100 bg-brand-50/40"
-              )}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-medium text-slate-900">{item.title}</p>
-                  <p className="mt-1 text-slate-600">{item.body}</p>
-                  <p className="mt-2 text-xs text-slate-500">{new Date(item.created_at).toLocaleString()}</p>
-                </div>
-                {!item.read_at ? (
+      {open ? (
+        <div className="border-t border-border px-3 pb-3 pt-2">
+          {loading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-14 w-full" />
+              <Skeleton className="h-14 w-full" />
+            </div>
+          ) : notifications.length === 0 ? (
+            <EmptyState
+              icon={CheckCircle2}
+              title="You're all caught up"
+              description="New updates about bookings and verification will appear here."
+              className="border-0 bg-surface-alt py-4"
+              compact
+            />
+          ) : (
+            <ul className="space-y-2">
+              {notifications.map((item) => (
+                <li
+                  key={item.id}
+                  className={cn(
+                    "relative rounded-xl border border-info-border bg-info-bg/40 p-2.5 text-sm transition-opacity duration-[400ms]",
+                    fadingIds.has(item.id) && "opacity-0"
+                  )}
+                >
                   <button
                     type="button"
-                    onClick={() => markRead(item.id)}
-                    className="shrink-0 text-xs font-medium text-brand-700 hover:underline"
+                    onClick={() => void dismissNotification(item.id)}
+                    className="absolute right-1.5 top-1.5 rounded-lg p-1 text-text-muted hover:bg-surface hover:text-text-secondary"
+                    aria-label="Dismiss notification"
                   >
-                    Mark read
+                    <X className="h-3.5 w-3.5" />
                   </button>
-                ) : null}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+                  <div className="pr-6">
+                    <p className="text-sm font-medium text-text-primary">{item.title}</p>
+                    <p className="mt-0.5 text-xs text-text-secondary">{item.body}</p>
+                    <p className="mt-1.5 text-[11px] text-text-muted">
+                      {new Date(item.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : null}
     </section>
   );
 }

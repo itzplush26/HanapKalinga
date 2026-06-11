@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
 
 export type InboxRow = {
   bookingId: string;
@@ -7,6 +8,7 @@ export type InboxRow = {
   status: string;
   otherPartyName: string;
   otherPartyId: string;
+  otherPartyPhoto?: string | null;
   lastMessage: string | null;
   lastMessageAt: string | null;
   unreadCount: number;
@@ -112,14 +114,31 @@ export async function buildInbox(
   }
 
   const otherIds = [...new Set(bookingList.map((b) => b[otherColumn]))];
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, full_name")
-    .in("id", otherIds);
+  const nameById = new Map<string, string>();
+  const photoById = new Map<string, string | null>();
 
-  const nameById = new Map(
-    (profiles ?? []).map((p) => [p.id as string, (p.full_name as string) ?? "User"])
-  );
+  if (role === "family") {
+    const { data: nurses } = await supabase
+      .from("nurses")
+      .select("id, profile_photo_url, profiles(full_name)")
+      .in("id", otherIds);
+
+    for (const nurse of nurses ?? []) {
+      const profile = Array.isArray(nurse.profiles) ? nurse.profiles[0] : nurse.profiles;
+      nameById.set(nurse.id as string, profile?.full_name?.trim() || "Unknown User");
+      photoById.set(nurse.id as string, resolveProfilePhotoUrl(nurse.profile_photo_url));
+    }
+  } else {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, profile_photo_url")
+      .in("id", otherIds);
+
+    for (const profile of profiles ?? []) {
+      nameById.set(profile.id as string, profile.full_name?.trim() || "Unknown User");
+      photoById.set(profile.id as string, resolveProfilePhotoUrl(profile.profile_photo_url));
+    }
+  }
 
   return bookingList
     .filter((b) => bookingsWithMessages.has(b.id))
@@ -130,8 +149,9 @@ export async function buildInbox(
         requestedDate: b.requested_date,
         shift: b.shift,
         status: b.status,
-        otherPartyName: nameById.get(b[otherColumn]) ?? "User",
+        otherPartyName: nameById.get(b[otherColumn]) ?? "Unknown User",
         otherPartyId: b[otherColumn],
+        otherPartyPhoto: photoById.get(b[otherColumn]) ?? null,
         lastMessage: latest?.content ?? null,
         lastMessageAt: latest?.created_at ?? null,
         unreadCount: unreadMap.get(b.id) ?? 0

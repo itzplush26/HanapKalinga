@@ -10,7 +10,9 @@ import { parseSafeRedirect } from "@/lib/auth-redirect";
 import { fetchProfileRole, resolvePostLoginDestination } from "@/lib/post-auth";
 import { APP_NAME } from "@/lib/constants";
 import { mapSupabaseError } from "@/lib/user-errors";
-import { Button } from "@/components/ui/button";
+import { establishUserSession } from "@/lib/session-lock";
+import { LoadingButton } from "@/components/ui/loading-button";
+import { Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { z } from "zod";
@@ -21,6 +23,8 @@ export default function LoginPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [redirectTarget, setRedirectTarget] = useState<string | null>(null);
+  const [sessionConflict, setSessionConflict] = useState(false);
+  const [sessionConflictDismissed, setSessionConflictDismissed] = useState(false);
   const supabase = createClient();
 
   const safeRedirect = useMemo(() => parseSafeRedirect(redirectTarget), [redirectTarget]);
@@ -43,6 +47,10 @@ export default function LoginPage() {
       setMessage(
         "We could not find a complete account profile for this user. Please contact support if you need help."
       );
+    }
+    if (params.get("reason") === "session_conflict") {
+      setSessionConflict(true);
+      setSessionConflictDismissed(false);
     }
   }, []);
 
@@ -77,6 +85,12 @@ export default function LoginPage() {
         return;
       }
 
+      await establishUserSession(
+        supabase,
+        userId,
+        typeof navigator !== "undefined" ? navigator.userAgent : undefined
+      );
+
       const destination = resolvePostLoginDestination(role, safeRedirect);
 
       if (!destination) {
@@ -97,6 +111,23 @@ export default function LoginPage() {
   return (
     <main className="px-5 py-8">
       <div className="mx-auto flex max-w-md flex-col gap-6">
+        {sessionConflict && !sessionConflictDismissed ? (
+          <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+            <Lock className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+            <div className="flex-1">
+              <p>
+                Your account is currently active on another device. You have been signed out for your security.
+              </p>
+              <button
+                type="button"
+                className="mt-2 text-xs font-medium underline"
+                onClick={() => setSessionConflictDismissed(true)}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        ) : null}
         <div>
           <h1 className="text-2xl font-semibold">Log in</h1>
           <p className="text-sm text-slate-600">Sign in to {APP_NAME} with your email and password.</p>
@@ -121,9 +152,14 @@ export default function LoginPage() {
               <p className="text-xs text-rose-600">{form.formState.errors.password.message}</p>
             ) : null}
           </div>
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? "Signing in..." : "Log in"}
-          </Button>
+          <LoadingButton
+            type="submit"
+            className="w-full"
+            loading={isSubmitting}
+            loadingText="Signing in..."
+          >
+            Log in
+          </LoadingButton>
         </form>
         <p className="text-center text-xs text-slate-500">
           <Link href="/login/forgot-password" className="underline">

@@ -1,0 +1,121 @@
+/* ---- LIGHT MODE ---- */
+:root {
+  /* Primary — Teal */
+  --color-primary: #0d9488;
+  --color-primary-hover: #0f766e;
+  --color-primary-light: #ccfbf1;
+
+  /* Secondary — Navy */
+  --color-secondary: #1e3a5f;
+  --color-secondary-soft: #2d5282;
+
+  /* Backgrounds */
+  --color-bg: #f8fafb;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f1f5f9;
+  --color-bg-gradient:
+    radial-gradient(circle at top, color-mix(in srgb, var(--color-primary) 14%, transparent), transparent 52%),
+    radial-gradient(circle at bottom, color-mix(in srgb, var(--color-secondary) 10%, transparent), transparent 55%);
+
+  /* Text */
+  --color-text-primary: #1a202c;
+  --color-text-secondary: #4a5568;
+  --color-text-muted: #718096;
+
+  /* Status */
+  --color-success: #059669;
+  --color-success-bg: #ecfdf5;
+  --color-success-border: #a7f3d0;
+  --color-warning: #d97706;
+  --color-warning-bg: #fffbeb;
+  --color-warning-border: #fde68a;
+  --color-error: #dc2626;
+  --color-error-bg: #fef2f2;
+  --color-error-border: #fecaca;
+  --color-info: #0d9488;
+  --color-info-bg: #ccfbf1;
+  --color-info-border: #99f6e4;
+
+  /* Border */
+  --color-border: #e2e8f0;
+  --color-border-focus: #0d9488;
+
+  /* Verification status card (Section 17) */
+  --color-verification-badge-bg: #fef3c7;
+  --color-verification-badge-text: #92400e;
+  --color-verification-badge-border: #fcd34d;
+  --color-verification-step-completed-bg: #ccfbf1;
+  --color-verification-step-completed-text: #0f766e;
+  --color-verification-step-completed-border: #0d9488;
+  --color-verification-step-active-bg: #fef3c7;
+  --color-verification-step-active-text: #92400e;
+  --color-verification-step-active-border: #fcd34d;
+  --color-verification-step-future-text: #94a3b8;
+  --color-verification-step-future-border: #cbd5e1;
+  --color-verification-step-approved-bg: #d1fae5;
+  --color-verification-step-approved-text: #065f46;
+  --color-verification-step-approved-border: #059669;
+
+  /* Nav */
+  --color-nav-bg: #ffffff;
+  --color-nav-active: #0d9488;
+  --color-nav-inactive: #94a3b8;
+  --color-nav-border: #e2e8f0;
+}
+
+/* ---- DARK MODE ---- */
+html.dark {
+  --color-primary: #14b8a6;
+  --color-primary-hover: #0d9488;
+  --color-primary-light: #134e4a;
+
+  --color-secondary: #93c5fd;
+  --color-secondary-soft: #bfdbfe;
+
+  --color-bg: #0f1f2e;
+  --color-surface: #162636;
+  --color-surface-alt: #1e3448;
+  --color-bg-gradient:
+    radial-gradient(circle at top, color-mix(in srgb, var(--color-primary) 18%, transparent), transparent 52%),
+    radial-gradient(circle at bottom, color-mix(in srgb, var(--color-secondary) 12%, transparent), transparent 55%);
+
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+
+  --color-success: #34d399;
+  --color-success-bg: #064e3b;
+  --color-success-border: #047857;
+  --color-warning: #fbbf24;
+  --color-warning-bg: #78350f;
+  --color-warning-border: #b45309;
+  --color-error: #f87171;
+  --color-error-bg: #7f1d1d;
+  --color-error-border: #b91c1c;
+  --color-info: #14b8a6;
+  --color-info-bg: #134e4a;
+  --color-info-border: #0f766e;
+
+  --color-border: #2d4a63;
+  --color-border-focus: #14b8a6;
+
+  --color-verification-badge-bg: #2d2000;
+  --color-verification-badge-text: #fbbf24;
+  --color-verification-badge-border: color-mix(in srgb, #fbbf24 30%, transparent);
+  --color-verification-step-completed-bg: #134e4a;
+  --color-verification-step-completed-text: #14b8a6;
+  --color-verification-step-completed-border: #14b8a6;
+  --color-verification-step-active-bg: #2d2000;
+  --color-verification-step-active-text: #fbbf24;
+  --color-verification-step-active-border: #fbbf24;
+  --color-verification-step-future-text: #64748b;
+  --color-verification-step-future-border: #2d4a63;
+  --color-verification-step-approved-bg: #064e3b;
+  --color-verification-step-approved-text: #34d399;
+  --color-verification-step-approved-border: #34d399;
+
+  --color-nav-bg: #162636;
+  --color-nav-active: #14b8a6;
+  --color-nav-inactive: #64748b;
+  --color-nav-border: #2d4a63;
+}

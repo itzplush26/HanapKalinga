@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { isCityInRegion } from "@/lib/ph-locations";
-import { RATE_RANGE_IDS } from "@/lib/rate-ranges";
+import { isCityInRegion } from "@/lib/data/ph-locations";
+import { DAILY_RATE_BAND_IDS, HOURLY_RATE_BAND_IDS } from "@/lib/data/rates";
 
-const rateRangeField = z.union([z.enum(RATE_RANGE_IDS), z.literal("")]);
+const hourlyRateRangeField = z.union([z.enum(HOURLY_RATE_BAND_IDS), z.literal("")]);
+const dailyRateRangeField = z.union([z.enum(DAILY_RATE_BAND_IDS), z.literal("")]);
 
 function validateCityInRegion(
   values: { region?: string; city?: string },
@@ -39,8 +40,8 @@ const nurseProfileFieldsSchema = z.object({
   city: z.string().min(2, "City is required."),
   barangay: z.string().min(2, "Barangay is required."),
   bio: z.string().optional(),
-  hourlyRateRange: rateRangeField,
-  dailyRateRange: rateRangeField,
+  hourlyRateRange: hourlyRateRangeField,
+  dailyRateRange: dailyRateRangeField,
   specializations: z.array(z.string()).min(1, "Select at least one specialization.")
 });
 
@@ -86,8 +87,8 @@ export const nurseProfileEditSchema = z
     specializations: z.string().min(1, "Enter at least one specialization."),
     yearsExperience: z.number().min(0, "Years of experience cannot be negative."),
     bio: z.string().optional(),
-    hourlyRateRange: rateRangeField,
-    dailyRateRange: rateRangeField,
+    hourlyRateRange: hourlyRateRangeField,
+    dailyRateRange: dailyRateRangeField,
     profile_photo_url: z.string().optional(),
     prc_document_url: z.string().optional(),
     tesda_document_url: z.string().optional(),

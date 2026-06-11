@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
-import { DashboardNav } from "@/components/dashboard-nav";
-import { SignOutButton } from "@/components/sign-out-button";
+import { DashboardShell } from "@/components/dashboard-shell";
+import { LicenseExpiryGate } from "@/components/license-expiry-gate";
 import { createClient } from "@/lib/supabase/server";
+import { getDocumentExpiryItems } from "@/lib/license-expiry";
 
 export default async function NurseDashboardLayout({
   children
@@ -37,13 +38,17 @@ export default async function NurseDashboardLayout({
     redirect("/login?error=no_profile");
   }
 
+  const { data: nurse } = await supabase
+    .from("nurses")
+    .select("provider_type, prc_license_expiry, tesda_cert_expiry, nbi_expiry")
+    .eq("id", auth.user.id)
+    .maybeSingle();
+
+  const documentExpiry = getDocumentExpiryItems(nurse ?? {});
+
   return (
-    <>
-      <div className="flex items-center justify-end px-5 pt-2">
-        <SignOutButton />
-      </div>
-      <DashboardNav role="nurse" />
-      {children}
-    </>
+    <DashboardShell role="nurse">
+      <LicenseExpiryGate documents={documentExpiry}>{children}</LicenseExpiryGate>
+    </DashboardShell>
   );
 }

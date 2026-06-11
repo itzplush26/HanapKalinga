@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "@/lib/supabase/service";
 import { resolveDocumentViewUrl } from "@/lib/storage-docs";
 import { AdminBreadcrumbs } from "@/components/admin/admin-breadcrumbs";
 import { AdminPageHeader } from "@/components/admin/admin-shell";
@@ -13,12 +12,11 @@ interface AdminVerificationDetailPageProps {
 
 export default async function AdminVerificationDetailPage({ params }: AdminVerificationDetailPageProps) {
   const supabase = createClient();
-  const service = createServiceClient();
 
   const { data: nurse } = await supabase
     .from("nurses")
     .select(
-      "id, provider_type, verification_status, submitted_at, prc_document_url, tesda_document_url, nbi_document_url, profiles(full_name, city, region, barangay, phone)"
+      "id, provider_type, verification_status, submitted_at, prc_document_url, tesda_document_url, nbi_document_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry, profiles(full_name, city, region, barangay, phone)"
     )
     .eq("id", params.id)
     .maybeSingle();
@@ -30,10 +28,10 @@ export default async function AdminVerificationDetailPage({ params }: AdminVerif
   const profile = Array.isArray(nurse.profiles) ? nurse.profiles[0] : nurse.profiles;
 
   const [prcSignedUrl, tesdaSignedUrl, nbiSignedUrl, auditResult] = await Promise.all([
-    resolveDocumentViewUrl(service, nurse.prc_document_url),
-    resolveDocumentViewUrl(service, nurse.tesda_document_url),
-    resolveDocumentViewUrl(service, nurse.nbi_document_url),
-    service
+    resolveDocumentViewUrl(nurse.prc_document_url),
+    resolveDocumentViewUrl(nurse.tesda_document_url),
+    resolveDocumentViewUrl(nurse.nbi_document_url),
+    supabase
       .from("verification_audit_logs")
       .select("id, action, previous_status, new_status, rejection_reason, review_notes, created_at, admin_id")
       .eq("nurse_id", params.id)
@@ -43,7 +41,7 @@ export default async function AdminVerificationDetailPage({ params }: AdminVerif
   const adminIds = [...new Set((auditResult.data ?? []).map((entry) => entry.admin_id))];
   const { data: adminProfiles } =
     adminIds.length > 0
-      ? await service.from("profiles").select("id, full_name").in("id", adminIds)
+      ? await supabase.from("profiles").select("id, full_name").in("id", adminIds)
       : { data: [] };
 
   const adminNameMap = new Map((adminProfiles ?? []).map((item) => [item.id, item.full_name ?? "Administrator"]));
@@ -82,6 +80,9 @@ export default async function AdminVerificationDetailPage({ params }: AdminVerif
         prcSignedUrl={prcSignedUrl}
         tesdaSignedUrl={tesdaSignedUrl}
         nbiSignedUrl={nbiSignedUrl}
+        prcLicenseExpiry={nurse.prc_license_expiry}
+        tesdaCertExpiry={nurse.tesda_cert_expiry}
+        nbiExpiry={nurse.nbi_expiry}
         auditLogs={auditLogs}
       />
     </main>

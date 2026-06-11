@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { SESSION_TOKEN_COOKIE } from "@/lib/session-lock";
 
 const protectedPrefixes = ["/dashboard", "/admin"];
 
@@ -65,6 +66,24 @@ export async function middleware(request: NextRequest) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  const cookieToken = request.cookies.get(SESSION_TOKEN_COOKIE)?.value;
+  if (cookieToken) {
+    const { data: sessionRow } = await supabase
+      .from("user_sessions")
+      .select("session_token")
+      .eq("user_id", data.user.id)
+      .maybeSingle();
+
+    if (!sessionRow?.session_token || sessionRow.session_token !== cookieToken) {
+      await supabase.auth.signOut();
+      const conflictUrl = new URL("/login", request.url);
+      conflictUrl.searchParams.set("reason", "session_conflict");
+      const redirectResponse = NextResponse.redirect(conflictUrl);
+      redirectResponse.cookies.set(SESSION_TOKEN_COOKIE, "", { path: "/", maxAge: 0 });
+      return redirectResponse;
+    }
   }
 
   const role = await getProfileRole(supabase, data.user.id);

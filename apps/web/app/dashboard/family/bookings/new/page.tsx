@@ -3,16 +3,20 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
 import { bookingRequestSchema } from "@/lib/validations/booking";
-import { SHIFT_LABELS } from "@/lib/booking-notes";
+import { SHIFT_LABELS, formatShiftLabel } from "@/lib/booking-notes";
 import { BOOKING_SKILLS } from "@/lib/constants";
+import { DAILY_RATE_BANDS } from "@/lib/data/rates";
+import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
+import { AvailableDateInput } from "@/components/available-date-input";
 import { mapSupabaseError } from "@/lib/user-errors";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -71,12 +75,16 @@ function NurseSummaryCard({ nurse }: { nurse: NursePreview }) {
 
 function BookingForm() {
   const supabase = createClient();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const defaultNurse = searchParams.get("nurse") ?? "";
   const [nursePreview, setNursePreview] = useState<NursePreview | null>(null);
   const [loadingNurse, setLoadingNurse] = useState(Boolean(defaultNurse));
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
+  const [hasAvailabilitySet, setHasAvailabilitySet] = useState(false);
   const [submitted, setSubmitted] = useState<SuccessState | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<BookingRequestValues>({
     resolver: zodResolver(bookingRequestSchema),
@@ -84,9 +92,11 @@ function BookingForm() {
       nurseId: defaultNurse,
       requestedDate: "",
       shift: "morning",
+      customStartTime: "",
+      customEndTime: "",
       patientCondition: "mobile",
       requiredSkills: [],
-      budgetRange: "1000_2000",
+      budgetRange: "1500_2500",
       additionalInstructions: ""
     }
   });
@@ -103,23 +113,44 @@ function BookingForm() {
         .from("nurses")
         .select("id, provider_type, profile_photo_url, profiles(full_name, city)")
         .eq("id", defaultNurse)
-        .single();
+        .eq("verification_status", "verified")
+        .maybeSingle();
 
-      if (data) {
-        const profile = Array.isArray(data.profiles) ? data.profiles[0] : data.profiles;
-        setNursePreview({
-          id: data.id,
-          name: profile?.full_name ?? "Provider",
-          city: profile?.city ?? "Philippines",
-          providerType: data.provider_type ?? "nurse",
-          imageUrl: data.profile_photo_url ?? undefined
-        });
+      if (!data) {
+        setLoadingNurse(false);
+        router.replace("/nurses?message=select-nurse");
+        return;
       }
+
+      const profile = Array.isArray(data.profiles) ? data.profiles[0] : data.profiles;
+      setNursePreview({
+        id: data.id,
+        name: profile?.full_name ?? "Verified Nurse",
+        city: profile?.city ?? "Philippines",
+        providerType: data.provider_type ?? "nurse",
+        imageUrl: resolveProfilePhotoUrl(data.profile_photo_url) ?? undefined
+      });
+
+      const today = new Date().toISOString().slice(0, 10);
+      const end = new Date();
+      end.setDate(end.getDate() + 60);
+      const endDate = end.toISOString().slice(0, 10);
+      const { data: availabilityRows } = await supabase
+        .from("availability")
+        .select("date")
+        .eq("nurse_id", defaultNurse)
+        .eq("is_open", true)
+        .gte("date", today)
+        .lte("date", endDate);
+
+      const dates = [...new Set((availabilityRows ?? []).map((row) => row.date as string))].sort();
+      setAvailableDates(dates);
+      setHasAvailabilitySet(dates.length > 0);
       setLoadingNurse(false);
     }
 
     loadNurse();
-  }, [defaultNurse, form, supabase]);
+  }, [defaultNurse, form, router, supabase]);
 
   function toggleSkill(skill: string) {
     const current = form.getValues("requiredSkills");
@@ -136,43 +167,52 @@ function BookingForm() {
 
   async function handleSubmit(values: BookingRequestValues) {
     setSubmitError(null);
+    setIsSubmitting(true);
     const { data } = await supabase.auth.getUser();
     const user = data.user;
-    if (!user) return;
+    if (!user) {
+      setIsSubmitting(false);
+      return;
+    }
 
     const structuredRequest = {
       patientCondition: values.patientCondition,
       requiredSkills: values.requiredSkills,
       budgetRange: values.budgetRange,
-      additionalInstructions: values.additionalInstructions ?? ""
+      additionalInstructions: values.additionalInstructions ?? "",
+      ...(values.shift === "custom"
+        ? {
+            customStartTime: values.customStartTime,
+            customEndTime: values.customEndTime
+          }
+        : {})
     };
 
-    const { data: booking, error } = await supabase
-      .from("bookings")
-      .insert({
-        family_id: user.id,
-        nurse_id: values.nurseId,
-        requested_date: values.requestedDate,
-        shift: values.shift,
-        notes: JSON.stringify(structuredRequest)
-      })
-      .select("id")
-      .single();
+    const response = await fetch("/api/bookings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(values)
+    });
 
-    if (error || !booking) {
-      setSubmitError(mapSupabaseError(error, "generic"));
+    const payload = (await response.json()) as { bookingId?: string; error?: string };
+    if (!response.ok || !payload.bookingId) {
+      setSubmitError(payload.error ?? "Failed to create booking.");
+      setIsSubmitting(false);
       return;
     }
 
     setSubmitted({
-      bookingId: booking.id,
+      bookingId: payload.bookingId,
       nurseName: nursePreview?.name ?? "your nurse",
       requestedDate: values.requestedDate,
       shift: values.shift
     });
+    setIsSubmitting(false);
   }
 
   const selectedSkills = form.watch("requiredSkills");
+  const selectedShift = form.watch("shift");
+  const requestedDate = form.watch("requestedDate");
 
   if (!defaultNurse) {
     return (
@@ -196,7 +236,7 @@ function BookingForm() {
         <p className="text-sm text-slate-700">They typically respond within 24 hours.</p>
         <p className="text-sm text-slate-500">
           Requested: {formatBookingDate(submitted.requestedDate)} ·{" "}
-          {SHIFT_LABELS[submitted.shift] ?? submitted.shift} shift
+          {formatShiftLabel(submitted.shift, null)}
         </p>
         <div className="flex flex-col gap-2">
           <Button asChild>
@@ -224,7 +264,12 @@ function BookingForm() {
       <input type="hidden" {...form.register("nurseId")} />
       <div className="space-y-1">
         <label className="text-sm font-medium text-slate-700">Requested date</label>
-        <Input type="date" {...form.register("requestedDate")} />
+        <AvailableDateInput
+          value={requestedDate}
+          availableDates={availableDates}
+          hasAvailabilitySet={hasAvailabilitySet}
+          onChange={(value) => form.setValue("requestedDate", value, { shouldValidate: true })}
+        />
       </div>
       <div className="space-y-1">
         <label className="text-sm font-medium text-slate-700">Patient condition</label>
@@ -241,8 +286,21 @@ function BookingForm() {
           <option value="afternoon">Afternoon (2pm–10pm)</option>
           <option value="evening">Evening (10pm–6am)</option>
           <option value="full_day">Full day (24hr)</option>
+          <option value="custom">Custom time</option>
         </Select>
       </div>
+      {selectedShift === "custom" ? (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-slate-700">Start time</label>
+            <Input type="time" {...form.register("customStartTime")} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-slate-700">End time</label>
+            <Input type="time" {...form.register("customEndTime")} />
+          </div>
+        </div>
+      ) : null}
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-700">Skills needed</label>
         <div className="flex flex-wrap gap-2">
@@ -271,10 +329,11 @@ function BookingForm() {
       <div className="space-y-1">
         <label className="text-sm font-medium text-slate-700">Budget band</label>
         <Select {...form.register("budgetRange")}>
-          <option value="under_1000">Under ₱1,500/shift</option>
-          <option value="1000_2000">₱1,500–₱2,500/shift</option>
-          <option value="2000_3500">₱2,500–₱4,000/shift</option>
-          <option value="3500_plus">Above ₱4,000/shift</option>
+          {DAILY_RATE_BANDS.map((band) => (
+            <option key={band.id} value={band.id}>
+              {band.label}
+            </option>
+          ))}
         </Select>
       </div>
       <Textarea
@@ -282,9 +341,9 @@ function BookingForm() {
         {...form.register("additionalInstructions")}
       />
       {submitError ? <p className="text-sm text-rose-600">{submitError}</p> : null}
-      <Button type="submit" disabled={!nursePreview}>
+      <LoadingButton type="submit" loading={isSubmitting} loadingText="Sending request..." disabled={!nursePreview}>
         Send booking request
-      </Button>
+      </LoadingButton>
     </form>
   );
 }

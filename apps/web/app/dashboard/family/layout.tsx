@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
-import { DashboardNav } from "@/components/dashboard-nav";
-import { SignOutButton } from "@/components/sign-out-button";
+import { DashboardShell } from "@/components/dashboard-shell";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function FamilyDashboardLayout({
@@ -37,13 +36,5 @@ export default async function FamilyDashboardLayout({
     redirect("/login?error=no_profile");
   }
 
-  return (
-    <>
-      <div className="flex items-center justify-end px-5 pt-2">
-        <SignOutButton />
-      </div>
-      <DashboardNav role="family" />
-      {children}
-    </>
-  );
+  return <DashboardShell role="family">{children}</DashboardShell>;
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { useToast } from "@/components/admin/use-toast";
@@ -35,6 +36,9 @@ interface VerificationReviewPanelProps {
   prcSignedUrl: string | null;
   tesdaSignedUrl: string | null;
   nbiSignedUrl: string | null;
+  prcLicenseExpiry?: string | null;
+  tesdaCertExpiry?: string | null;
+  nbiExpiry?: string | null;
   auditLogs: AuditLogEntry[];
 }
 
@@ -51,6 +55,9 @@ export function VerificationReviewPanel({
   prcSignedUrl,
   tesdaSignedUrl,
   nbiSignedUrl,
+  prcLicenseExpiry: initialPrcExpiry,
+  tesdaCertExpiry: initialTesdaExpiry,
+  nbiExpiry: initialNbiExpiry,
   auditLogs
 }: VerificationReviewPanelProps) {
   const router = useRouter();
@@ -61,6 +68,9 @@ export function VerificationReviewPanel({
   const [confirmAction, setConfirmAction] = useState<
     "approve" | "reject" | "request_resubmission" | "mark_under_review" | null
   >(null);
+  const [prcLicenseExpiry, setPrcLicenseExpiry] = useState(initialPrcExpiry?.slice(0, 10) ?? "");
+  const [tesdaCertExpiry, setTesdaCertExpiry] = useState(initialTesdaExpiry?.slice(0, 10) ?? "");
+  const [nbiExpiry, setNbiExpiry] = useState(initialNbiExpiry?.slice(0, 10) ?? "");
 
   async function submitAction(
     action: "approve" | "reject" | "request_resubmission" | "mark_under_review"
@@ -74,7 +84,14 @@ export function VerificationReviewPanel({
           nurseId,
           action,
           rejectionReason: rejectionReason.trim() || undefined,
-          reviewNotes: reviewNotes.trim() || undefined
+          reviewNotes: reviewNotes.trim() || undefined,
+          ...(action === "approve"
+            ? {
+                prcLicenseExpiry: prcLicenseExpiry || undefined,
+                tesdaCertExpiry: tesdaCertExpiry || undefined,
+                nbiExpiry: nbiExpiry || undefined
+              }
+            : {})
         })
       });
 
@@ -109,6 +126,8 @@ export function VerificationReviewPanel({
 
   const isCaregiver = providerType === "caregiver";
   const canReview = ["pending", "under_review", "resubmission_required"].includes(status);
+  const canApprove =
+    Boolean(nbiExpiry) && (isCaregiver ? Boolean(tesdaCertExpiry) : Boolean(prcLicenseExpiry));
 
   return (
     <>
@@ -176,7 +195,7 @@ export function VerificationReviewPanel({
                     Mark under review
                   </Button>
                 ) : null}
-                <Button type="button" onClick={() => setConfirmAction("approve")}>
+                <Button type="button" onClick={() => setConfirmAction("approve")} disabled={!canApprove}>
                   Approve
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setConfirmAction("request_resubmission")}>
@@ -192,13 +211,42 @@ export function VerificationReviewPanel({
 
         <section className="space-y-4">
           <h3 className="text-sm font-semibold text-slate-900">Uploaded documents</h3>
+          <p className="text-xs text-slate-500">
+            Enter each document&apos;s expiry date as printed on the certificate before approving.
+          </p>
           <div className="grid gap-4 lg:grid-cols-2">
             {isCaregiver ? (
-              <DocumentViewer label="TESDA NC II Certificate" url={tesdaSignedUrl} />
+              <div className="space-y-2">
+                <DocumentViewer label="TESDA NC II Certificate" url={tesdaSignedUrl} />
+                <label className="block text-xs font-medium text-slate-600">
+                  TESDA expiry date <span className="text-rose-600">*</span>
+                </label>
+                <Input
+                  type="date"
+                  value={tesdaCertExpiry}
+                  onChange={(e) => setTesdaCertExpiry(e.target.value)}
+                />
+              </div>
             ) : (
-              <DocumentViewer label="PRC License" url={prcSignedUrl} />
+              <div className="space-y-2">
+                <DocumentViewer label="PRC License" url={prcSignedUrl} />
+                <label className="block text-xs font-medium text-slate-600">
+                  PRC license expiry date <span className="text-rose-600">*</span>
+                </label>
+                <Input
+                  type="date"
+                  value={prcLicenseExpiry}
+                  onChange={(e) => setPrcLicenseExpiry(e.target.value)}
+                />
+              </div>
             )}
-            <DocumentViewer label="NBI Clearance" url={nbiSignedUrl} />
+            <div className="space-y-2">
+              <DocumentViewer label="NBI Clearance" url={nbiSignedUrl} />
+              <label className="block text-xs font-medium text-slate-600">
+                NBI clearance expiry date <span className="text-rose-600">*</span>
+              </label>
+              <Input type="date" value={nbiExpiry} onChange={(e) => setNbiExpiry(e.target.value)} />
+            </div>
           </div>
         </section>
       </div>
@@ -234,10 +282,11 @@ export function VerificationReviewPanel({
       <ConfirmDialog
         open={confirmAction === "approve"}
         title="Approve this application?"
-        description="The applicant will be verified and notified by email and in-app notification."
+        description="Document expiry dates will be saved and used for renewal reminders. The applicant will be verified and notified."
         confirmLabel="Approve"
         loading={loading}
-        onConfirm={() => submitAction("approve")}
+        loadingText="Verifying..."
+        onConfirm={() => (canApprove ? submitAction("approve") : undefined)}
         onCancel={() => setConfirmAction(null)}
       />
       <ConfirmDialog
@@ -247,6 +296,7 @@ export function VerificationReviewPanel({
         confirmLabel="Reject"
         destructive
         loading={loading}
+        loadingText="Rejecting..."
         onConfirm={() => submitAction("reject")}
         onCancel={() => setConfirmAction(null)}
       />

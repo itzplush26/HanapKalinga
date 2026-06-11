@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { resetPasswordRequestSchema } from "@/lib/validations/auth";
 import { getAuthCallbackUrl } from "@/lib/auth-redirect";
 import { mapSupabaseError } from "@/lib/user-errors";
-import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
 
 type ForgotPasswordValues = z.infer<typeof resetPasswordRequestSchema>;
@@ -73,9 +73,14 @@ export default function ForgotPasswordPage() {
                 <p className="text-xs text-rose-600">Enter a valid email address.</p>
               ) : null}
             </div>
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Sending..." : "Send reset link"}
-            </Button>
+            <LoadingButton
+              type="submit"
+              className="w-full"
+              loading={isSubmitting}
+              loadingText="Sending..."
+            >
+              Send reset link
+            </LoadingButton>
           </form>
         )}
 

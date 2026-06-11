@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 export interface Message {
   id: string;
@@ -18,6 +19,7 @@ interface MessageThreadProps {
   initialMessages: Message[];
   senderNames?: Record<string, string>;
   readOnly?: boolean;
+  className?: string;
 }
 
 export function MessageThread({
@@ -25,10 +27,12 @@ export function MessageThread({
   currentUserId,
   initialMessages,
   senderNames = {},
-  readOnly = false
+  readOnly = false,
+  className
 }: MessageThreadProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const supabase = createClient();
 
@@ -59,7 +63,10 @@ export function MessageThread({
         { event: "INSERT", schema: "public", table: "messages", filter: `booking_id=eq.${bookingId}` },
         (payload) => {
           const next = payload.new as Message;
-          setMessages((prev) => [...prev, next]);
+          setMessages((prev) => {
+            if (prev.some((message) => message.id === next.id)) return prev;
+            return [...prev, next];
+          });
           if (!readOnly && next.sender_id !== currentUserId) {
             supabase
               .from("messages")
@@ -72,7 +79,7 @@ export function MessageThread({
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      void supabase.removeChannel(channel);
     };
   }, [bookingId, currentUserId, readOnly, supabase]);
 
@@ -81,21 +88,56 @@ export function MessageThread({
   }, [messages]);
 
   async function handleSend() {
-    if (!draft.trim() || readOnly || !currentUserId) return;
-    await supabase.from("messages").insert({
-      booking_id: bookingId,
+    const content = draft.trim();
+    if (!content || readOnly || !currentUserId) return;
+
+    const optimisticId = `temp-${Date.now()}`;
+    const optimisticMessage: Message = {
+      id: optimisticId,
       sender_id: currentUserId,
-      content: draft.trim()
-    });
+      content,
+      created_at: new Date().toISOString()
+    };
+
+    setMessages((prev) => [...prev, optimisticMessage]);
     setDraft("");
+    setSending(true);
+
+    const { data, error } = await supabase
+      .from("messages")
+      .insert({
+        booking_id: bookingId,
+        sender_id: currentUserId,
+        content
+      })
+      .select("id, sender_id, content, created_at")
+      .single();
+
+    if (error || !data) {
+      setMessages((prev) => prev.filter((message) => message.id !== optimisticId));
+      setDraft(content);
+      setSending(false);
+      return;
+    }
+
+    setSending(false);
+
+    setMessages((prev) => {
+      const withoutOptimistic = prev.filter((message) => message.id !== optimisticId);
+      if (withoutOptimistic.some((message) => message.id === data.id)) return withoutOptimistic;
+      return [...withoutOptimistic, data as Message];
+    });
   }
 
   return (
-    <div className="flex h-[420px] flex-col rounded-2xl border border-slate-200 bg-white">
+    <div
+      id="chat"
+      className={cn("flex h-[420px] scroll-mt-24 flex-col rounded-2xl border border-slate-200 bg-white", className)}
+    >
       <div className="flex-1 space-y-3 overflow-y-auto p-4 text-sm">
         {messages.map((message) => {
           const isMine = message.sender_id === currentUserId;
-          const senderLabel = isMine ? "You" : senderNames[message.sender_id] ?? "Them";
+          const senderLabel = isMine ? "You" : senderNames[message.sender_id] ?? "Unknown User";
           return (
             <div
               key={message.id}
@@ -128,13 +170,13 @@ export function MessageThread({
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault();
-                handleSend();
+                void handleSend();
               }
             }}
           />
-          <Button type="button" onClick={handleSend}>
+          <LoadingButton type="button" loading={sending} loadingText="Sending..." onClick={() => void handleSend()}>
             Send
-          </Button>
+          </LoadingButton>
         </div>
       )}
     </div>

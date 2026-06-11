@@ -1,15 +1,12 @@
+import { getDailyRateBand } from "@/lib/data/rates";
+
 export type ParsedBookingNotes = {
   patientCondition?: string;
   requiredSkills?: string[];
   budgetRange?: string;
   additionalInstructions?: string;
-};
-
-const BUDGET_LABELS: Record<string, string> = {
-  under_1000: "Under PHP 1,000 / day",
-  "1000_2000": "PHP 1,000 – 2,000 / day",
-  "2000_3500": "PHP 2,000 – 3,500 / day",
-  "3500_plus": "PHP 3,500+ / day"
+  customStartTime?: string;
+  customEndTime?: string;
 };
 
 const CONDITION_LABELS: Record<string, string> = {
@@ -39,11 +36,12 @@ export function parseBookingNotes(notes: string | null | undefined): ParsedBooki
           : undefined;
 
     return {
-      patientCondition:
-        typeof raw.patientCondition === "string" ? raw.patientCondition : undefined,
+      patientCondition: typeof raw.patientCondition === "string" ? raw.patientCondition : undefined,
       requiredSkills: skills?.filter((s): s is string => typeof s === "string"),
       budgetRange: budget,
-      additionalInstructions: extra
+      additionalInstructions: extra,
+      customStartTime: typeof raw.customStartTime === "string" ? raw.customStartTime : undefined,
+      customEndTime: typeof raw.customEndTime === "string" ? raw.customEndTime : undefined
     };
   } catch {
     return { additionalInstructions: notes };
@@ -57,12 +55,26 @@ export function formatPatientCondition(value?: string) {
 
 export function formatBudgetRange(value?: string) {
   if (!value) return null;
-  return BUDGET_LABELS[value] ?? value;
+  const band = getDailyRateBand(value);
+  if (band) return band.label;
+  return value.replace(/_/g, "-");
 }
 
 export const SHIFT_LABELS: Record<string, string> = {
-  morning: "Morning",
-  afternoon: "Afternoon",
-  evening: "Night",
-  full_day: "24-hour"
+  morning: "Morning (6am–2pm)",
+  afternoon: "Afternoon (2pm–10pm)",
+  evening: "Evening (10pm–6am)",
+  full_day: "Full day (24hr)",
+  custom: "Custom time"
 };
+
+export function formatShiftLabel(shift: string, notes: string | null | undefined) {
+  if (shift !== "custom") {
+    return SHIFT_LABELS[shift] ?? shift;
+  }
+  const parsed = parseBookingNotes(notes);
+  if (parsed?.customStartTime && parsed?.customEndTime) {
+    return `Custom: ${parsed.customStartTime} – ${parsed.customEndTime}`;
+  }
+  return SHIFT_LABELS.custom;
+}

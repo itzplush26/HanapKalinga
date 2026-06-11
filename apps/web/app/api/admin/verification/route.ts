@@ -4,6 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendMail } from "@/lib/email/send-mail";
 import {
+  buildVerificationApprovedEmailHtml,
+  buildVerificationApprovedEmailText,
+  VERIFICATION_APPROVED_SUBJECT
+} from "@/lib/email/verification-approved-email";
+import {
   actionToStatus,
   getVerificationNotificationContent,
   type VerificationAction
@@ -13,7 +18,10 @@ const bodySchema = z.object({
   nurseId: z.string().uuid(),
   action: z.enum(["approve", "reject", "request_resubmission", "mark_under_review"]),
   rejectionReason: z.string().optional(),
-  reviewNotes: z.string().optional()
+  reviewNotes: z.string().optional(),
+  prcLicenseExpiry: z.string().optional(),
+  tesdaCertExpiry: z.string().optional(),
+  nbiExpiry: z.string().optional()
 });
 
 export async function POST(request: Request) {
@@ -40,7 +48,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid request." }, { status: 400 });
     }
 
-    const { nurseId, action, rejectionReason, reviewNotes } = parsed.data;
+    const { nurseId, action, rejectionReason, reviewNotes, prcLicenseExpiry, tesdaCertExpiry, nbiExpiry } =
+      parsed.data;
 
     if (
       (action === "reject" || action === "request_resubmission") &&
@@ -56,7 +65,7 @@ export async function POST(request: Request) {
 
     const { data: nurse, error: nurseError } = await service
       .from("nurses")
-      .select("id, verification_status, profiles(full_name, role)")
+      .select("id, verification_status, provider_type, profiles(full_name, role)")
       .eq("id", nurseId)
       .maybeSingle();
 
@@ -67,6 +76,18 @@ export async function POST(request: Request) {
     const profile = Array.isArray(nurse.profiles) ? nurse.profiles[0] : nurse.profiles;
     if (profile?.role !== "nurse") {
       return NextResponse.json({ error: "Invalid applicant." }, { status: 400 });
+    }
+
+    if (action === "approve") {
+      if (!nbiExpiry) {
+        return NextResponse.json({ error: "NBI expiry date is required before approval." }, { status: 400 });
+      }
+      if (nurse.provider_type === "nurse" && !prcLicenseExpiry) {
+        return NextResponse.json({ error: "PRC license expiry is required for nurses." }, { status: 400 });
+      }
+      if (nurse.provider_type === "caregiver" && !tesdaCertExpiry) {
+        return NextResponse.json({ error: "TESDA certificate expiry is required for caregivers." }, { status: 400 });
+      }
     }
 
     const previousStatus = nurse.verification_status;
@@ -81,6 +102,9 @@ export async function POST(request: Request) {
     if (action === "approve") {
       updatePayload.verified_at = new Date().toISOString();
       updatePayload.rejection_reason = null;
+      updatePayload.prc_license_expiry = prcLicenseExpiry ?? null;
+      updatePayload.tesda_cert_expiry = tesdaCertExpiry ?? null;
+      updatePayload.nbi_expiry = nbiExpiry ?? null;
     } else if (action === "reject" || action === "request_resubmission") {
       updatePayload.rejection_reason = trimmedReason;
       updatePayload.verified_at = null;
@@ -133,11 +157,22 @@ export async function POST(request: Request) {
     let emailError: string | undefined;
 
     if (recipientEmail) {
-      const mailResult = await sendMail({
-        to: recipientEmail,
-        subject: `[HanapKalinga] ${notification.title}`,
-        text: `${notification.body}\n\nSign in to view your dashboard: ${process.env.NEXT_PUBLIC_APP_URL ?? "https://hanapkalinga.ph"}/dashboard/nurse`
-      });
+      const firstName = profile?.full_name?.trim().split(/\s+/)[0] ?? "there";
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://hanapkalinga.com";
+
+      const mailResult =
+        newStatus === "verified"
+          ? await sendMail({
+              to: recipientEmail,
+              subject: VERIFICATION_APPROVED_SUBJECT,
+              text: buildVerificationApprovedEmailText(firstName),
+              html: buildVerificationApprovedEmailHtml(firstName)
+            })
+          : await sendMail({
+              to: recipientEmail,
+              subject: `[HanapKalinga] ${notification.title}`,
+              text: `${notification.body}\n\nSign in to view your dashboard: ${appUrl}`
+            });
       emailSent = mailResult.sent;
       emailError = mailResult.error;
     }

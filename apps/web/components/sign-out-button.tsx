@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { signOutWithSessionCleanup } from "@/lib/session-lock";
 import { cn } from "@/lib/utils";
 
 interface SignOutButtonProps {
@@ -10,8 +11,7 @@ interface SignOutButtonProps {
 export function SignOutButton({ className }: SignOutButtonProps) {
   async function handleSignOut() {
     const supabase = createClient();
-    await supabase.auth.signOut();
-    window.location.href = "/";
+    await signOutWithSessionCleanup(supabase, { redirectTo: "/" });
   }
 
   return (
