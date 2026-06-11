@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { createAnonClient } from "@/lib/supabase/anon";
 import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "@/lib/supabase/service";
 import { resolveNurseId } from "@/lib/nurse/resolve";
 import { ShareProfileButton } from "@/components/share-profile-button";
 import { ReviewBreakdown } from "@/components/review-breakdown";
@@ -24,8 +24,10 @@ interface NurseProfilePageProps {
 }
 
 export async function generateStaticParams() {
-  const service = createServiceClient();
-  const { data } = await service
+  const supabase = createAnonClient();
+  if (!supabase) return [];
+
+  const { data } = await supabase
     .from("nurses")
     .select("id, profile_slug")
     .eq("verification_status", "verified");
