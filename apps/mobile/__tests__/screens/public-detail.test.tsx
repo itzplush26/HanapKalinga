@@ -3,16 +3,28 @@ import { useNurseDetail } from '../../src/lib/hooks/useNurseDetail';
 import { useNurseAvailability } from '../../src/lib/hooks/useNurseAvailability';
 import { supabase } from '../../src/lib/supabase';
 
+function createChainableMock(resolvedValue?: unknown) {
+  const chain: Record<string, jest.Mock> = {};
+  const handler = {
+    get(_target: unknown, prop: string) {
+      if (prop === 'then') {
+        return undefined;
+      }
+      if (!chain[prop]) {
+        chain[prop] = jest.fn(() => handler);
+      }
+      return chain[prop];
+    },
+    apply() {
+      return resolvedValue ?? handler;
+    },
+  };
+  return new Proxy(handler, handler);
+}
+
 jest.mock('../../src/lib/supabase', () => ({
   supabase: {
-    from: jest.fn().mockReturnThis(),
-    select: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockReturnThis(),
-    gte: jest.fn().mockReturnThis(),
-    lte: jest.fn().mockReturnThis(),
-    order: jest.fn().mockReturnThis(),
-    limit: jest.fn().mockReturnThis(),
-    single: jest.fn().mockReturnThis(),
+    from: jest.fn(),
   },
 }));
 
@@ -51,51 +63,50 @@ const mockReviews = [
   { id: 'r2', rating: 4, comment: 'Very good.', created_at: '2025-05-15T00:00:00Z' },
 ];
 
+function buildChain(result: unknown) {
+  let resolved = false;
+  const chain: Record<string, jest.Mock> = {};
+  const proxy = new Proxy(
+    {},
+    {
+      get(_, prop: string) {
+        if (prop === 'then') {
+          if (!resolved) {
+            resolved = true;
+            return (resolve: (v: unknown) => void) => resolve(result);
+          }
+          return undefined;
+        }
+        if (!chain[prop]) {
+          chain[prop] = jest.fn(() => proxy);
+        }
+        return chain[prop];
+      },
+    }
+  );
+  return proxy;
+}
+
 describe('useNurseDetail', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('fetches nurse detail data successfully', async () => {
-    const mockFrom = jest.fn().mockReturnThis();
-
     (supabase.from as jest.Mock).mockImplementation((table: string) => {
       if (table === 'profiles') {
-        return {
-          select: jest.fn().mockReturnThis(),
-          eq: jest.fn().mockReturnThis(),
-          single: jest.fn().mockResolvedValue({ data: mockProfile, error: null }),
-        };
+        return buildChain({ data: mockProfile, error: null });
       }
       if (table === 'nurses') {
-        return {
-          select: jest.fn().mockReturnThis(),
-          eq: jest.fn().mockReturnThis(),
-          single: jest.fn().mockResolvedValue({ data: mockNurse, error: null }),
-        };
+        return buildChain({ data: mockNurse, error: null });
       }
       if (table === 'availability') {
-        return {
-          select: jest.fn().mockReturnThis(),
-          eq: jest.fn().mockReturnThis(),
-          gte: jest.fn().mockReturnThis(),
-          order: jest.fn().mockReturnThis(),
-          limit: jest.fn().mockResolvedValue({ data: mockAvailability, error: null }),
-        };
+        return buildChain({ data: mockAvailability, error: null });
       }
       if (table === 'reviews') {
-        return {
-          select: jest.fn().mockReturnThis(),
-          eq: jest.fn().mockReturnThis(),
-          order: jest.fn().mockResolvedValue({ data: mockReviews, error: null }),
-        };
+        return buildChain({ data: mockReviews, error: null });
       }
-      return {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({ data: null, error: null }),
-        order: jest.fn().mockResolvedValue({ data: null, error: null }),
-      };
+      return buildChain({ data: null, error: null });
     });
 
     const { result } = await renderHook(() => useNurseDetail('1'));
@@ -112,13 +123,11 @@ describe('useNurseDetail', () => {
   });
 
   it('handles error when profile fetch fails', async () => {
-    (supabase.from as jest.Mock).mockReturnValue({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      single: jest.fn().mockResolvedValue({ data: null, error: { message: 'Profile not found' } }),
-      order: jest.fn().mockResolvedValue({ data: [], error: null }),
-      gte: jest.fn().mockReturnThis(),
-      limit: jest.fn().mockResolvedValue({ data: [], error: null }),
+    (supabase.from as jest.Mock).mockImplementation((table: string) => {
+      if (table === 'profiles') {
+        return buildChain({ data: null, error: { message: 'Profile not found' } });
+      }
+      return buildChain({ data: [], error: null });
     });
 
     const { result } = await renderHook(() => useNurseDetail('nonexistent'));
@@ -137,13 +146,9 @@ describe('useNurseAvailability', () => {
   });
 
   it('fetches availability for a nurse', async () => {
-    (supabase.from as jest.Mock).mockReturnValue({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      gte: jest.fn().mockReturnThis(),
-      lte: jest.fn().mockReturnThis(),
-      order: jest.fn().mockResolvedValue({ data: mockAvailability, error: null }),
-    });
+    (supabase.from as jest.Mock).mockReturnValue(
+      buildChain({ data: mockAvailability, error: null })
+    );
 
     const { result } = await renderHook(() => useNurseAvailability('1', 7));
 
@@ -157,13 +162,9 @@ describe('useNurseAvailability', () => {
   });
 
   it('returns empty array when no availability', async () => {
-    (supabase.from as jest.Mock).mockReturnValue({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      gte: jest.fn().mockReturnThis(),
-      lte: jest.fn().mockReturnThis(),
-      order: jest.fn().mockResolvedValue({ data: null, error: null }),
-    });
+    (supabase.from as jest.Mock).mockReturnValue(
+      buildChain({ data: null, error: null })
+    );
 
     const { result } = await renderHook(() => useNurseAvailability('1', 7));
 
