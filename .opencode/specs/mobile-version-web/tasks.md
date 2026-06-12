@@ -12,7 +12,7 @@ Eight phases build the mobile app from foundation through full feature parity. P
 
 **Goal**: Install all dependencies, establish the design token system, build UI primitives and shared wrappers, configure app.json, and set up navigation infrastructure.
 
-- [ ] 1. **Install all dependencies**
+- [x] 1. **Install all dependencies**
   - Verify existing dependencies in `package.json` are present
   - Install missing production deps: `lucide-react-native`, `expo-image-picker`, `expo-document-picker`, `@react-native-community/datetimepicker`, `expo-file-system`, `expo-sharing`, `zod`, `@react-navigation/bottom-tabs`
   - Install font packages: `@expo-google-fonts/space-grotesk`, `@expo-google-fonts/manrope`
@@ -20,7 +20,7 @@ Eight phases build the mobile app from foundation through full feature parity. P
   - Configure `useFonts` with SpaceGrotesk + Manrope in root layout
   - _Requirements: Design Principle 4_
 
-- [ ] 2. **Create design token system** (`src/theme/`)
+- [x] 2. **Create design token system** (`src/theme/`)
   - `colors.ts` - brand palette (50->900), surface colors (soft, strong, dark), signature colors (cream, yellow, mustard), semantic colors (link, info, success, error), ink, body, muted, hairline, canvas
   - `typography.ts` - fontFamily (display, body, bodyMedium, bodySemiBold), mobile-adapted size scale (32px->12px), lineHeight
   - `spacing.ts` - all tokens from design doc (xxs 4px -> section 64px)
@@ -28,7 +28,7 @@ Eight phases build the mobile app from foundation through full feature parity. P
   - `index.ts` - unified export
   - _Requirements: Design Token System section_
 
-- [ ] 3. **Build UI primitives** (all in `src/components/ui/`)
+- [x] 3. **Build UI primitives** (all in `src/components/ui/`)
   - `Button.tsx` - variants: primary, secondary, ghost, link. Min height 48pt. Loading spinner, pressed opacity.
   - `Input.tsx` - 48pt height, rounded.sm, hairline border, brand-300 focus. SecureTextEntry toggle. Error state.
   - `Card.tsx` - variants: default, signature (brand bg, white text), cream (brand-50 bg). rounded prop.
@@ -40,26 +40,26 @@ Eight phases build the mobile app from foundation through full feature parity. P
   - `Chip.tsx` - rounded-pill toggle. Selected: brand-600 bg. Unselected: white bg, brand-200 border.
   - _Requirements: Reusable UI Primitives, Design Principle 6_
 
-- [ ] 4. **Build shared wrappers and infrastructure**
+- [x] 4. **Build shared wrappers and infrastructure**
   - `ScreenWrapper` - SafeAreaView + KeyboardAvoidingView (iOS behavior="padding") + optional ScrollView
   - `ErrorBoundary` - catches render errors, shows fallback with retry button
   - `LoadingOverlay` - full-screen semi-transparent spinner for async operations
   - _Requirements: Design Principle 6_
 
-- [ ] 5. **Configure app.json** (`app.json`)
+- [x] 5. **Configure app.json** (`app.json`)
   - Add `scheme` for deep linking (hanapkalinga)
   - Configure `expo-splash-screen` with brand-600 background and icon
   - Configure deep linking for auth callback URL (matching web's `/auth/callback`)
   - Set status bar style (dark), orientation lock (portrait)
   - _Requirements: 1.7_
 
-- [ ] 6. **Set up Supabase typed client**
+- [x] 6. **Set up Supabase typed client**
   - Generate Supabase types from existing schema (or manually mirror `web/types/database.types.ts`)
   - Create `src/lib/supabase.ts` - typed Supabase client using the existing `lib/supabase.ts` pattern with SecureStore adapter
   - Create TypeScript type exports for all database row types (re-exporting from shared or local)
   - _Requirements: 1.7_
 
-- [ ] 7. **Configure navigation infrastructure**
+- [x] 7. **Configure navigation infrastructure**
   - Set up `app/_layout.tsx` with root Stack (no headers), StatusBar, font loading, ErrorBoundary, splash screen hide
   - Create route group layouts as placeholders:
     - `(auth)/_layout.tsx` - stack with slide animation
@@ -71,7 +71,7 @@ Eight phases build the mobile app from foundation through full feature parity. P
   - **Architecture note**: The Family "Browse" tab deep-links to `(public)/nurses/` via `expo-router`'s `useRouter()`. The public route group is shared, not duplicated.
   - _Requirements: Navigation Architecture, Route Map_
 
-- [ ] 8. **Checkpoint - Design system and infrastructure complete**
+- [x] 8. **Checkpoint - Design system and infrastructure complete**
   - Verify all tokens match design doc values
   - Verify all UI primitives render each variant correctly
   - Verify fonts load on both iOS and Android simulators
@@ -83,7 +83,7 @@ Eight phases build the mobile app from foundation through full feature parity. P
 
 **Goal**: Create consistent data-fetching patterns, shared utility functions, and testing infrastructure that every screen inherits.
 
-- [ ] 9. **Create shared utility functions** (`src/lib/helpers.ts`)
+- [x] 9. **Create shared utility functions** (`src/lib/helpers.ts`)
   - `formatDate(date: string)` - "Mon, Jun 15" format
   - `getShiftLabel(shift: Shift)` - "Morning (6AM-2PM)"
   - `formatRate(rate: number)` - "P1,500/day" or "P200/hr"
@@ -93,35 +93,35 @@ Eight phases build the mobile app from foundation through full feature parity. P
   - `cn(...classes: (string | undefined)[])` - class name merge utility (like web's tailwind-merge pattern)
   - _Requirements: all_
 
-- [ ] 10. **Create base data-fetching hook pattern** (`src/lib/hooks/`)
+- [x] 10. **Create base data-fetching hook pattern** (`src/lib/hooks/`)
   - Create `useSupabaseQuery` base hook: takes Supabase query builder, returns `{ data, loading, error, refetch }`
   - Create `useSupabaseMutation` base hook: takes mutation function, returns `{ mutate, loading, error }`
   - Document the pattern: every data-fetching screen uses one of these two base hooks
   - Note: These are thin wrappers - not a custom query library. They enforce consistent return shapes and error handling.
   - _Requirements: all_
 
-- [ ] 11. **Set up testing infrastructure**
+- [x] 11. **Set up testing infrastructure**
   - Configure Jest with React Native Testing Library preset
   - Create `/__tests__/` directory structure mirroring src/
   - Create a test helper file with common mock factories (mocked navigation, mocked supabase client)
   - Add `test` and `test:watch` scripts to `package.json`
   - _Requirements: Testing Strategy section_
 
-- [ ] 12. **Build shared domain components** (`src/components/`)
+- [x] 12. **Build shared domain components** (`src/components/`)
   - `EmptyState` - icon + title + subtitle + optional CTA Button. Props: `icon`, `title`, `subtitle`, `actionLabel?`, `onAction?`. Used by nurse list, booking list, notifications, messages inbox.
   - `DocumentUploader` - uses `expo-document-picker` with file type filter (PDF/images) and size cap (5MB). Shows file name + remove button after selection. Loading state during upload. Error state for oversized/invalid files. Used by registration and nurse profile.
   - `RegionCitySelects` - two cascading pickers: region selector (17 PH regions) -> city selector (filtered cities for selected region). Uses native Picker or scrollable list. Used by registration, family profile, nurse profile.
   - `StarRating` - row of 5 touchable stars. Half-star support. Read-only mode via prop. Accessible labels per star. Used by booking review and nurse detail display.
   - _Requirements: 1.3, 3.2, 4.2, 6_
 
-- [ ] 13. **Write tests for UI primitives** (establishes testing patterns)
+- [x] 13. **Write tests for UI primitives** (establishes testing patterns)
   - Test Button renders all variants correctly
   - Test Input shows error state, handles text input
   - Test Badge renders correct color for each status
   - Test Skeleton renders with correct dimensions
   - _Requirements: Testing Strategy, Unit Tests_
 
-- [ ] 14. **Checkpoint - Data layer complete**
+- [x] 14. **Checkpoint - Data layer complete**
   - Verify helpers return correct formatted values
   - Verify base hooks return correct shape (mock a Supabase call)
   - Verify tests run and pass (`npm test`)
@@ -131,59 +131,59 @@ Eight phases build the mobile app from foundation through full feature parity. P
 
 **Goal**: Build the full auth flow - landing screen, auth context, login, multi-step registration (split into individual tasks), password reset.
 
-- [ ] 15. **Build Auth context** (`src/contexts/AuthContext.tsx`)
+- [x] 15. **Build Auth context** (`src/contexts/AuthContext.tsx`)
   - Wraps app with Supabase `onAuthStateChange` listener
   - On cold start: restore session from `expo-secure-store` (already configured in lib/supabase.ts)
   - Expose: `user`, `profile`, `isLoading`, `signOut`, `refreshProfile`
   - Provide role-based redirect helper (used by layout files)
   - _Requirements: 1.6, 1.7_
 
-- [ ] 16. **Write auth tests**
+- [x] 16. **Write auth tests**
   - Test: auth context returns correct user after login
   - Test: signOut clears session
   - Test: role-based redirect returns correct target
   - _Requirements: Testing Strategy_
 
-- [ ] 17. **Build Landing screen** (`app/index.tsx`)
+- [x] 17. **Build Landing screen** (`app/index.tsx`)
   - Hero: `APP_NAME` in SpaceGrotesk displayLg, tagline in Manrope body
   - Two primary CTAs: "I need a nurse or caregiver" -> registration (family path), "I am a nurse or caregiver" -> registration (provider path)
   - "Log in" TextLink at bottom
   - If already authenticated: redirect to role-appropriate dashboard
   - _Requirements: 1.1_
 
-- [ ] 18. **Build Login screen** (`(auth)/login.tsx`)
+- [x] 18. **Build Login screen** (`(auth)/login.tsx`)
   - Email + password Inputs with zod validation
   - "Forgot password?" and "Create an account" TextLinks
   - Error state: "Invalid email or password" on auth failure
   - On success: redirect to role-appropriate dashboard
   - _Requirements: 1.2_
 
-- [ ] 19. **Build Forgot & Reset Password screens**
+- [x] 19. **Build Forgot & Reset Password screens**
   - `(auth)/forgot-password.tsx` - email Input, send reset link Button, success confirmation, back-to-login link
   - `(auth)/update-password.tsx` - new password + confirm Inputs, update Button, success state with login link
   - Handle deep link from password reset email
   - _Requirements: 1.5, 1.6_
 
-- [ ] 20. **Registration Step 1: Email** (`(auth)/register/index.tsx`)
+- [x] 20. **Registration Step 1: Email** (`(auth)/register/index.tsx`)
   - Email Input with validation
   - "Next" Button -> sends OTP via Supabase `signInWithOtp`
   - Error handling for invalid/duplicate email
   - _Requirements: 1.3_
 
-- [ ] 21. **Registration Step 2: OTP Verification** (`(auth)/register/verify-otp.tsx`)
+- [x] 21. **Registration Step 2: OTP Verification** (`(auth)/register/verify-otp.tsx`)
   - 6 individual digit input boxes (auto-advance on type)
   - "Verify" Button -> confirms OTP via Supabase
   - "Resend code" TextLink with 30-second countdown timer
   - Error state: "Invalid verification code"
   - _Requirements: 1.3_
 
-- [ ] 22. **Registration Step 3: Role Selection** (`(auth)/register/choose-role.tsx`)
+- [x] 22. **Registration Step 3: Role Selection** (`(auth)/register/choose-role.tsx`)
   - Two large Card options tappable: "I am a family member looking for care" (family) and "I am a nurse or caregiver" (provider)
   - Selected card: brand-600 border + checkmark icon. Unselected: hairline border.
   - "Continue" Button (enabled only when role is selected)
   - _Requirements: 1.3_
 
-- [ ] 23. **Registration Step 4: Profile Form** (`(auth)/register/profile.tsx`)
+- [x] 23. **Registration Step 4: Profile Form** (`(auth)/register/profile.tsx`)
   - Dynamic form based on role selection from Step 3:
     - **Family**: full_name, phone, region+city+barangay (RegionCitySelects), address, patient_name. All validated with zod.
     - **Nurse**: full_name, phone, region+city+barangay, address, provider_type toggle (nurse/caregiver), specializations Chip multi-select, years_experience Input, bio Textarea, hourly_rate + daily_rate range inputs, DocumentUploader for PRC/TESDA cert, DocumentUploader for NBI clearance
@@ -192,14 +192,14 @@ Eight phases build the mobile app from foundation through full feature parity. P
   - "Next" Button (disabled while uploading docs)
   - _Requirements: 1.3_
 
-- [ ] 24. **Registration Step 5: Set Password** (`(auth)/register/set-password.tsx`)
+- [x] 24. **Registration Step 5: Set Password** (`(auth)/register/set-password.tsx`)
   - Password + confirm password Inputs
   - Minimum length validation (8 characters), show password toggle
   - "Create account" Button -> finalizes signup via Supabase `updateUser`
   - On success: auto-authenticated + redirect to role-based dashboard
   - _Requirements: 1.3, 1.4_
 
-- [ ] 25. **Build auth redirect middleware**
+- [x] 25. **Build auth redirect middleware**
   - In each layout file: check auth state + role before rendering children
   - `(family)/_layout.tsx` - redirect unauthenticated -> landing; wrong role -> own dashboard
   - `(nurse)/_layout.tsx` - same pattern
@@ -207,14 +207,14 @@ Eight phases build the mobile app from foundation through full feature parity. P
   - `(public)/_layout.tsx` - no auth check (public)
   - _Requirements: Correctness Properties 1, 2_
 
-- [ ] 26. **Write auth flow tests**
+- [x] 26. **Write auth flow tests**
   - Test: complete registration flow navigates correctly step-by-step
   - Test: login with wrong credentials shows error
   - Test: auth redirect sends wrong-role user to correct dashboard
   - Test: password reset flow handles deep link
   - _Requirements: Testing Strategy_
 
-- [ ] 27. **Checkpoint - Auth flow complete**
+- [x] 27. **Checkpoint - Auth flow complete**
   - Verify: register as family -> lands on family dashboard
   - Verify: register as nurse -> lands on nurse dashboard
   - Verify: login with wrong credentials shows inline error
