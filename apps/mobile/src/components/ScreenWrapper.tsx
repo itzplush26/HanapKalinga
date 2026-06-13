@@ -1,11 +1,11 @@
 import {
-  SafeAreaView,
   KeyboardAvoidingView,
   ScrollView,
   Platform,
   StyleSheet,
   ViewStyle,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 
 interface ScreenWrapperProps {
@@ -29,7 +29,7 @@ export function ScreenWrapper({
   );
 
   return (
-    <SafeAreaView style={[styles.safeArea, style]}>
+    <SafeAreaView style={[styles.safeArea, style]} edges={['top', 'bottom']}>
       {scroll ? (
         <ScrollView
           contentContainerStyle={styles.scrollContent}
