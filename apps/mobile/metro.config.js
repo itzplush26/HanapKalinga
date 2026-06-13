@@ -2,6 +2,7 @@ const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
 
 const projectRoot = __dirname;
+const rootNodeModules = path.resolve(projectRoot, '..', '..', 'node_modules');
 const mobileNodeModules = path.resolve(projectRoot, 'node_modules');
 
 // Monorepo workaround: mobile (Expo 54 / React 19) and web (Next.js / React 18)
@@ -10,8 +11,8 @@ const mobileNodeModules = path.resolve(projectRoot, 'node_modules');
 // We intercept and redirect these modules to mobile's React 19 copy.
 const REDIRECT = {
   react: path.join(mobileNodeModules, 'react', 'index.js'),
-  scheduler: path.join(mobileNodeModules, 'scheduler', 'index.js'),
-  'use-sync-external-store': path.join(mobileNodeModules, 'use-sync-external-store', 'index.js'),
+  scheduler: path.join(rootNodeModules, 'scheduler', 'index.js'),
+  'use-sync-external-store': path.join(rootNodeModules, 'use-sync-external-store', 'index.js'),
 };
 
 const config = getDefaultConfig(projectRoot);
