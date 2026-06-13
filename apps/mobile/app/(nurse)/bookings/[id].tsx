@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, Check, X } from 'lucide-react-native';
+import { ArrowLeft } from 'lucide-react-native';
 import { useAuth } from '../../../src/contexts/AuthContext';
 import { useBookingDetail } from '../../../src/lib/hooks/useBookingDetail';
 import { supabase } from '../../../src/lib/supabase';
