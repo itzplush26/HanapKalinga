@@ -1,0 +1,37 @@
+appId: ${APP_ID}
+env:
+  TEST_EMAIL: ${TEST_EMAIL}
+  TEST_PASSWORD: ${TEST_PASSWORD}
+---
+# Login as family user
+- runFlow:
+    file: ../shared/setup.yaml
+- runFlow:
+    file: ../shared/helpers.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# Wait for family dashboard
+- assertVisible:
+    id: "browse_button_filter"
+    timeout: 15000
+
+# Navigate to Browse tab
+- tapOn:
+    text: "Browse"
+
+# Verify browse screen loaded
+- assertVisible:
+    id: "browse_list_nurses"
+    timeout: 10000
+
+# Verify search input is present
+- assertVisible:
+    id: "browse_input_search"
+    timeout: 5000
+
+# Verify filter button is present
+- assertVisible:
+    id: "browse_button_filter"
+    timeout: 5000
