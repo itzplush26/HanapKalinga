@@ -52,6 +52,20 @@ const TAB_LABELS: Record<QueueTab, string> = {
   incomplete: "Incomplete"
 };
 
+function parseInitialTab(value?: string): QueueTab {
+  if (
+    value === "all" ||
+    value === "pending" ||
+    value === "verified" ||
+    value === "rejected" ||
+    value === "incomplete" ||
+    value === "under_review"
+  ) {
+    return value === "under_review" ? "pending" : value;
+  }
+  return "pending";
+}
+
 function useDebouncedValue<T>(value: T, delayMs: number): T {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
@@ -63,11 +77,12 @@ function useDebouncedValue<T>(value: T, delayMs: number): T {
 
 interface VerificationQueueProps {
   initialNurses: VerificationQueueNurse[];
+  initialTab?: string;
 }
 
-export function VerificationQueue({ initialNurses }: VerificationQueueProps) {
+export function VerificationQueue({ initialNurses, initialTab }: VerificationQueueProps) {
   const nurses = initialNurses;
-  const [activeTab, setActiveTab] = useState<QueueTab>("pending");
+  const [activeTab, setActiveTab] = useState<QueueTab>(() => parseInitialTab(initialTab));
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [sendingReminders, setSendingReminders] = useState(false);
@@ -77,7 +92,9 @@ export function VerificationQueue({ initialNurses }: VerificationQueueProps) {
   const counts = useMemo(
     () => ({
       all: nurses.length,
-      pending: nurses.filter((nurse) => nurse.verification_status === "pending").length,
+      pending: nurses.filter((nurse) =>
+        nurse.verification_status === "pending" || nurse.verification_status === "under_review"
+      ).length,
       verified: nurses.filter((nurse) => nurse.verification_status === "verified").length,
       rejected: nurses.filter((nurse) =>
         ["rejected", "resubmission_required"].includes(nurse.verification_status)
@@ -96,7 +113,7 @@ export function VerificationQueue({ initialNurses }: VerificationQueueProps) {
         activeTab === "all"
           ? true
           : activeTab === "pending"
-            ? nurse.verification_status === "pending"
+            ? nurse.verification_status === "pending" || nurse.verification_status === "under_review"
             : activeTab === "verified"
               ? nurse.verification_status === "verified"
               : activeTab === "rejected"
