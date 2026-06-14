@@ -64,7 +64,7 @@ async function notifyMatchingNurses(
   const service = createServiceClient();
   const { data: nurses } = await service
     .from("nurses")
-    .select("id, specializations, profiles(full_name, region)")
+    .select("id, specializations, profiles!nurses_id_fkey(full_name, region)")
     .eq("verification_status", "verified");
   const budgetLabel = getDailyRateBand(data.budgetBand ?? "")?.label ?? "Open to discuss";
 

@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: NurseProfilePageProps): Promi
 
   const { data: nurse } = await supabase
     .from("nurses")
-    .select("bio, profile_photo_url, profile_slug, profiles(full_name)")
+    .select("bio, profile_photo_url, profile_slug, profiles!nurses_id_fkey(full_name)")
     .eq("id", nurseId)
     .single();
 
@@ -96,7 +96,7 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
     supabase
       .from("nurses")
       .select(
-        "id, provider_type, profile_slug, specializations, years_experience, bio, hourly_rate, hourly_rate_max, hourly_rate_range, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, profiles(full_name, city, barangay, region)"
+        "id, provider_type, profile_slug, specializations, years_experience, bio, hourly_rate, hourly_rate_max, hourly_rate_range, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, profiles!nurses_id_fkey(full_name, city, barangay, region)"
       )
       .eq("id", nurseId)
       .single(),

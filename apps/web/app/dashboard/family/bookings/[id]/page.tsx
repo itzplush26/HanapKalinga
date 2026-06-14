@@ -22,7 +22,7 @@ export default async function FamilyBookingDetailPage({ params }: BookingDetailP
     supabase
       .from("bookings")
       .select(
-        "id, status, requested_date, shift, notes, nurse_id, nurses(provider_type, profile_photo_url, profiles(full_name, city))"
+        "id, status, requested_date, shift, notes, nurse_id, nurses(provider_type, profile_photo_url, profiles!nurses_id_fkey(full_name, city))"
       )
       .eq("id", params.id)
       .single(),

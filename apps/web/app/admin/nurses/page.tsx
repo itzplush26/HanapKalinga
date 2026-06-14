@@ -9,7 +9,7 @@ export default async function AdminNursesPage() {
   const supabase = createClient();
   const { data: nurses } = await supabase
     .from("nurses")
-    .select("id, verification_status, profiles(full_name, city)")
+    .select("id, verification_status, profiles!nurses_id_fkey(full_name, city)")
     .order("verification_status", { ascending: true });
 
   return (

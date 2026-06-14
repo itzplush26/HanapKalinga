@@ -35,7 +35,7 @@ async function loadBookingContext(bookingId: string) {
 
   const [{ data: family }, { data: nurse }] = await Promise.all([
     service.from("families").select("patient_name, profiles(full_name)").eq("id", booking.family_id).single(),
-    service.from("nurses").select("provider_type, profiles(full_name)").eq("id", booking.nurse_id).single()
+    service.from("nurses").select("provider_type, profiles!nurses_id_fkey(full_name)").eq("id", booking.nurse_id).single()
   ]);
 
   const familyProfile = Array.isArray(family?.profiles) ? family?.profiles[0] : family?.profiles;

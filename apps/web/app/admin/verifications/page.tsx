@@ -100,7 +100,8 @@ export default async function AdminVerificationsPage({
 
       {error ? (
         <p className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          Could not load the verification queue. Ensure database migrations through 0027 are applied.
+          Could not load the verification queue.
+          {error.message ? ` ${error.message}` : " Check that database migrations through 0027 are applied."}
         </p>
       ) : null}
 

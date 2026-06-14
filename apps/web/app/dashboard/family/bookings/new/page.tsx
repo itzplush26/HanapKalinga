@@ -111,7 +111,7 @@ function BookingForm() {
     async function loadNurse() {
       const { data } = await supabase
         .from("nurses")
-        .select("id, provider_type, profile_photo_url, profiles(full_name, city)")
+        .select("id, provider_type, profile_photo_url, profiles!nurses_id_fkey(full_name, city)")
         .eq("id", defaultNurse)
         .eq("verification_status", "verified")
         .maybeSingle();

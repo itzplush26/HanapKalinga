@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   const service = createServiceClient();
   const { data: nurses } = await service
     .from("nurses")
-    .select("id, provider_type, prc_license_expiry, tesda_cert_expiry, nbi_expiry, license_expiry_notified_at, profiles(full_name)");
+    .select("id, provider_type, prc_license_expiry, tesda_cert_expiry, nbi_expiry, license_expiry_notified_at, profiles!nurses_id_fkey(full_name)");
 
   const notifyCutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   let notified = 0;
