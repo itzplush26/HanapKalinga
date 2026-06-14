@@ -10,7 +10,7 @@ This is a **monorepo** containing both web and mobile applications with shared c
 NurseLink/
 ├── apps/
 │   ├── web/              # Next.js web application
-│   └── mobile/           # React Native mobile app (coming soon)
+│   └── mobile/           # React Native mobile app (Expo)
 ├── packages/
 │   ├── shared/           # Shared business logic, types, validations
 │   ├── database/         # Supabase migrations and seeds
@@ -85,7 +85,25 @@ npm run dev
 
 ### Mobile App
 
-_Coming soon - React Native/Expo setup will be added_
+```bash
+cd apps/mobile
+npm start
+```
+
+Scan the QR code with Expo Go, or press `a` for Android emulator / `i` for iOS simulator.
+
+#### Running E2E Tests
+
+E2E tests use [Maestro](https://maestro.mobile.dev) for mobile UI automation across auth, family, nurse, and admin flows.
+
+**Prerequisites:** Install Maestro CLI, run an Android emulator or iOS simulator, and have Supabase accessible.
+
+```powershell
+# From apps/mobile/
+.\scripts\run-maestro.ps1 -Env local
+```
+
+CI workflow (`.github/workflows/maestro-e2e.yml`) builds an APK via EAS, starts an Android emulator, seeds test data, runs all Maestro flows, and cleans up. See `apps/mobile/AGENTS.md` for full setup details.
 
 ### Build All
 
@@ -137,12 +155,12 @@ Business logic that works across web and mobile:
 - Zustand (state management)
 - React Hook Form + Zod
 
-### Mobile (Planned)
-- React Native with Expo
+### Mobile
+- React Native with Expo 54
 - TypeScript
-- Supabase
-- Native Navigation
-- NativeWind or React Native Paper
+- Supabase (Auth, Database, Storage)
+- Expo Router (file-based navigation)
+- React Native Paper components
 
 ### Shared
 - TypeScript
@@ -159,6 +177,10 @@ Business logic that works across web and mobile:
 | `npm run build:web` | Build web app only |
 | `npm run lint` | Lint all workspaces |
 | `npm run clean` | Remove all node_modules and build artifacts |
+| `npm run test` (in `apps/mobile/`) | Run mobile unit/integration tests |
+| `node apps/mobile/scripts/seed-e2e.mjs` | Seed Maestro E2E test data |
+| `node apps/mobile/scripts/cleanup-e2e.mjs` | Clean up E2E test data |
+| `.\scripts\run-maestro.ps1` (in `apps/mobile/`) | Orchestrate Maestro E2E tests |
 
 ## Features
 
