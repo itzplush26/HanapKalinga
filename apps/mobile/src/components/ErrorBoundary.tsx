@@ -45,7 +45,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           <Text style={styles.message}>
             {this.state.error?.message || 'An unexpected error occurred.'}
           </Text>
-          <Button variant="primary" onPress={this.handleRetry}>
+          <Button variant="default" onPress={this.handleRetry}>
             Tap to retry
           </Button>
         </View>
