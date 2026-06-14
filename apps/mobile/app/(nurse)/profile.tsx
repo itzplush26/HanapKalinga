@@ -22,7 +22,7 @@ import type { Nurse, Profile } from '@hanapkalinga/shared/types';
 
 export default function NurseProfileScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -348,6 +348,25 @@ export default function NurseProfileScreen() {
 
         <Button variant="primary" loading={saving} onPress={handleSave}>
           Save
+        </Button>
+
+        <Button
+          variant="outline"
+          onPress={() => {
+            Alert.alert('Sign out', 'Are you sure you want to sign out?', [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Sign out',
+                style: 'destructive',
+                onPress: async () => {
+                  await signOut();
+                  router.replace('/');
+                },
+              },
+            ]);
+          }}
+        >
+          Sign out
         </Button>
       </ScrollView>
     </ScreenWrapper>

@@ -43,6 +43,7 @@ export default function NurseBookingsScreen() {
         <FlatList
           data={bookings}
           keyExtractor={(item) => item.id}
+          testID="nurseBookings_list_bookings"
           renderItem={({ item }) => {
             const statusColor = getStatusColor(item.status);
             return (
@@ -51,6 +52,7 @@ export default function NurseBookingsScreen() {
                 activeOpacity={0.7}
                 style={styles.card}
                 accessibilityRole="button"
+                testID={`nurseBookings_card_${item.id}`}
               >
                 <View style={styles.row}>
                   <View style={styles.iconContainer}>
