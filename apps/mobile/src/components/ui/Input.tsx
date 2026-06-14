@@ -8,7 +8,7 @@ import {
   TextInputProps as RNTextInputProps,
 } from 'react-native';
 import { Eye, EyeOff } from 'lucide-react-native';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../contexts/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { rounded } from '../../theme/rounded';
 import { typography } from '../../theme/typography';
@@ -26,22 +26,29 @@ export function Input({
   style,
   ...props
 }: InputProps) {
+  const { colors } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
   const [isSecureVisible, setIsSecureVisible] = useState(false);
 
   return (
     <View style={styles.container}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && (
+        <Text style={[styles.label, { color: colors['text-secondary'] }]}>
+          {label}
+        </Text>
+      )}
       <View
         style={[
           styles.inputWrapper,
-          isFocused && styles.inputFocused,
-          error && styles.inputError,
+          {
+            borderColor: error ? colors.error : isFocused ? colors['border-focus'] : colors.border,
+            backgroundColor: colors.surface,
+          },
         ]}
       >
         <RNTextInput
-          style={[styles.input, style]}
-          placeholderTextColor={colors.muted}
+          style={[styles.input, { color: colors['text-primary'] }, style]}
+          placeholderTextColor={colors['text-muted']}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           secureTextEntry={secureTextEntry && !isSecureVisible}
@@ -56,56 +63,45 @@ export function Input({
             accessibilityRole="button"
           >
             {isSecureVisible ? (
-              <EyeOff size={20} color={colors.muted} />
+              <EyeOff size={20} color={colors['text-muted']} />
             ) : (
-              <Eye size={20} color={colors.muted} />
+              <Eye size={20} color={colors['text-muted']} />
             )}
           </TouchableOpacity>
         )}
       </View>
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {error && <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing.xs,
+    gap: spacing[2],
   },
   label: {
-    fontSize: typography.size.labelMd,
+    fontSize: typography.size.sm,
     fontFamily: typography.fontFamily.bodyMedium,
-    color: colors.body,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 48,
+    height: 44,
     borderWidth: 1,
-    borderColor: colors.hairline,
-    borderRadius: rounded.sm,
-    backgroundColor: colors.canvas,
-    paddingHorizontal: spacing.md,
-  },
-  inputFocused: {
-    borderColor: colors.brand[300],
-  },
-  inputError: {
-    borderColor: colors.semantic.error,
+    borderRadius: rounded.md,
+    paddingHorizontal: spacing[3],
   },
   input: {
     flex: 1,
-    fontSize: typography.size.body,
+    fontSize: typography.size.base,
     fontFamily: typography.fontFamily.body,
-    color: colors.ink,
     height: '100%',
   },
   toggleButton: {
-    padding: spacing.xs,
+    padding: spacing[2],
   },
   errorText: {
-    fontSize: typography.size.caption,
+    fontSize: typography.size.sm,
     fontFamily: typography.fontFamily.body,
-    color: colors.semantic.error,
   },
 });
