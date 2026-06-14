@@ -214,7 +214,7 @@ export default function VerificationReviewScreen() {
               </Text>
             </View>
             <View style={styles.applicantDetails}>
-              <Text style={styles.applicantName}>
+              <Text style={styles.applicantName} testID="verificationDetail_text_name">
                 {profile?.full_name ?? 'Applicant'}
               </Text>
               <Badge color={statusColor} label={nurse.verification_status.replace(/_/g, ' ')} />
@@ -303,7 +303,7 @@ export default function VerificationReviewScreen() {
         </Card>
 
         {data.auditLogs.length > 0 && (
-          <Card variant="default" title="Audit log" style={{ marginTop: spacing.md }}>
+          <Card variant="default" title="Audit log" style={{ marginTop: spacing.md }} testID="verificationDetail_text_auditLog">
             {data.auditLogs.map((log, index) => (
               <View key={log.id}>
                 {index > 0 && <Separator />}
@@ -343,6 +343,7 @@ export default function VerificationReviewScreen() {
               onPress={confirmApprove}
               loading={actionLoading === 'approved'}
               disabled={actionLoading !== null}
+              testID="verificationDetail_button_approve"
             >
               Approve
             </Button>
@@ -356,6 +357,7 @@ export default function VerificationReviewScreen() {
               loading={actionLoading === 'rejected'}
               disabled={actionLoading !== null}
               style={styles.rejectButton}
+              testID="verificationDetail_button_reject"
             >
               Reject
             </Button>
