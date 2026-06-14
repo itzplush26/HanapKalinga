@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
 import { Upload, X, FileText, AlertTriangle } from 'lucide-react-native';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../contexts/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { rounded } from '../../theme/rounded';
 import { typography } from '../../theme/typography';
@@ -25,6 +24,7 @@ export function DocumentUploader({
   accept,
   loading = false,
 }: DocumentUploaderProps) {
+  const { colors } = useTheme();
   const [error, setError] = useState<string | null>(null);
 
   const handlePick = async () => {
@@ -63,11 +63,19 @@ export function DocumentUploader({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, { color: colors['text-secondary'] }]}>{label}</Text>
       {selectedFile ? (
-        <View style={styles.fileCard}>
-          <FileText size={20} color={colors.brand[600]} />
-          <Text style={styles.fileName} numberOfLines={1}>
+        <View
+          style={[
+            styles.fileCard,
+            {
+              borderColor: colors.primary,
+              backgroundColor: colors['primary-light'],
+            },
+          ]}
+        >
+          <FileText size={20} color={colors.primary} />
+          <Text style={[styles.fileName, { color: colors['text-primary'] }]} numberOfLines={1}>
             {selectedFile.name}
           </Text>
           <TouchableOpacity
@@ -76,32 +84,39 @@ export function DocumentUploader({
             accessibilityLabel={`Remove ${selectedFile.name}`}
             accessibilityRole="button"
           >
-            <X size={16} color={colors.muted} />
+            <X size={16} color={colors['text-muted']} />
           </TouchableOpacity>
         </View>
       ) : (
         <TouchableOpacity
           onPress={handlePick}
           disabled={loading}
-          style={[styles.uploadZone, loading && styles.uploadZoneDisabled]}
+          style={[
+            styles.uploadZone,
+            {
+              borderColor: colors.border,
+              backgroundColor: colors.surface,
+            },
+            loading && styles.uploadZoneDisabled,
+          ]}
           accessibilityRole="button"
           accessibilityLabel={`Upload ${label}`}
         >
           {loading ? (
-            <Text style={styles.uploadText}>Uploading...</Text>
+            <Text style={[styles.uploadText, { color: colors.primary }]}>Uploading...</Text>
           ) : (
             <>
-              <Upload size={20} color={colors.brand[600]} />
-              <Text style={styles.uploadText}>Tap to upload {label}</Text>
-              <Text style={styles.uploadHint}>PDF or image, max 5MB</Text>
+              <Upload size={20} color={colors.primary} />
+              <Text style={[styles.uploadText, { color: colors.primary }]}>Tap to upload {label}</Text>
+              <Text style={[styles.uploadHint, { color: colors['text-muted'] }]}>PDF or image, max 5MB</Text>
             </>
           )}
         </TouchableOpacity>
       )}
       {error && (
         <View style={styles.errorRow}>
-          <AlertTriangle size={14} color={colors.semantic.error} />
-          <Text style={styles.errorText}>{error}</Text>
+          <AlertTriangle size={14} color={colors.error} />
+          <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
         </View>
       )}
     </View>
@@ -110,32 +125,28 @@ export function DocumentUploader({
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing.xs,
+    gap: spacing[2],
   },
   label: {
-    fontSize: typography.size.labelMd,
+    fontSize: typography.size.sm,
     fontFamily: typography.fontFamily.bodyMedium,
-    color: colors.body,
   },
   fileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    gap: spacing[3],
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
     borderWidth: 1,
-    borderColor: colors.brand[200],
-    borderRadius: rounded.sm,
-    backgroundColor: colors.brand[50],
+    borderRadius: rounded.md,
   },
   fileName: {
     flex: 1,
-    fontSize: typography.size.body,
+    fontSize: typography.size.base,
     fontFamily: typography.fontFamily.body,
-    color: colors.ink,
   },
   removeButton: {
-    padding: spacing.xxs,
+    padding: spacing[1],
     minWidth: 44,
     minHeight: 44,
     justifyContent: 'center',
@@ -143,35 +154,30 @@ const styles = StyleSheet.create({
   },
   uploadZone: {
     borderWidth: 1,
-    borderColor: colors.hairline,
     borderStyle: 'dashed',
-    borderRadius: rounded.sm,
-    padding: spacing.lg,
+    borderRadius: rounded.md,
+    padding: spacing[6],
     alignItems: 'center',
-    gap: spacing.xs,
-    backgroundColor: colors.canvas,
+    gap: spacing[2],
   },
   uploadZoneDisabled: {
     opacity: 0.5,
   },
   uploadText: {
-    fontSize: typography.size.body,
+    fontSize: typography.size.base,
     fontFamily: typography.fontFamily.bodyMedium,
-    color: colors.brand[600],
   },
   uploadHint: {
-    fontSize: typography.size.caption,
+    fontSize: typography.size.sm,
     fontFamily: typography.fontFamily.body,
-    color: colors.muted,
   },
   errorRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xxs,
+    gap: 4,
   },
   errorText: {
-    fontSize: typography.size.caption,
+    fontSize: typography.size.sm,
     fontFamily: typography.fontFamily.body,
-    color: colors.semantic.error,
   },
 });
