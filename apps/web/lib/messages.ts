@@ -120,7 +120,7 @@ export async function buildInbox(
   if (role === "family") {
     const { data: nurses } = await supabase
       .from("nurses")
-      .select("id, profile_photo_url, profiles(full_name)")
+      .select("id, profile_photo_url, profiles!nurses_id_fkey(full_name)")
       .in("id", otherIds);
 
     for (const nurse of nurses ?? []) {

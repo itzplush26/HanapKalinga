@@ -38,7 +38,7 @@ export default async function FamilyDashboardPage({ searchParams }: FamilyDashbo
     completedIds.length
       ? supabase
           .from("bookings")
-          .select("id, status, requested_date, nurse_id, nurses(profile_photo_url, profiles(full_name))")
+          .select("id, status, requested_date, nurse_id, nurses(profile_photo_url, profiles!nurses_id_fkey(full_name))")
           .in("id", completedIds)
       : Promise.resolve({ data: [] })
   ]);

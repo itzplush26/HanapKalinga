@@ -60,7 +60,7 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
         await supabase
           .from("nurses")
           .select(
-            "id, provider_type, specializations, years_experience, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry, profiles(full_name, first_name, last_name, city, region, barangay)"
+            "id, provider_type, specializations, years_experience, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry, profiles!nurses_id_fkey(full_name, first_name, last_name, city, region, barangay)"
           )
           .eq("verification_status", "verified")
           .textSearch("search_vector", searchQuery, {

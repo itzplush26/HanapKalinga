@@ -52,7 +52,7 @@ export async function POST(_request: Request, { params }: RouteContext) {
 
     const { data: nurse } = await service
       .from("nurses")
-      .select("profiles(full_name)")
+      .select("profiles!nurses_id_fkey(full_name)")
       .eq("id", booking.nurse_id)
       .maybeSingle();
 

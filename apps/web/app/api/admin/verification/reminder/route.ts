@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     const service = createServiceClient();
     const { data: nurses, error } = await service
       .from("nurses")
-      .select("id, provider_type, prc_document_url, tesda_document_url, nbi_document_url, profiles(full_name)")
+      .select("id, provider_type, prc_document_url, tesda_document_url, nbi_document_url, profiles!nurses_id_fkey(full_name)")
       .in("id", parsed.data.nurseIds);
 
     if (error) {

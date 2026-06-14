@@ -16,7 +16,7 @@ export default async function AdminVerificationDetailPage({ params }: AdminVerif
   const { data: nurse } = await supabase
     .from("nurses")
     .select(
-      "id, provider_type, verification_status, submitted_at, prc_document_url, tesda_document_url, nbi_document_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry, bio, specializations, daily_rate_range, hourly_rate_range, profile_photo_url, profiles(full_name, city, region, barangay, phone, profile_photo_url)"
+      "id, provider_type, verification_status, submitted_at, prc_document_url, tesda_document_url, nbi_document_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry, bio, specializations, daily_rate_range, hourly_rate_range, profile_photo_url, profiles!nurses_id_fkey(full_name, city, region, barangay, phone, profile_photo_url)"
     )
     .eq("id", params.id)
     .maybeSingle();

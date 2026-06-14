@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     const { data: nurse, error: nurseError } = await service
       .from("nurses")
       .select(
-        "id, profile_slug, verification_status, provider_type, prc_document_url, tesda_document_url, nbi_document_url, profiles(full_name, role)"
+        "id, profile_slug, verification_status, provider_type, prc_document_url, tesda_document_url, nbi_document_url, profiles!nurses_id_fkey(full_name, role)"
       )
       .eq("id", nurseId)
       .maybeSingle();
