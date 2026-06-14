@@ -6,6 +6,10 @@ import {
   VerificationQueue,
   type VerificationQueueNurse
 } from "@/components/admin/verification-queue";
+import {
+  fetchVerificationQueueRows,
+  getAdminDataClient
+} from "@/lib/admin/verification-queries";
 import type { VerificationStatus } from "@/lib/verification";
 
 export const dynamic = "force-dynamic";
@@ -42,14 +46,10 @@ export default async function AdminVerificationsPage({
 }: {
   searchParams?: { status?: string };
 }) {
-  const supabase = createClient();
+  const sessionClient = createClient();
+  const adminClient = getAdminDataClient(sessionClient);
 
-  const { data: nurses, error } = await supabase
-    .from("nurses")
-    .select(
-      "id, provider_type, verification_status, submitted_at, profile_photo_url, prc_document_url, tesda_document_url, nbi_document_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry, bio, specializations, daily_rate_range, hourly_rate_range, profiles(full_name, first_name, last_name, city, region, profile_photo_url)"
-    )
-    .order("submitted_at", { ascending: false, nullsFirst: false });
+  const { data: nurses, error } = await fetchVerificationQueueRows(adminClient);
 
   if (error) {
     console.error("admin.verifications.list", error);
@@ -97,6 +97,12 @@ export default async function AdminVerificationsPage({
           />
         }
       />
+
+      {error ? (
+        <p className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          Could not load the verification queue. Ensure database migrations through 0027 are applied.
+        </p>
+      ) : null}
 
       <VerificationQueue initialNurses={queueNurses} initialTab={initialTab} />
     </main>

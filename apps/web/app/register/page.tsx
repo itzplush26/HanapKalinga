@@ -107,6 +107,8 @@ export default function RegisterPage() {
       bio: "",
       hourlyRateRange: "",
       dailyRateRange: "",
+      prcLicenseNo: "",
+      tesdaCertificateNo: "",
       specializations: [] as string[]
     }
   });
@@ -324,6 +326,14 @@ export default function RegisterPage() {
       return;
     }
     setDocErrors({});
+
+    const { error: stubError } = await ensureNurseProfile(supabase, userId, nurseValues.providerType);
+    if (stubError) {
+      console.error("signup.nurses_provider_type.error", stubError);
+      setStatus(mapSupabaseError(stubError, "generic"));
+      setIsSubmitting(false);
+      return;
+    }
 
     const credentialPrefix = nurseValues.providerType === "nurse" ? "prc" : "tesda";
 
@@ -818,6 +828,31 @@ export default function RegisterPage() {
                 }
               />
             </div>
+            {nurseForm.watch("providerType") === "nurse" ? (
+              <div className="space-y-1">
+                {requiredLabel("PRC license number", !!nurseForm.formState.errors.prcLicenseNo)}
+                <Input
+                  placeholder="PRC license number"
+                  {...nurseForm.register("prcLicenseNo")}
+                  className={
+                    nurseForm.formState.errors.prcLicenseNo ? "border-rose-500 focus:ring-rose-500" : undefined
+                  }
+                />
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {requiredLabel("TESDA certificate number", !!nurseForm.formState.errors.tesdaCertificateNo)}
+                <Input
+                  placeholder="TESDA NC II certificate number"
+                  {...nurseForm.register("tesdaCertificateNo")}
+                  className={
+                    nurseForm.formState.errors.tesdaCertificateNo
+                      ? "border-rose-500 focus:ring-rose-500"
+                      : undefined
+                  }
+                />
+              </div>
+            )}
             {requiredLabel(
               nurseForm.watch("providerType") === "caregiver"
                 ? "TESDA NC II certificate"

@@ -9,6 +9,7 @@ import {
   VERIFICATION_APPROVED_SUBJECT
 } from "@/lib/email/verification-approved-email";
 import { hasRequiredDocuments } from "@/lib/admin/verification-documents";
+import { isProviderRole } from "@/lib/provider-role";
 import { revalidatePublicNursePages } from "@/lib/nurses/revalidate-public";
 import {
   buildVerificationRejectedEmailHtml,
@@ -83,7 +84,7 @@ export async function POST(request: Request) {
     }
 
     const profile = Array.isArray(nurse.profiles) ? nurse.profiles[0] : nurse.profiles;
-    if (profile?.role !== "nurse") {
+    if (!profile?.role || !isProviderRole(profile.role)) {
       return NextResponse.json({ error: "Invalid applicant." }, { status: 400 });
     }
 

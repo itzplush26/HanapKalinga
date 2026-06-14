@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { isProviderRole } from "@/lib/provider-role";
 import { getUploadAuthContext } from "@/lib/storage/upload-auth";
 import { compressProfilePhoto } from "@/lib/storage/compress-image";
 
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: profileError.message }, { status: 500 });
     }
 
-    if (auth.role === "nurse") {
+    if (isProviderRole(auth.role)) {
       const { error: nurseError } = await service
         .from("nurses")
         .update({ profile_photo_url: publicUrl })

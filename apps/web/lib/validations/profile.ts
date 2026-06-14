@@ -42,7 +42,9 @@ export const nurseProfileFieldsSchema = z.object({
   bio: z.string().optional(),
   hourlyRateRange: hourlyRateRangeField,
   dailyRateRange: dailyRateRangeField,
-  specializations: z.array(z.string()).min(1, "Select at least one specialization.")
+  specializations: z.array(z.string()).min(1, "Select at least one specialization."),
+  prcLicenseNo: z.string().optional(),
+  tesdaCertificateNo: z.string().optional()
 });
 
 export const nurseProfileFormSchema = nurseProfileFieldsSchema.superRefine(validateCityInRegion);
@@ -84,6 +86,7 @@ export const nurseProfileEditSchema = z
     barangay: z.string().min(2, "Barangay is required."),
     address: z.string().optional(),
     prcLicenseNo: z.string().optional(),
+    tesdaCertificateNo: z.string().optional(),
     specializations: z.string().min(1, "Enter at least one specialization."),
     yearsExperience: z.number().min(0, "Years of experience cannot be negative."),
     bio: z.string().optional(),
