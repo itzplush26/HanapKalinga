@@ -125,7 +125,7 @@ Implementation is organized into 5 phases: foundational setup, test ID annotatio
 
 - [x] 17. Create GitHub Actions workflow for Maestro E2E tests
   - [x] Create `.github/workflows/maestro-e2e.yml` — matrix strategy (api-level 34), manual dispatch with env input, PR trigger on mobile paths
-  - [x] Steps: checkout → setup Node → npm ci → build Expo APK (EAS preview profile) → start emulator → run seed → run Maestro flows → upload screenshots on failure → cleanup
+  - [x] Steps: checkout → setup Node → npm ci → setup Android SDK → expo prebuild → Gradle assembleDebug → start emulator → run seed → run Maestro flows → upload screenshots on failure → cleanup
   - _Requirements: 7.1, 7.2, 7.3_
 
 - [x] 18. Add staging environment configuration

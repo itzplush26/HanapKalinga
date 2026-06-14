@@ -54,13 +54,7 @@ The `maestro-e2e` workflow (`.github/workflows/maestro-e2e.yml`) runs on:
 It requires these GitHub Actions secrets:
 | Secret | Description |
 |--------|-------------|
-| `EXPO_TOKEN` | Expo access token for EAS Build |
 | `SUPABASE_URL_STAGING` | Staging Supabase project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | Staging service role key |
 
-### EAS Build profile
-
-`eas.json` includes a `preview` profile that builds a debug APK for E2E testing:
-```bash
-eas build -p android --profile preview --local
-```
+The workflow builds the APK locally via `npx expo prebuild` + Gradle — no Expo account or EAS needed.
