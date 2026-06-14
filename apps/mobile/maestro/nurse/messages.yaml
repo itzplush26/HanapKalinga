@@ -1,0 +1,22 @@
+appId: ${APP_ID}
+env:
+  TEST_EMAIL: ${TEST_EMAIL}
+  TEST_PASSWORD: ${TEST_PASSWORD}
+---
+# Login as nurse user
+- runFlow:
+    file: ../shared/setup.yaml
+- runFlow:
+    file: ../shared/helpers.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# Navigate to Messages tab
+- tapOn:
+    text: "Messages"
+
+# Verify messages screen loaded
+- assertVisible:
+    id: "messages_list_conversations"
+    timeout: 15000
