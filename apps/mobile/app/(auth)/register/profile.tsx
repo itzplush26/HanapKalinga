@@ -192,6 +192,7 @@ export default function RegisterProfileScreen() {
             onChangeText={setFullName}
             placeholder="Enter your full name"
             autoCapitalize="words"
+            testID={`profile${isFamily ? 'Family' : 'Nurse'}_input_name`}
           />
 
           <Input
