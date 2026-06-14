@@ -58,6 +58,7 @@ export default function NurseMessagesScreen() {
         <FlatList
           data={conversations}
           keyExtractor={(item) => item.bookingId}
+          testID="messages_list_conversations"
           renderItem={({ item }) => (
             <TouchableOpacity
               onPress={() => router.push(`/(nurse)/bookings/${item.bookingId}`)}
@@ -65,6 +66,7 @@ export default function NurseMessagesScreen() {
               style={styles.card}
               accessibilityRole="button"
               accessibilityLabel={`Conversation with ${item.otherUserName}`}
+              testID={`messages_card_${item.bookingId}`}
             >
               <View style={styles.avatar}>
                 <Text style={styles.avatarText}>

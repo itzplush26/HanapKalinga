@@ -241,6 +241,7 @@ export default function NurseBookingDetailScreen() {
               loading={actionLoading}
               onPress={handleAccept}
               style={styles.actionButton}
+              testID="nurseBookingDetail_button_accept"
             >
               Accept
             </Button>
@@ -249,6 +250,7 @@ export default function NurseBookingDetailScreen() {
               loading={actionLoading}
               onPress={handleDecline}
               style={styles.declineButton}
+              testID="nurseBookingDetail_button_decline"
             >
               Decline
             </Button>
