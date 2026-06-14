@@ -74,7 +74,7 @@ export default function FamilyBookingDetailScreen() {
               <Text style={styles.shift}>{getShiftLabel(booking.shift)}</Text>
             )}
           </View>
-          <Badge color={statusColor} label={booking.status.replace('_', ' ')} />
+          <Badge color={statusColor} label={booking.status.replace('_', ' ')} testID="bookingDetail_text_status" />
         </View>
 
         {nurse && (
@@ -119,7 +119,7 @@ export default function FamilyBookingDetailScreen() {
 
         <Separator />
 
-        <Text style={styles.sectionTitle}>Messages</Text>
+        <Text style={styles.sectionTitle} testID="bookingDetail_button_message">Messages</Text>
         {user && (
           <MessageThread
             bookingId={booking.id}
