@@ -9,6 +9,7 @@ import {
   type DailyRateBandId,
   type HourlyRateBandId
 } from "@/lib/rate-ranges";
+import { isProviderRole, profileRoleForProviderType } from "@/lib/provider-role";
 import { hasRequiredDocuments } from "@/lib/admin/verification-documents";
 
 export async function POST(request: Request) {
@@ -67,9 +68,11 @@ export async function POST(request: Request) {
     const service = createServiceClient();
     const submittedAt = new Date().toISOString();
 
+    const profileRole = profileRoleForProviderType(values.providerType);
+
     const { error: profileError } = await service.from("profiles").upsert({
       id: userId,
-      role: "nurse",
+      role: profileRole,
       full_name: fullName,
       first_name: values.firstName,
       middle_name: values.middleName?.trim() || null,
@@ -99,8 +102,10 @@ export async function POST(request: Request) {
         daily_rate_12hr: dailyRates.min,
         daily_rate_12hr_max: dailyRates.max,
         daily_rate_range: values.dailyRateRange || null,
+        prc_license_no: values.providerType === "nurse" ? values.prcLicenseNo?.trim() || null : null,
         prc_document_url: documentPayload.prc_document_url,
         tesda_document_url: documentPayload.tesda_document_url,
+        tesda_certificate_no: values.tesdaCertificateNo?.trim() || null,
         nbi_document_url: documentPayload.nbi_document_url,
         verification_status: "pending",
         submitted_at: submittedAt
@@ -111,6 +116,14 @@ export async function POST(request: Request) {
     if (nurseError) {
       console.error("register.nurse.nurses.error", nurseError);
       return NextResponse.json({ error: nurseError.message }, { status: 500 });
+    }
+
+    try {
+      await service.auth.admin.updateUserById(userId, {
+        user_metadata: { role: profileRole, provider_type: values.providerType }
+      });
+    } catch (metadataError) {
+      console.error("register.nurse.auth_metadata.error", metadataError);
     }
 
     return NextResponse.json({ ok: true });

@@ -62,6 +62,7 @@ export default function NurseProfilePage() {
       barangay: "",
       address: "",
       prcLicenseNo: "",
+      tesdaCertificateNo: "",
       specializations: "",
       yearsExperience: 0,
       bio: "",
@@ -92,7 +93,7 @@ export default function NurseProfilePage() {
           supabase
             .from("nurses")
             .select(
-              "provider_type, verification_status, rejection_reason, submitted_at, prc_license_no, specializations, years_experience, bio, hourly_rate, hourly_rate_max, hourly_rate_range, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, prc_document_url, tesda_document_url, nbi_document_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry"
+              "provider_type, verification_status, rejection_reason, submitted_at, prc_license_no, tesda_certificate_no, specializations, years_experience, bio, hourly_rate, hourly_rate_max, hourly_rate_range, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, prc_document_url, tesda_document_url, nbi_document_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry"
             )
             .eq("id", user.id)
             .maybeSingle()
@@ -128,6 +129,7 @@ export default function NurseProfilePage() {
           barangay: profile?.barangay ?? "",
           address: profile?.address ?? "",
           prcLicenseNo: nurse?.prc_license_no ?? "",
+          tesdaCertificateNo: nurse?.tesda_certificate_no ?? "",
           specializations: (nurse?.specializations ?? []).join(", "),
           yearsExperience: nurse?.years_experience ?? 0,
           bio: nurse?.bio ?? "",
@@ -218,7 +220,8 @@ export default function NurseProfilePage() {
       {
         id: user.id,
         provider_type: providerType,
-        prc_license_no: values.prcLicenseNo || null,
+        prc_license_no: providerType === "nurse" ? values.prcLicenseNo || null : null,
+        tesda_certificate_no: providerType === "caregiver" ? values.tesdaCertificateNo || null : null,
         specializations: values.specializations.split(",").map((item: string) => item.trim()),
         years_experience: values.yearsExperience,
         bio: values.bio || null,
@@ -358,8 +361,21 @@ export default function NurseProfilePage() {
               <Textarea id="address" placeholder="Home address (optional)" {...form.register("address")} />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="prcLicenseNo">PRC license number</Label>
-              <Input id="prcLicenseNo" placeholder="PRC license number" {...form.register("prcLicenseNo")} />
+              {providerType === "nurse" ? (
+                <>
+                  <Label htmlFor="prcLicenseNo">PRC license number</Label>
+                  <Input id="prcLicenseNo" placeholder="PRC license number" {...form.register("prcLicenseNo")} />
+                </>
+              ) : (
+                <>
+                  <Label htmlFor="tesdaCertificateNo">TESDA certificate number</Label>
+                  <Input
+                    id="tesdaCertificateNo"
+                    placeholder="TESDA NC II certificate number"
+                    {...form.register("tesdaCertificateNo")}
+                  />
+                </>
+              )}
             </div>
             <div className="space-y-1">
               <Label htmlFor="specializations">Specializations</Label>

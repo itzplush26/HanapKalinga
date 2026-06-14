@@ -9,6 +9,8 @@ import { useToast } from "@/components/admin/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LoadingButton } from "@/components/ui/loading-button";
+import { PENDING_VERIFICATION_STATUSES } from "@/lib/admin/verification-queries";
+import { ProviderTypeBadge } from "@/components/provider-type-badge";
 import { resolveProfileDisplayName } from "@/lib/profile-display";
 import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
 import { hasIncompleteDocuments } from "@/lib/admin/verification-documents";
@@ -42,11 +44,12 @@ export interface VerificationQueueNurse {
   } | null;
 }
 
-type QueueTab = "all" | "pending" | "verified" | "rejected" | "incomplete";
+type QueueTab = "all" | "pending" | "under_review" | "verified" | "rejected" | "incomplete";
 
 const TAB_LABELS: Record<QueueTab, string> = {
   all: "All",
   pending: "Pending",
+  under_review: "Under review",
   verified: "Verified",
   rejected: "Rejected",
   incomplete: "Incomplete"
@@ -61,7 +64,7 @@ function parseInitialTab(value?: string): QueueTab {
     value === "incomplete" ||
     value === "under_review"
   ) {
-    return value === "under_review" ? "pending" : value;
+    return value === "under_review" ? "under_review" : value;
   }
   return "pending";
 }
@@ -93,8 +96,11 @@ export function VerificationQueue({ initialNurses, initialTab }: VerificationQue
     () => ({
       all: nurses.length,
       pending: nurses.filter((nurse) =>
-        nurse.verification_status === "pending" || nurse.verification_status === "under_review"
+        PENDING_VERIFICATION_STATUSES.includes(
+          nurse.verification_status as (typeof PENDING_VERIFICATION_STATUSES)[number]
+        )
       ).length,
+      under_review: nurses.filter((nurse) => nurse.verification_status === "under_review").length,
       verified: nurses.filter((nurse) => nurse.verification_status === "verified").length,
       rejected: nurses.filter((nurse) =>
         ["rejected", "resubmission_required"].includes(nurse.verification_status)
@@ -113,7 +119,11 @@ export function VerificationQueue({ initialNurses, initialTab }: VerificationQue
         activeTab === "all"
           ? true
           : activeTab === "pending"
-            ? nurse.verification_status === "pending" || nurse.verification_status === "under_review"
+            ? PENDING_VERIFICATION_STATUSES.includes(
+                nurse.verification_status as (typeof PENDING_VERIFICATION_STATUSES)[number]
+              )
+            : activeTab === "under_review"
+              ? nurse.verification_status === "under_review"
             : activeTab === "verified"
               ? nurse.verification_status === "verified"
               : activeTab === "rejected"
@@ -283,6 +293,7 @@ export function VerificationQueue({ initialNurses, initialTab }: VerificationQue
                             {resolveProfileDisplayName(profile, "Applicant")}
                           </p>
                           <VerificationStatusBadge status={nurse.verification_status} />
+                          <ProviderTypeBadge providerType={nurse.provider_type} />
                           <span
                             className={
                               profileComplete

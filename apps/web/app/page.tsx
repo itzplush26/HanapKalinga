@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { getPostLoginPath } from "@/lib/auth-redirect";
 import type { AuthRole } from "@/lib/auth-redirect";
+import { isProviderRole } from "@/lib/provider-role";
 
 export const metadata: Metadata = {
   description:
@@ -23,7 +24,7 @@ export default async function HomePage() {
       .maybeSingle();
 
     const role = profile?.role as AuthRole | undefined;
-    if (role === "family" || role === "nurse" || role === "admin") {
+    if (role === "family" || isProviderRole(role) || role === "admin") {
       redirect(getPostLoginPath(role, null));
     }
   }

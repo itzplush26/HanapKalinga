@@ -116,7 +116,7 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
   ]);
 
   const { data: ratingRow } = await supabase
-    .from("nurse_ratings")
+    .from("provider_ratings")
     .select("average_rating, review_count")
     .eq("reviewee_id", nurseId)
     .maybeSingle();

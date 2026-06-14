@@ -78,7 +78,7 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
 
   const { data: ratingRows } =
     nurseIds.length > 0
-      ? await supabase.from("nurse_ratings").select("nurse_id, average_rating, review_count").in("nurse_id", nurseIds)
+      ? await supabase.from("provider_ratings").select("nurse_id, average_rating, review_count").in("nurse_id", nurseIds)
       : { data: [] };
 
   const ratingsMap = new Map(

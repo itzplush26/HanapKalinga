@@ -21,6 +21,13 @@ export const completeNurseRegistrationSchema = nurseProfileFieldsSchema
     const hasTesda = Boolean(values.tesdaDocumentPath?.trim());
 
     if (values.providerType === "nurse") {
+      if (!values.prcLicenseNo?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "PRC license number is required.",
+          path: ["prcLicenseNo"]
+        });
+      }
       if (!hasPrc) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -38,6 +45,13 @@ export const completeNurseRegistrationSchema = nurseProfileFieldsSchema
     }
 
     if (values.providerType === "caregiver") {
+      if (!values.tesdaCertificateNo?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "TESDA certificate number is required.",
+          path: ["tesdaCertificateNo"]
+        });
+      }
       if (!hasTesda) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
