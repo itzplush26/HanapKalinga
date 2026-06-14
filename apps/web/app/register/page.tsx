@@ -27,26 +27,16 @@ import { RateRangeSelect } from "@/components/rate-range-select";
 import type { DailyRateBandId, HourlyRateBandId } from "@/lib/rate-ranges";
 import { PROVIDER_SPECIALIZATIONS } from "@/lib/constants";
 import { ensureNurseProfile } from "@/lib/nurse/ensure-profile";
+import {
+  clearSignupStage,
+  clearSignupStageIfStale,
+  getSignupStageKeys,
+  isSignupStageOwnedBy,
+  saveSignupUserId,
+  SIGNUP_TOTAL_STEPS
+} from "@/lib/signup-stage";
 
-const SIGNUP_TOTAL_STEPS = 4;
-
-const SIGNUP_STAGE_KEYS = {
-  step: "hanapkalinga.signup.step",
-  role: "hanapkalinga.signup.role",
-  email: "hanapkalinga.signup.email",
-  family: "hanapkalinga.signup.family",
-  nurse: "hanapkalinga.signup.nurse",
-  auth: "hanapkalinga.signup.auth"
-} as const;
-
-const LEGACY_SIGNUP_KEYS = [
-  "nurselink.signup.step",
-  "nurselink.signup.role",
-  "nurselink.signup.email",
-  "nurselink.signup.family",
-  "nurselink.signup.nurse",
-  "nurselink.signup.auth"
-] as const;
+const SIGNUP_STAGE_KEYS = getSignupStageKeys();
 
 export default function RegisterPage() {
   const [step, setStep] = useState(1);
@@ -66,6 +56,7 @@ export default function RegisterPage() {
     confirmPassword: string;
   } | null>(null);
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const supabase = createClient();
 
   const requiredLabel = (label: string, hasError?: boolean) => (
@@ -120,9 +111,8 @@ export default function RegisterPage() {
     }
   });
 
-  function clearSignupStage() {
-    Object.values(SIGNUP_STAGE_KEYS).forEach((key) => window.sessionStorage.removeItem(key));
-    LEGACY_SIGNUP_KEYS.forEach((key) => window.sessionStorage.removeItem(key));
+  function clearSignupStageLocal() {
+    clearSignupStage();
   }
 
   async function handleCredentialsSubmit(values: {
@@ -174,6 +164,7 @@ export default function RegisterPage() {
       }
 
       setSignupUserId(userId);
+      saveSignupUserId(userId);
 
       if (!data.session) {
         setStatus(
@@ -187,7 +178,7 @@ export default function RegisterPage() {
 
       const { role: existingRole } = await fetchProfileRole(supabase, userId);
       if (existingRole) {
-        clearSignupStage();
+        clearSignupStageLocal();
         const destination = resolvePostLoginDestination(existingRole, null);
         if (destination) {
           window.location.href = destination;
@@ -310,7 +301,7 @@ export default function RegisterPage() {
 
       await establishUserSession(supabase, userId, navigator.userAgent);
 
-      clearSignupStage();
+      clearSignupStageLocal();
       setIsSubmitting(false);
       window.location.href = "/dashboard/family?welcome=1";
       return;
@@ -335,12 +326,16 @@ export default function RegisterPage() {
     setDocErrors({});
 
     const credentialPrefix = nurseValues.providerType === "nurse" ? "prc" : "tesda";
-    const credentialLabel =
-      nurseValues.providerType === "caregiver" ? "TESDA certificate" : "PRC license";
 
-    setUploadProgress(`Uploading ${credentialLabel}...`);
-    const credentialUpload = await uploadNurseDocument(pendingCredentialFile!, credentialPrefix, userId);
+    setUploadProgress("Uploading documents...");
+    const [credentialUpload, nbiUpload] = await Promise.all([
+      uploadNurseDocument(pendingCredentialFile!, credentialPrefix, userId),
+      uploadNurseDocument(pendingNbiFile!, "nbi", userId)
+    ]);
+
     if ("error" in credentialUpload) {
+      const credentialLabel =
+        nurseValues.providerType === "caregiver" ? "TESDA certificate" : "PRC license";
       setStatus(mapUploadErrorMessage(credentialUpload.error));
       setDocErrors((prev) => ({
         ...prev,
@@ -351,8 +346,6 @@ export default function RegisterPage() {
       return;
     }
 
-    setUploadProgress("Uploading NBI clearance...");
-    const nbiUpload = await uploadNurseDocument(pendingNbiFile!, "nbi", userId);
     if ("error" in nbiUpload) {
       setStatus(mapUploadErrorMessage(nbiUpload.error));
       setDocErrors((prev) => ({ ...prev, nbi: mapUploadErrorMessage(nbiUpload.error) }));
@@ -384,7 +377,7 @@ export default function RegisterPage() {
 
     await establishUserSession(supabase, userId, navigator.userAgent);
 
-    clearSignupStage();
+    clearSignupStageLocal();
     setUploadProgress(null);
     setIsSubmitting(false);
     window.location.href = "/dashboard/nurse";
@@ -402,10 +395,21 @@ export default function RegisterPage() {
   useEffect(() => {
     async function restoreSignupSession() {
       const userId = await resolveAuthUserId(supabase, null);
-      if (userId) setSignupUserId(userId);
+      clearSignupStageIfStale(userId);
+      if (userId) {
+        setSignupUserId(userId);
+        saveSignupUserId(userId);
+      }
+      setAuthChecked(true);
     }
     restoreSignupSession();
   }, [supabase]);
+
+  useEffect(() => {
+    if (signupUserId) {
+      saveSignupUserId(signupUserId);
+    }
+  }, [signupUserId]);
 
   useEffect(() => {
     async function redirectIfProfileComplete() {
@@ -417,7 +421,7 @@ export default function RegisterPage() {
 
       const destination = resolvePostLoginDestination(existingRole, null);
       if (destination) {
-        clearSignupStage();
+        clearSignupStageLocal();
         window.location.href = destination;
       }
     }
@@ -426,37 +430,56 @@ export default function RegisterPage() {
   }, [supabase]);
 
   useEffect(() => {
-    const storedStep = window.sessionStorage.getItem(SIGNUP_STAGE_KEYS.step);
-    const storedRole = window.sessionStorage.getItem(SIGNUP_STAGE_KEYS.role);
-    const storedEmail = window.sessionStorage.getItem(SIGNUP_STAGE_KEYS.email);
-    const storedAuth = window.sessionStorage.getItem(SIGNUP_STAGE_KEYS.auth);
-    const queryRole = new URLSearchParams(window.location.search).get("role");
-    if (storedStep) {
-      const nextStep = Number(storedStep);
-      if (!Number.isNaN(nextStep)) setStep(nextStep);
-    }
-    const normalizedQueryRole = queryRole === "provider" ? "nurse" : queryRole;
-    const nextRole =
-      normalizedQueryRole === "family" || normalizedQueryRole === "nurse"
-        ? normalizedQueryRole
-        : storedRole;
-    if (nextRole === "family" || nextRole === "nurse") {
-      setRole(nextRole);
-      roleForm.setValue("role", nextRole);
-    }
-    if (storedEmail) {
-      setEmail(storedEmail);
-      credentialsForm.setValue("email", storedEmail);
-    }
-    if (storedAuth) {
-      try {
-        const parsed = JSON.parse(storedAuth);
-        if (typeof parsed.email === "string") credentialsForm.setValue("email", parsed.email);
-      } catch {
-        // Ignore malformed auth cache.
+    if (!authChecked) return;
+
+    async function restoreCachedStage() {
+      const userId = await resolveAuthUserId(supabase, signupUserId);
+      const storedStepRaw = window.sessionStorage.getItem(SIGNUP_STAGE_KEYS.step);
+      const storedStep = storedStepRaw ? Number(storedStepRaw) : 1;
+
+      if (storedStep > 1 && (!userId || !isSignupStageOwnedBy(userId))) {
+        clearSignupStageLocal();
+        setStep(1);
+        setRole(null);
+        return;
+      }
+
+      const storedRole = window.sessionStorage.getItem(SIGNUP_STAGE_KEYS.role);
+      const storedEmail = window.sessionStorage.getItem(SIGNUP_STAGE_KEYS.email);
+      const storedAuth = window.sessionStorage.getItem(SIGNUP_STAGE_KEYS.auth);
+      const queryRole = new URLSearchParams(window.location.search).get("role");
+
+      if (storedStepRaw) {
+        if (!Number.isNaN(storedStep) && storedStep >= 1 && storedStep <= SIGNUP_TOTAL_STEPS) {
+          setStep(storedStep);
+        }
+      }
+
+      const normalizedQueryRole = queryRole === "provider" ? "nurse" : queryRole;
+      const nextRole =
+        normalizedQueryRole === "family" || normalizedQueryRole === "nurse"
+          ? normalizedQueryRole
+          : storedRole;
+      if (nextRole === "family" || nextRole === "nurse") {
+        setRole(nextRole);
+        roleForm.setValue("role", nextRole);
+      }
+      if (storedEmail) {
+        setEmail(storedEmail);
+        credentialsForm.setValue("email", storedEmail);
+      }
+      if (storedAuth) {
+        try {
+          const parsed = JSON.parse(storedAuth);
+          if (typeof parsed.email === "string") credentialsForm.setValue("email", parsed.email);
+        } catch {
+          // Ignore malformed auth cache.
+        }
       }
     }
-  }, [credentialsForm, roleForm]);
+
+    void restoreCachedStage();
+  }, [authChecked, credentialsForm, roleForm, signupUserId, supabase]);
 
   useEffect(() => {
     window.sessionStorage.setItem(SIGNUP_STAGE_KEYS.step, String(step));
@@ -857,7 +880,7 @@ export default function RegisterPage() {
       <TermsAcceptanceModal
         open={showTermsModal}
         onAccept={handleTermsAccepted}
-        onDecline={() => {
+        onClose={() => {
           setShowTermsModal(false);
           setPendingCredentials(null);
         }}

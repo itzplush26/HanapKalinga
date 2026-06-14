@@ -80,19 +80,30 @@ export default function NurseProfilePage() {
       const user = auth.user;
       if (!user) return;
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("first_name, middle_name, last_name, full_name, phone, region, city, barangay, address, profile_photo_url")
-        .eq("id", user.id)
-        .maybeSingle();
+      const [{ data: profile, error: profileError }, { data: nurse, error: nurseError }] =
+        await Promise.all([
+          supabase
+            .from("profiles")
+            .select(
+              "first_name, middle_name, last_name, full_name, phone, region, city, barangay, address, profile_photo_url"
+            )
+            .eq("id", user.id)
+            .maybeSingle(),
+          supabase
+            .from("nurses")
+            .select(
+              "provider_type, verification_status, rejection_reason, submitted_at, prc_license_no, specializations, years_experience, bio, hourly_rate, hourly_rate_max, hourly_rate_range, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, prc_document_url, tesda_document_url, nbi_document_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry"
+            )
+            .eq("id", user.id)
+            .maybeSingle()
+        ]);
 
-      const { data: nurse } = await supabase
-        .from("nurses")
-        .select(
-          "provider_type, verification_status, rejection_reason, submitted_at, prc_license_no, specializations, years_experience, bio, hourly_rate, hourly_rate_max, hourly_rate_range, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, prc_document_url, tesda_document_url, nbi_document_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry"
-        )
-        .eq("id", user.id)
-        .maybeSingle();
+      if (profileError) {
+        console.error("nurse_profile.profiles.load", profileError);
+      }
+      if (nurseError) {
+        console.error("nurse_profile.nurses.load", nurseError);
+      }
 
       if (profile || nurse) {
         const nameParts = profile?.full_name?.split(" ") ?? [];
