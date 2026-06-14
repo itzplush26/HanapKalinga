@@ -24,6 +24,8 @@ export interface NurseListItem {
   verification_status: VerificationStatus;
   provider_type: ProviderType | null;
   bio: string | null;
+  average_rating?: number;
+  review_count?: number;
 }
 
 interface UseNursesResult {

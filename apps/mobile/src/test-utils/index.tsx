@@ -1,5 +1,6 @@
 import { ReactElement, ReactNode } from 'react';
 import { render as rtlRender } from '@testing-library/react-native';
+import { ThemeProvider } from '../contexts/ThemeContext';
 
 export function createMockNavigation() {
   return {
@@ -44,9 +45,11 @@ export function createMockSupabaseClient() {
   };
 }
 
-export async function renderWithProviders(ui: ReactElement) {
+export function renderWithProviders(ui: ReactElement) {
   function Wrapper({ children }: { children: ReactNode }) {
-    return <>{children}</>;
+    return <ThemeProvider>{children}</ThemeProvider>;
   }
   return rtlRender(ui, { wrapper: Wrapper });
 }
+
+export { rtlRender };
