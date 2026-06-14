@@ -116,7 +116,7 @@ export default function NurseProfilePage() {
         setInitialCredentialUrl(credentialUrl);
         setInitialNbiUrl(nurse?.nbi_document_url ?? "");
         setProfilePhotoUrl(
-          resolveProfilePhotoUrl(nurse?.profile_photo_url ?? profile?.profile_photo_url ?? null)
+          resolveProfilePhotoUrl(profile?.profile_photo_url ?? nurse?.profile_photo_url ?? null)
         );
         form.reset({
           firstName: profile?.first_name ?? nameParts[0] ?? "",
@@ -141,7 +141,7 @@ export default function NurseProfilePage() {
             nurse?.daily_rate_12hr_max,
             nurse?.daily_rate_range
           ),
-          profile_photo_url: nurse?.profile_photo_url ?? profile?.profile_photo_url ?? "",
+          profile_photo_url: profile?.profile_photo_url ?? nurse?.profile_photo_url ?? "",
           prc_document_url: nurse?.prc_document_url ?? "",
           tesda_document_url: nurse?.tesda_document_url ?? "",
           nbi_document_url: nurse?.nbi_document_url ?? ""

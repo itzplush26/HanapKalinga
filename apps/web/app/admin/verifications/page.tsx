@@ -1,3 +1,4 @@
+import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { AdminBreadcrumbs } from "@/components/admin/admin-breadcrumbs";
 import { AdminPageHeader } from "@/components/admin/admin-shell";
@@ -9,27 +10,52 @@ import type { VerificationStatus } from "@/lib/verification";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminVerificationsPage() {
-  const service = createServiceClient();
+async function fetchNurseEmails(nurseIds: string[]) {
+  const emailMap = new Map<string, string | null>();
 
-  const { data: nurses, error } = await service
+  if (nurseIds.length === 0) {
+    return emailMap;
+  }
+
+  try {
+    const service = createServiceClient();
+    const entries = await Promise.all(
+      nurseIds.map(async (nurseId) => {
+        try {
+          const { data } = await service.auth.admin.getUserById(nurseId);
+          return [nurseId, data.user?.email ?? null] as const;
+        } catch {
+          return [nurseId, null] as const;
+        }
+      })
+    );
+    entries.forEach(([id, email]) => emailMap.set(id, email));
+  } catch (error) {
+    console.error("admin.verifications.emails", error);
+  }
+
+  return emailMap;
+}
+
+export default async function AdminVerificationsPage({
+  searchParams
+}: {
+  searchParams?: { status?: string };
+}) {
+  const supabase = createClient();
+
+  const { data: nurses, error } = await supabase
     .from("nurses")
     .select(
       "id, provider_type, verification_status, submitted_at, profile_photo_url, prc_document_url, tesda_document_url, nbi_document_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry, bio, specializations, daily_rate_range, hourly_rate_range, profiles(full_name, first_name, last_name, city, region, profile_photo_url)"
     )
-    .order("submitted_at", { ascending: false });
+    .order("submitted_at", { ascending: false, nullsFirst: false });
 
   if (error) {
     console.error("admin.verifications.list", error);
   }
 
-  const emailEntries = await Promise.all(
-    (nurses ?? []).map(async (nurse) => {
-      const { data } = await service.auth.admin.getUserById(nurse.id);
-      return [nurse.id, data.user?.email ?? null] as const;
-    })
-  );
-  const emailMap = new Map(emailEntries);
+  const emailMap = await fetchNurseEmails((nurses ?? []).map((nurse) => nurse.id));
 
   const queueNurses: VerificationQueueNurse[] = (nurses ?? []).map((nurse) => {
     const profile = Array.isArray(nurse.profiles) ? nurse.profiles[0] : nurse.profiles;
@@ -54,6 +80,8 @@ export default async function AdminVerificationsPage() {
     };
   });
 
+  const initialTab = searchParams?.status;
+
   return (
     <main>
       <AdminPageHeader
@@ -70,7 +98,7 @@ export default async function AdminVerificationsPage() {
         }
       />
 
-      <VerificationQueue initialNurses={queueNurses} />
+      <VerificationQueue initialNurses={queueNurses} initialTab={initialTab} />
     </main>
   );
 }
