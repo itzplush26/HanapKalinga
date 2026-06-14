@@ -130,11 +130,10 @@ export default function AdminLayout() {
       }}
     >
       <Stack.Screen name="index" />
-      <Stack.Screen name="verifications" />
+      <Stack.Screen name="verifications/index" />
       <Stack.Screen name="nurses" />
       <Stack.Screen name="families" />
-      <Stack.Screen name="bookings" />
-      <Stack.Screen name="reports" />
+      <Stack.Screen name="bookings/index" />
     </Stack>
   );
 }
