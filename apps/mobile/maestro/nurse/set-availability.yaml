@@ -1,0 +1,40 @@
+appId: ${APP_ID}
+env:
+  TEST_EMAIL: ${TEST_EMAIL}
+  TEST_PASSWORD: ${TEST_PASSWORD}
+---
+# Login as nurse user
+- runFlow:
+    file: ../shared/setup.yaml
+- runFlow:
+    file: ../shared/helpers.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# Wait for nurse dashboard (availability is a nurse-specific element)
+- assertVisible:
+    id: "availability_button_save"
+    timeout: 15000
+
+# Navigate to Schedule tab
+- tapOn:
+    text: "Schedule"
+
+# Wait for availability grid
+- assertVisible:
+    id: "availability_grid_mon"
+    timeout: 10000
+
+# Toggle a morning shift on Monday
+- tapOn:
+    id: "availability_toggle_mon_morning"
+
+# Tap save
+- tapOn:
+    id: "availability_button_save"
+
+# Verify save completed (button no longer in loading state)
+- assertNotVisible:
+    text: "Saving"
+    timeout: 10000
