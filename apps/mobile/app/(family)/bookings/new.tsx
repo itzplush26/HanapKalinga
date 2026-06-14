@@ -228,6 +228,7 @@ export default function NewBookingScreen() {
             style={styles.datePicker}
             accessibilityRole="button"
             accessibilityLabel="Select date"
+            testID="bookingNew_picker_date"
           >
             <CalendarDays size={18} color={colors.brand[600]} />
             <Text style={styles.dateText}>
@@ -264,6 +265,7 @@ export default function NewBookingScreen() {
                 ]}
                 accessibilityRole="button"
                 accessibilityState={{ selected: patientCondition === c.value }}
+                testID={`bookingNew_input_condition_${c.value}`}
               >
                 <Text
                   style={[
@@ -287,6 +289,7 @@ export default function NewBookingScreen() {
                 label={s.label}
                 selected={shift === s.value}
                 onPress={() => setShift(s.value)}
+                testID={`bookingNew_picker_shift_${s.value}`}
               />
             ))}
           </View>
@@ -315,6 +318,7 @@ export default function NewBookingScreen() {
                 label={b.label}
                 selected={budgetRange === b.value}
                 onPress={() => setBudgetRange(b.value)}
+                testID={`bookingNew_input_budget_${b.value}`}
               />
             ))}
           </View>
@@ -329,7 +333,7 @@ export default function NewBookingScreen() {
           numberOfLines={3}
         />
 
-        <Button variant="primary" loading={submitting} onPress={handleSubmit}>
+        <Button variant="primary" loading={submitting} onPress={handleSubmit} testID="bookingNew_button_submit">
           Submit Request
         </Button>
       </ScrollView>
