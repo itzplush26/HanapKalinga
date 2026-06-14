@@ -1,0 +1,45 @@
+appId: ${APP_ID}
+env:
+  TEST_EMAIL: ${TEST_EMAIL}
+  TEST_PASSWORD: ${TEST_PASSWORD}
+  VERIFICATION_ID: ${VERIFICATION_ID}
+---
+# Login as admin user
+- runFlow:
+    file: ../shared/setup.yaml
+- runFlow:
+    file: ../shared/helpers.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# Navigate to Verifications tab
+- tapOn:
+    accessibilityLabel: "Verifications tab"
+
+# Wait for queue
+- assertVisible:
+    id: "verificationQueue_list_requests"
+    timeout: 15000
+
+# Tap on a specific verification request
+- tapOn:
+    id: "verificationQueue_card_${VERIFICATION_ID}"
+
+# Verify verification detail screen loaded
+- assertVisible:
+    id: "verificationDetail_text_name"
+    timeout: 10000
+
+# Verify audit log section is present
+- assertVisible:
+    id: "verificationDetail_text_auditLog"
+    timeout: 5000
+
+# Verify action buttons are present
+- assertVisible:
+    id: "verificationDetail_button_approve"
+    timeout: 5000
+- assertVisible:
+    id: "verificationDetail_button_reject"
+    timeout: 5000

@@ -1,0 +1,27 @@
+appId: ${APP_ID}
+env:
+  TEST_EMAIL: ${TEST_EMAIL}
+  TEST_PASSWORD: ${TEST_PASSWORD}
+---
+# Login as admin user
+- runFlow:
+    file: ../shared/setup.yaml
+- runFlow:
+    file: ../shared/helpers.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# Wait for admin dashboard
+- assertVisible:
+    id: "dashboard_metrics_pendingVerifications"
+    timeout: 15000
+
+# Verify all metric cards are displayed
+- assertVisible:
+    id: "dashboard_metrics_totalBookings"
+    timeout: 5000
+
+- assertVisible:
+    id: "dashboard_metrics_totalSignups"
+    timeout: 5000
