@@ -1,0 +1,25 @@
+appId: ${APP_ID}
+---
+- runFlow:
+    file: ../shared/setup.yaml
+
+# Navigate to login from landing
+- tapOn:
+    id: "landing_button_login"
+
+# Enter wrong credentials
+- tapOn:
+    id: "login_input_email"
+- inputText: "nonexistent@test.com"
+- tapOn:
+    id: "login_input_password"
+- inputText: "WrongPass123!"
+
+# Submit
+- tapOn:
+    id: "login_button_submit"
+
+# Wait for error message to appear
+- assertVisible:
+    id: "login_text_error"
+    timeout: 15000
