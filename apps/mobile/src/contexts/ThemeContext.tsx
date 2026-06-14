@@ -1,58 +1,37 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-type Theme = 'light' | 'dark';
+import { createContext, useContext, useMemo } from 'react';
+import { useColorScheme } from 'react-native';
+import { themeColors, type ColorMode, type ColorTokens } from '../theme/colors';
 
 interface ThemeContextValue {
-  theme: Theme;
-  setTheme: (theme: Theme) => Promise<void>;
-  toggleTheme: () => Promise<void>;
   isDark: boolean;
+  mode: ColorMode;
+  colors: ColorTokens;
 }
 
-const THEME_KEY = '@hanapkalinga/theme';
+const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-const ThemeContext = createContext<ThemeContextValue>({
-  theme: 'light',
-  setTheme: async () => {},
-  toggleTheme: async () => {},
-  isDark: false,
-});
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const systemScheme = useColorScheme();
+  const isDark = systemScheme === 'dark';
+  const mode: ColorMode = isDark ? 'dark' : 'light';
+  const currentColors = themeColors[mode];
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('light');
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    AsyncStorage.getItem(THEME_KEY).then((stored) => {
-      if (stored === 'dark' || stored === 'light') {
-        setThemeState(stored);
-      }
-      setLoaded(true);
-    });
-  }, []);
-
-  const setTheme = useCallback(async (t: Theme) => {
-    setThemeState(t);
-    await AsyncStorage.setItem(THEME_KEY, t);
-  }, []);
-
-  const toggleTheme = useCallback(async () => {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    await setTheme(next);
-  }, [theme, setTheme]);
-
-  if (!loaded) {
-    return <>{children}</>;
-  }
+  const value = useMemo(
+    () => ({ isDark, mode, colors: currentColors }),
+    [isDark, mode, currentColors],
+  );
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme, isDark: theme === 'dark' }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );
 }
 
-export function useTheme() {
-  return useContext(ThemeContext);
+export function useTheme(): ThemeContextValue {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return ctx;
 }
