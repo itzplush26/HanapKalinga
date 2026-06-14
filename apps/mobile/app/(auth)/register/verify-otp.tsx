@@ -128,13 +128,14 @@ export default function VerifyOtpScreen() {
               maxLength={1}
               selectTextOnFocus
               accessibilityLabel={`Digit ${index + 1}`}
+              testID={`verifyOtp_input_${index}`}
             />
           ))}
         </View>
 
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        {error ? <Text style={styles.errorText} testID="verifyOtp_text_error">{error}</Text> : null}
 
-        <Button onPress={handleVerify} loading={loading} style={styles.button}>
+        <Button onPress={handleVerify} loading={loading} style={styles.button} testID="verifyOtp_button_verify">
           Verify
         </Button>
 
