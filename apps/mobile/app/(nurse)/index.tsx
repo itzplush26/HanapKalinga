@@ -1,6 +1,6 @@
 import { View, Text, FlatList, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { CalendarDays, User as UserIcon, Clock, Bell } from 'lucide-react-native';
+import { CalendarDays, Bell } from 'lucide-react-native';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useNurseDashboard } from '../../src/lib/hooks/useNurseDashboard';
 import { ScreenWrapper } from '../../src/components/ScreenWrapper';
