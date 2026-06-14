@@ -1,9 +1,10 @@
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { fireEvent, waitFor } from '@testing-library/react-native';
+import { renderWithProviders } from '../../../src/test-utils';
 import { Input } from '../../../src/components/ui/Input';
 
 describe('Input', () => {
   it('renders with label and placeholder', async () => {
-    const { getByText, getByPlaceholderText } = await render(
+    const { getByText, getByPlaceholderText } = await renderWithProviders(
       <Input label="Email" placeholder="Enter your email" />
     );
     expect(getByText('Email')).toBeTruthy();
@@ -11,7 +12,7 @@ describe('Input', () => {
   });
 
   it('shows error state', async () => {
-    const { getByText } = await render(
+    const { getByText } = await renderWithProviders(
       <Input label="Email" error="Invalid email" />
     );
     expect(getByText('Invalid email')).toBeTruthy();
@@ -19,7 +20,7 @@ describe('Input', () => {
 
   it('handles text input', async () => {
     const onChangeText = jest.fn();
-    const { getByPlaceholderText } = await render(
+    const { getByPlaceholderText } = await renderWithProviders(
       <Input placeholder="Enter text" onChangeText={onChangeText} />
     );
     fireEvent.changeText(getByPlaceholderText('Enter text'), 'Hello');
@@ -27,7 +28,7 @@ describe('Input', () => {
   });
 
   it('shows secure text entry toggle', async () => {
-    const { getByLabelText } = await render(
+    const { getByLabelText } = await renderWithProviders(
       <Input secureTextEntry label="Password" />
     );
     expect(getByLabelText('Show password')).toBeTruthy();

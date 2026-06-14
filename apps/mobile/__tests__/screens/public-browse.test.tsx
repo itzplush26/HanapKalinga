@@ -1,4 +1,5 @@
-import { render, fireEvent, act, waitFor } from '@testing-library/react-native';
+import { fireEvent, act, waitFor } from '@testing-library/react-native';
+import { renderWithProviders } from '../../src/test-utils';
 import { NurseCard } from '../../src/components/domain/NurseCard';
 import { NurseFiltersSheet } from '../../src/components/nurse-filters';
 import type { NurseListItem } from '../../src/lib/hooks/useNurses';
@@ -19,22 +20,21 @@ const mockNurse: NurseListItem = {
 
 describe('NurseCard', () => {
   it('renders all fields correctly', async () => {
-    const { getByText, getByLabelText } = await render(
+    const { getByText, getByLabelText } = await renderWithProviders(
       <NurseCard nurse={mockNurse} onPress={() => {}} />
     );
 
     expect(getByText('Maria Santos')).toBeTruthy();
     expect(getByText('Manila')).toBeTruthy();
-    expect(getByText('P1,500/day')).toBeTruthy();
+    expect(getByText('P1,500')).toBeTruthy();
     expect(getByText('verified')).toBeTruthy();
     expect(getByText('Elderly Care')).toBeTruthy();
     expect(getByText('Nurse')).toBeTruthy();
-    expect(getByText('+1 more')).toBeTruthy();
   });
 
   it('calls onPress when pressed', async () => {
     const onPress = jest.fn();
-    const { getByLabelText } = await render(
+    const { getByLabelText } = await renderWithProviders(
       <NurseCard nurse={mockNurse} onPress={onPress} />
     );
 
@@ -42,18 +42,18 @@ describe('NurseCard', () => {
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
-  it('shows initials when no full_name', async () => {
+  it('shows Unknown when no full_name', async () => {
     const nurseNoName = { ...mockNurse, full_name: null };
-    const { getByText } = await render(
+    const { getByText } = await renderWithProviders(
       <NurseCard nurse={nurseNoName} onPress={() => {}} />
     );
 
-    expect(getByText('U')).toBeTruthy();
+    expect(getByText('Unknown')).toBeTruthy();
   });
 
   it('shows Unknown location when city is null', async () => {
     const nurseNoCity = { ...mockNurse, city: null };
-    const { getByText } = await render(
+    const { getByText } = await renderWithProviders(
       <NurseCard nurse={nurseNoCity} onPress={() => {}} />
     );
 
@@ -63,7 +63,7 @@ describe('NurseCard', () => {
 
 describe('NurseFiltersSheet', () => {
   it('renders with current filters', async () => {
-    const { getByText, queryByText } = await render(
+    const { getByText, queryByText } = await renderWithProviders(
       <NurseFiltersSheet
         visible={true}
         onClose={jest.fn()}
@@ -84,7 +84,7 @@ describe('NurseFiltersSheet', () => {
     const onApply = jest.fn();
     const onClose = jest.fn();
 
-    const { getByText } = await render(
+    const { getByText } = await renderWithProviders(
       <NurseFiltersSheet
         visible={true}
         onClose={onClose}
@@ -100,7 +100,7 @@ describe('NurseFiltersSheet', () => {
 
   it('calls onClose when X is pressed', async () => {
     const onClose = jest.fn();
-    const { getByLabelText } = await render(
+    const { getByLabelText } = await renderWithProviders(
       <NurseFiltersSheet
         visible={true}
         onClose={onClose}

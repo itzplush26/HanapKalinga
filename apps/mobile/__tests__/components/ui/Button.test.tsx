@@ -1,9 +1,10 @@
-import { render, fireEvent } from '@testing-library/react-native';
+import { fireEvent } from '@testing-library/react-native';
+import { renderWithProviders } from '../../../src/test-utils';
 import { Button } from '../../../src/components/ui/Button';
 
 describe('Button', () => {
   it('renders correctly with default variant', async () => {
-    const { getByText, getByRole } = await render(
+    const { getByText, getByRole } = await renderWithProviders(
       <Button onPress={() => {}}>Press me</Button>
     );
     expect(getByText('Press me')).toBeTruthy();
@@ -13,7 +14,7 @@ describe('Button', () => {
   it('renders all variants without error', async () => {
     const variants = ['primary', 'secondary', 'ghost', 'link'] as const;
     for (const variant of variants) {
-      const { getByText } = await render(
+      const { getByText } = await renderWithProviders(
         <Button variant={variant} onPress={() => {}}>
           {variant}
         </Button>
@@ -23,7 +24,7 @@ describe('Button', () => {
   });
 
   it('shows loading spinner when loading is true', async () => {
-    const { queryByText, getByRole } = await render(
+    const { queryByText, getByRole } = await renderWithProviders(
       <Button loading onPress={() => {}}>
         Submit
       </Button>
@@ -35,7 +36,7 @@ describe('Button', () => {
 
   it('calls onPress when pressed', async () => {
     const onPress = jest.fn();
-    const { getByRole } = await render(
+    const { getByRole } = await renderWithProviders(
       <Button onPress={onPress}>Press me</Button>
     );
     fireEvent.press(getByRole('button'));
@@ -44,7 +45,7 @@ describe('Button', () => {
 
   it('does not call onPress when disabled', async () => {
     const onPress = jest.fn();
-    const { getByRole } = await render(
+    const { getByRole } = await renderWithProviders(
       <Button disabled onPress={onPress}>
         Disabled
       </Button>
