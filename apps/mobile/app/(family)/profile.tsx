@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { ScreenWrapper } from '../../src/components/ScreenWrapper';
 import { Input } from '../../src/components/ui/Input';
@@ -12,7 +13,8 @@ import { supabase } from '../../src/lib/supabase';
 import { familyProfileSchema } from '@hanapkalinga/shared/validations';
 
 export default function FamilyProfileScreen() {
-  const { user, profile, refreshProfile } = useAuth();
+  const router = useRouter();
+  const { user, profile, refreshProfile, signOut } = useAuth();
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -172,6 +174,25 @@ export default function FamilyProfileScreen() {
 
         <Button variant="primary" loading={saving} onPress={handleSave}>
           Save
+        </Button>
+
+        <Button
+          variant="outline"
+          onPress={() => {
+            Alert.alert('Sign out', 'Are you sure you want to sign out?', [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Sign out',
+                style: 'destructive',
+                onPress: async () => {
+                  await signOut();
+                  router.replace('/');
+                },
+              },
+            ]);
+          }}
+        >
+          Sign out
         </Button>
       </ScrollView>
     </ScreenWrapper>
