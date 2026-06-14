@@ -1,9 +1,9 @@
-import { render } from '@testing-library/react-native';
+import { renderWithProviders } from '../../../src/test-utils';
 import { Skeleton } from '../../../src/components/ui/Skeleton';
 
 describe('Skeleton', () => {
   it('renders text variant by default', async () => {
-    const { getByTestId } = await render(
+    const { getByTestId } = await renderWithProviders(
       <Skeleton testID="skeleton" />
     );
     expect(getByTestId('skeleton')).toBeTruthy();
@@ -12,7 +12,7 @@ describe('Skeleton', () => {
   it('renders all variants without error', async () => {
     const variants = ['text', 'circle', 'rectangle'] as const;
     for (const variant of variants) {
-      const { getByTestId } = await render(
+      const { getByTestId } = await renderWithProviders(
         <Skeleton testID={`skeleton-${variant}`} variant={variant} />
       );
       expect(getByTestId(`skeleton-${variant}`)).toBeTruthy();
@@ -20,7 +20,7 @@ describe('Skeleton', () => {
   });
 
   it('applies custom dimensions', async () => {
-    const { getByTestId } = await render(
+    const { getByTestId } = await renderWithProviders(
       <Skeleton testID="skeleton" width={100} height={50} />
     );
     const element = getByTestId('skeleton');
