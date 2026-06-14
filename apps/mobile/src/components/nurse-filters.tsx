@@ -168,7 +168,7 @@ export function NurseFiltersSheet({
 
         <View style={styles.footer}>
           <TextLink onPress={handleReset}>Reset</TextLink>
-          <Button variant="primary" onPress={handleApply} style={styles.applyButton}>
+          <Button variant="default" onPress={handleApply} style={styles.applyButton}>
             Apply
           </Button>
         </View>
