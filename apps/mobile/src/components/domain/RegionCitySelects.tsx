@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { ChevronDown } from 'lucide-react-native';
 import { PH_REGIONS } from '@hanapkalinga/shared/constants';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../contexts/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { rounded } from '../../theme/rounded';
 import { typography } from '../../theme/typography';
@@ -40,6 +40,7 @@ export function RegionCitySelects({
   onRegionChange,
   onCityChange,
 }: RegionCitySelectsProps) {
+  const { colors } = useTheme();
   const [showRegionPicker, setShowRegionPicker] = useState(false);
   const [showCityPicker, setShowCityPicker] = useState(false);
 
@@ -59,12 +60,14 @@ export function RegionCitySelects({
   return (
     <View style={styles.container}>
       <PickerTrigger
+        colors={colors}
         label="Region"
         value={region}
         placeholder="Select region"
         onPress={() => setShowRegionPicker(true)}
       />
       <PickerTrigger
+        colors={colors}
         label="City"
         value={city}
         placeholder={region ? 'Select city' : 'Select region first'}
@@ -73,6 +76,7 @@ export function RegionCitySelects({
         }}
       />
       <PickerModal
+        colors={colors}
         visible={showRegionPicker}
         title="Select Region"
         items={PH_REGIONS}
@@ -81,6 +85,7 @@ export function RegionCitySelects({
         onClose={() => setShowRegionPicker(false)}
       />
       <PickerModal
+        colors={colors}
         visible={showCityPicker}
         title="Select City"
         items={cities}
@@ -93,32 +98,45 @@ export function RegionCitySelects({
 }
 
 interface PickerTriggerProps {
+  colors: any;
   label: string;
   value: string;
   placeholder: string;
   onPress: () => void;
 }
 
-function PickerTrigger({ label, value, placeholder, onPress }: PickerTriggerProps) {
+function PickerTrigger({ colors, label, value, placeholder, onPress }: PickerTriggerProps) {
   return (
     <View style={styles.fieldGroup}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, { color: colors['text-secondary'] }]}>{label}</Text>
       <TouchableOpacity
         onPress={onPress}
-        style={styles.trigger}
+        style={[
+          styles.trigger,
+          {
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          },
+        ]}
         accessibilityRole="button"
         accessibilityLabel={`Select ${label}`}
       >
-        <Text style={[styles.triggerText, !value && styles.triggerPlaceholder]}>
+        <Text
+          style={[
+            styles.triggerText,
+            { color: value ? colors['text-primary'] : colors['text-muted'] },
+          ]}
+        >
           {value || placeholder}
         </Text>
-        <ChevronDown size={16} color={colors.muted} />
+        <ChevronDown size={16} color={colors['text-muted']} />
       </TouchableOpacity>
     </View>
   );
 }
 
 interface PickerModalProps {
+  colors: any;
   visible: boolean;
   title: string;
   items: string[];
@@ -127,20 +145,20 @@ interface PickerModalProps {
   onClose: () => void;
 }
 
-function PickerModal({ visible, title, items, selectedValue, onSelect, onClose }: PickerModalProps) {
+function PickerModal({ colors, visible, title, items, selectedValue, onSelect, onClose }: PickerModalProps) {
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{title}</Text>
+        <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.modalTitle, { color: colors['text-primary'] }]}>{title}</Text>
             <TouchableOpacity
               onPress={onClose}
               style={styles.modalCloseButton}
               accessibilityLabel="Close"
               accessibilityRole="button"
             >
-              <Text style={styles.modalCloseText}>Close</Text>
+              <Text style={[styles.modalCloseText, { color: colors.primary }]}>Close</Text>
             </TouchableOpacity>
           </View>
           <ScrollView style={styles.modalList}>
@@ -150,7 +168,8 @@ function PickerModal({ visible, title, items, selectedValue, onSelect, onClose }
                 onPress={() => onSelect(item)}
                 style={[
                   styles.modalItem,
-                  item === selectedValue && styles.modalItemSelected,
+                  { borderBottomColor: colors.border },
+                  item === selectedValue && { backgroundColor: colors['primary-light'] },
                 ]}
                 accessibilityRole="button"
                 accessibilityState={{ selected: item === selectedValue }}
@@ -158,7 +177,8 @@ function PickerModal({ visible, title, items, selectedValue, onSelect, onClose }
                 <Text
                   style={[
                     styles.modalItemText,
-                    item === selectedValue && styles.modalItemTextSelected,
+                    { color: item === selectedValue ? colors.primary : colors['text-primary'] },
+                    item === selectedValue && { fontFamily: typography.fontFamily.bodySemiBold },
                   ]}
                 >
                   {item}
@@ -174,34 +194,27 @@ function PickerModal({ visible, title, items, selectedValue, onSelect, onClose }
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing.md,
+    gap: spacing[4],
   },
   fieldGroup: {
-    gap: spacing.xs,
+    gap: spacing[2],
   },
   label: {
-    fontSize: typography.size.labelMd,
+    fontSize: typography.size.sm,
     fontFamily: typography.fontFamily.bodyMedium,
-    color: colors.body,
   },
   trigger: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: 48,
+    height: 44,
     borderWidth: 1,
-    borderColor: colors.hairline,
-    borderRadius: rounded.sm,
-    paddingHorizontal: spacing.md,
-    backgroundColor: colors.canvas,
+    borderRadius: rounded.md,
+    paddingHorizontal: spacing[4],
   },
   triggerText: {
-    fontSize: typography.size.body,
+    fontSize: typography.size.base,
     fontFamily: typography.fontFamily.body,
-    color: colors.ink,
-  },
-  triggerPlaceholder: {
-    color: colors.muted,
   },
   modalOverlay: {
     flex: 1,
@@ -209,7 +222,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: colors.canvas,
     borderTopLeftRadius: rounded.lg,
     borderTopRightRadius: rounded.lg,
     maxHeight: '60%',
@@ -218,15 +230,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[4],
     borderBottomWidth: 1,
-    borderBottomColor: colors.hairline,
   },
   modalTitle: {
-    fontSize: typography.size.titleSm,
+    fontSize: typography.size.base,
     fontFamily: typography.fontFamily.bodySemiBold,
-    color: colors.ink,
   },
   modalCloseButton: {
     minWidth: 44,
@@ -235,28 +245,18 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   modalCloseText: {
-    fontSize: typography.size.body,
+    fontSize: typography.size.base,
     fontFamily: typography.fontFamily.bodyMedium,
-    color: colors.brand[600],
   },
   modalList: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing[4],
   },
   modalItem: {
-    paddingVertical: spacing.md,
+    paddingVertical: spacing[4],
     borderBottomWidth: 1,
-    borderBottomColor: colors.hairline,
-  },
-  modalItemSelected: {
-    backgroundColor: colors.brand[50],
   },
   modalItemText: {
-    fontSize: typography.size.body,
+    fontSize: typography.size.base,
     fontFamily: typography.fontFamily.body,
-    color: colors.ink,
-  },
-  modalItemTextSelected: {
-    color: colors.brand[600],
-    fontFamily: typography.fontFamily.bodySemiBold,
   },
 });
