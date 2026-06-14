@@ -1,5 +1,6 @@
 import { TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../contexts/ThemeContext';
+import { rounded } from '../../theme/rounded';
 
 interface IconButtonProps {
   onPress?: () => void;
@@ -16,12 +17,22 @@ export function IconButton({
   accessibilityLabel,
   style,
 }: IconButtonProps) {
+  const { colors } = useTheme();
+
   return (
     <TouchableOpacity
       onPress={onPress}
       disabled={disabled}
       activeOpacity={0.7}
-      style={[styles.base, disabled && styles.disabled, style]}
+      style={[
+        styles.base,
+        {
+          borderColor: colors.border,
+          backgroundColor: colors.surface,
+        },
+        disabled && styles.disabled,
+        style,
+      ]}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       accessibilityState={{ disabled }}
@@ -35,12 +46,10 @@ const styles = StyleSheet.create({
   base: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: rounded.pill,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.hairline,
-    backgroundColor: colors.canvas,
   },
   disabled: {
     opacity: 0.5,

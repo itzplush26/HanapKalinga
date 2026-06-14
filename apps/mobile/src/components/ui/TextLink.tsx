@@ -1,5 +1,5 @@
 import { Text, TouchableOpacity, StyleSheet, TextStyle } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../contexts/ThemeContext';
 import { typography } from '../../theme/typography';
 
 interface TextLinkProps {
@@ -7,6 +7,7 @@ interface TextLinkProps {
   underline?: boolean;
   children: string;
   style?: TextStyle;
+  testID?: string;
 }
 
 export function TextLink({
@@ -14,12 +15,15 @@ export function TextLink({
   underline = false,
   children,
   style,
+  testID,
 }: TextLinkProps) {
+  const { colors } = useTheme();
+
   return (
-    <TouchableOpacity onPress={onPress} accessibilityRole="link">
+    <TouchableOpacity onPress={onPress} accessibilityRole="link" testID={testID}>
       <Text
         style={[
-          styles.text,
+          { color: colors.primary, fontSize: typography.size.base, fontFamily: typography.fontFamily.body },
           underline && styles.underline,
           style,
         ]}
@@ -31,11 +35,6 @@ export function TextLink({
 }
 
 const styles = StyleSheet.create({
-  text: {
-    color: colors.semantic.link,
-    fontSize: typography.size.body,
-    fontFamily: typography.fontFamily.body,
-  },
   underline: {
     textDecorationLine: 'underline',
   },
