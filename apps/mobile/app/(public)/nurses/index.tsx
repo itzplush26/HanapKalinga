@@ -40,7 +40,9 @@ export default function BrowseNursesScreen() {
 
   const renderItem = useCallback(
     ({ item }: { item: NurseListItem }) => (
-      <NurseCard nurse={item} onPress={() => handleNursePress(item)} />
+      <View testID={`browse_card_nurse_${item.id}`}>
+        <NurseCard nurse={item} onPress={() => handleNursePress(item)} />
+      </View>
     ),
     [handleNursePress]
   );
@@ -100,6 +102,7 @@ export default function BrowseNursesScreen() {
               accessibilityLabel="Open filters"
               accessibilityRole="button"
               style={styles.filterButton}
+              testID="browse_button_filter"
             >
               <SlidersHorizontal size={22} color={colors.brand[600]} />
               {Object.keys(filters).length > 0 && (
@@ -134,6 +137,7 @@ export default function BrowseNursesScreen() {
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
+          testID="browse_list_nurses"
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
           ListFooterComponent={renderFooter}

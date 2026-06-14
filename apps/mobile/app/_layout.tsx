@@ -4,13 +4,11 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import {
   useFonts,
-  SpaceGrotesk_700Bold,
-} from '@expo-google-fonts/space-grotesk';
-import {
-  Manrope_400Regular,
-  Manrope_500Medium,
-  Manrope_600SemiBold,
-} from '@expo-google-fonts/manrope';
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+} from '@expo-google-fonts/plus-jakarta-sans';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
 import { AuthProvider } from '../src/contexts/AuthContext';
 import { ThemeProvider } from '../src/contexts/ThemeContext';
@@ -19,10 +17,10 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    SpaceGrotesk_700Bold,
-    Manrope_400Regular,
-    Manrope_500Medium,
-    Manrope_600SemiBold,
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
   });
   const [appIsReady, setAppIsReady] = useState(false);
 
@@ -33,11 +31,22 @@ export default function RootLayout() {
     }
   }, [fontsLoaded]);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!appIsReady) {
+        setAppIsReady(true);
+        SplashScreen.hideAsync();
+      }
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [appIsReady]);
+
   if (!appIsReady) {
     return null;
   }
 
   return (
+<<<<<<< HEAD
     <ErrorBoundary>
       <AuthProvider>
         <ThemeProvider>
@@ -53,5 +62,22 @@ export default function RootLayout() {
         </ThemeProvider>
       </AuthProvider>
     </ErrorBoundary>
+=======
+    <ThemeProvider>
+      <ErrorBoundary>
+        <AuthProvider>
+          <StatusBar style="auto" />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" options={{ title: 'Home' }} />
+            <Stack.Screen name="(auth)" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="(public)" />
+            <Stack.Screen name="(family)" />
+            <Stack.Screen name="(nurse)" />
+            <Stack.Screen name="(admin)" />
+          </Stack>
+        </AuthProvider>
+      </ErrorBoundary>
+    </ThemeProvider>
+>>>>>>> f8382e9 (test(mobile): add testIDs to verification and nurse screens)
   );
 }
