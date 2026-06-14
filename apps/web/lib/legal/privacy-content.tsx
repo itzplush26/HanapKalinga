@@ -1,5 +1,8 @@
 export const PRIVACY_LAST_UPDATED = "June 2, 2026";
 
+export const PRIVACY_SUMMARY =
+  "We collect account and professional information to operate the marketplace, verify credentials, and connect families with providers. We do not sell your data and handle information in line with the Philippine Data Privacy Act.";
+
 export function PrivacyContent() {
   return (
     <div className="flex flex-col gap-4 text-sm text-text-secondary">
