@@ -1,0 +1,34 @@
+import { View, StyleSheet, ViewStyle } from 'react-native';
+import { colors } from '../../theme/colors';
+
+interface SeparatorProps {
+  orientation?: 'horizontal' | 'vertical';
+  style?: ViewStyle;
+}
+
+export function Separator({
+  orientation = 'horizontal',
+  style,
+}: SeparatorProps) {
+  return (
+    <View
+      style={[
+        orientation === 'horizontal' ? styles.horizontal : styles.vertical,
+        style,
+      ]}
+    />
+  );
+}
+
+const styles = StyleSheet.create({
+  horizontal: {
+    height: 1,
+    backgroundColor: colors.hairline,
+    width: '100%',
+  },
+  vertical: {
+    width: 1,
+    backgroundColor: colors.hairline,
+    height: '100%',
+  },
+});
