@@ -8,6 +8,7 @@ import {
   CareRequestApplicationsPanel,
   type CareRequestApplicationItem
 } from "@/components/care-request-applications-panel";
+import { CareRequestManageActions } from "@/components/care-request-manage-actions";
 import { getDailyRateBand } from "@/lib/data/rates";
 import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
 
@@ -27,7 +28,7 @@ export default async function FamilyCareRequestDetailPage({
   searchParams
 }: {
   params: { id: string };
-  searchParams: { posted?: string };
+  searchParams: { posted?: string; updated?: string; closed?: string };
 }) {
   const supabase = createClient();
   const { data: auth } = await supabase.auth.getUser();
@@ -99,6 +100,16 @@ export default async function FamilyCareRequestDetailPage({
               and apply.
             </p>
           ) : null}
+          {searchParams.updated === "1" ? (
+            <p className="rounded-2xl border border-success-border bg-success-bg px-4 py-3 text-sm text-success">
+              Your care request has been updated.
+            </p>
+          ) : null}
+          {searchParams.closed === "1" ? (
+            <p className="rounded-2xl border border-warning-border bg-warning-bg px-4 py-3 text-sm text-warning">
+              This care request is closed and no longer visible to nurses.
+            </p>
+          ) : null}
 
           <div className="rounded-2xl border border-border bg-surface p-4">
             <div className="flex items-start justify-between gap-3">
@@ -128,6 +139,11 @@ export default async function FamilyCareRequestDetailPage({
               </p>
             ) : null}
           </div>
+
+          <CareRequestManageActions
+            careRequestId={request.id as string}
+            status={request.status as string}
+          />
 
           <CareRequestApplicationsPanel
             careRequestId={request.id as string}
