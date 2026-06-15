@@ -65,6 +65,8 @@ export default async function AdminVerificationsPage({
       verification_status: nurse.verification_status as VerificationStatus,
       submitted_at: nurse.submitted_at,
       profile_photo_url: nurse.profile_photo_url,
+      prc_license_no: nurse.prc_license_no,
+      tesda_certificate_no: nurse.tesda_certificate_no,
       prc_document_url: nurse.prc_document_url,
       tesda_document_url: nurse.tesda_document_url,
       nbi_document_url: nurse.nbi_document_url,

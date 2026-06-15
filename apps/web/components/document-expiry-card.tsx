@@ -10,9 +10,9 @@ interface DocumentExpiryCardProps {
 }
 
 function StatusIcon({ status }: { status: DocumentExpiryItem["status"] }) {
-  if (status === "valid") return <CheckCircle2 className="h-4 w-4 text-emerald-600" />;
-  if (status === "expiring_soon") return <Clock className="h-4 w-4 text-amber-600" />;
-  return <AlertTriangle className="h-4 w-4 text-rose-600" />;
+  if (status === "valid") return <CheckCircle2 className="h-4 w-4 text-success" />;
+  if (status === "expiring_soon") return <Clock className="h-4 w-4 text-warning" />;
+  return <AlertTriangle className="h-4 w-4 text-error" />;
 }
 
 function statusLabel(item: DocumentExpiryItem): string {
@@ -30,9 +30,9 @@ export function DocumentExpiryCard({ documents, showRenewCta = true }: DocumentE
   const hasExpired = documents.some((d) => d.status === "expired");
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4">
-      <h2 className="text-sm font-semibold text-navy-900">Document expiry dates</h2>
-      <p className="mt-1 text-xs text-slate-500">
+    <section className="rounded-2xl border border-border bg-surface p-4">
+      <h2 className="text-sm font-semibold text-text-primary">Document expiry dates</h2>
+      <p className="mt-1 text-xs text-text-muted">
         Dates are set by admin when your documents are approved. Upload renewed documents before expiry.
       </p>
       <ul className="mt-4 space-y-3">
@@ -41,22 +41,22 @@ export function DocumentExpiryCard({ documents, showRenewCta = true }: DocumentE
             key={item.key}
             className={cn(
               "flex items-start gap-3 rounded-xl border px-3 py-2.5 text-sm",
-              item.status === "expired" && "border-rose-200 bg-rose-50",
-              item.status === "expiring_soon" && "border-amber-200 bg-amber-50",
-              item.status === "valid" && "border-slate-100 bg-slate-50",
-              item.status === "missing" && "border-slate-100 bg-slate-50"
+              item.status === "expired" && "border-error-border bg-error-bg",
+              item.status === "expiring_soon" && "border-warning-border bg-warning-bg",
+              item.status === "valid" && "border-border bg-surface-alt",
+              item.status === "missing" && "border-border bg-surface-alt"
             )}
           >
             <StatusIcon status={item.status} />
             <div className="min-w-0 flex-1">
-              <p className="font-medium text-navy-900">{item.label}</p>
+              <p className="font-medium text-text-primary">{item.label}</p>
               <p
                 className={cn(
                   "text-xs",
-                  item.status === "expired" && "text-rose-700",
-                  item.status === "expiring_soon" && "text-amber-800",
-                  item.status === "valid" && "text-slate-600",
-                  item.status === "missing" && "text-slate-500"
+                  item.status === "expired" && "text-error",
+                  item.status === "expiring_soon" && "text-warning",
+                  item.status === "valid" && "text-text-secondary",
+                  item.status === "missing" && "text-text-muted"
                 )}
               >
                 {statusLabel(item)}
@@ -66,7 +66,7 @@ export function DocumentExpiryCard({ documents, showRenewCta = true }: DocumentE
         ))}
       </ul>
       {hasExpired && showRenewCta ? (
-        <p className="mt-4 text-xs text-rose-700">
+        <p className="mt-4 text-xs text-error">
           Upload renewed documents below. An admin will review them and update your expiry dates.
         </p>
       ) : null}

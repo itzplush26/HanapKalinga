@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { createAnonClient } from "@/lib/supabase/anon";
 import { createClient } from "@/lib/supabase/server";
 import { resolveNurseId } from "@/lib/nurse/resolve";
 import { ShareProfileButton } from "@/components/share-profile-button";
 import { ReviewBreakdown } from "@/components/review-breakdown";
 import { ReportUserMenu } from "@/components/report-user-menu";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { appUrl } from "@/lib/email/templates/layout";
 import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
 import { Button } from "@/components/ui/button";
@@ -21,6 +23,22 @@ export const revalidate = 3600;
 
 interface NurseProfilePageProps {
   params: { id: string };
+}
+
+function hasConfiguredRate(
+  band: string | null | undefined,
+  min: number | null | undefined,
+  max: number | null | undefined
+): boolean {
+  if (band?.trim()) return true;
+  if (min != null && min > 0) return true;
+  if (max != null && max > 0) return true;
+  return false;
+}
+
+function formatShiftLabel(shift: string | null | undefined): string {
+  if (!shift?.trim()) return "Shift not specified";
+  return shift.replace(/_/g, " ");
 }
 
 export async function generateStaticParams() {
@@ -46,13 +64,13 @@ export async function generateMetadata({ params }: NurseProfilePageProps): Promi
     .from("nurses")
     .select("bio, profile_photo_url, profile_slug, profiles!nurses_id_fkey(full_name)")
     .eq("id", nurseId)
-    .single();
+    .maybeSingle();
 
   const profile = Array.isArray(nurse?.profiles) ? nurse?.profiles[0] : nurse?.profiles;
-  const name = profile?.full_name ?? "Nurse";
+  const name = profile?.full_name?.trim() || "Nurse";
   const slug = nurse?.profile_slug ?? nurseId;
   const image = resolveProfilePhotoUrl(nurse?.profile_photo_url) ?? appUrl("/og-default.png");
-  const description = (nurse?.bio ?? "").slice(0, 160);
+  const description = (nurse?.bio ?? "").slice(0, 160) || `${name} on HanapKalinga`;
 
   return {
     title: `${name} — HanapKalinga`,
@@ -71,8 +89,13 @@ export async function generateMetadata({ params }: NurseProfilePageProps): Promi
 export default async function NurseProfilePage({ params }: NurseProfilePageProps) {
   const supabase = createClient();
   const nurseId = await resolveNurseId(supabase, params.id);
+
+  if (!nurseId) {
+    notFound();
+  }
+
   const { data: auth } = await supabase.auth.getUser();
-  let bookingHref = `/login?redirect=${encodeURIComponent(`/dashboard/family/bookings/new?nurse=${nurseId ?? params.id}`)}`;
+  let bookingHref = `/login?redirect=${encodeURIComponent(`/dashboard/family/bookings/new?nurse=${nurseId}`)}`;
   if (auth.user) {
     const { data: viewerProfile } = await supabase
       .from("profiles")
@@ -80,58 +103,54 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
       .eq("id", auth.user.id)
       .maybeSingle();
     if (viewerProfile?.role === "family") {
-      bookingHref = `/dashboard/family/bookings/new?nurse=${nurseId ?? params.id}`;
+      bookingHref = `/dashboard/family/bookings/new?nurse=${nurseId}`;
     }
   }
 
-  if (!nurseId) {
-    return (
-      <main className="px-5 py-8">
-        <p className="text-sm text-slate-600">Nurse not found.</p>
-      </main>
-    );
+  const [{ data: nurse, error: nurseError }, { data: availability }, { data: reviews }] =
+    await Promise.all([
+      supabase
+        .from("nurses")
+        .select(
+          "id, provider_type, profile_slug, verification_status, specializations, years_experience, bio, hourly_rate, hourly_rate_max, hourly_rate_range, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, profiles!nurses_id_fkey(full_name, city, barangay, region)"
+        )
+        .eq("id", nurseId)
+        .maybeSingle(),
+      supabase
+        .from("availability")
+        .select("date, shift, is_open")
+        .eq("nurse_id", nurseId)
+        .eq("is_open", true)
+        .gte("date", new Date().toISOString().slice(0, 10))
+        .order("date", { ascending: true })
+        .limit(14),
+      supabase
+        .from("reviews")
+        .select("id, rating, comment, created_at, reviewer_id, profiles!reviewer_id(full_name)")
+        .eq("reviewee_id", nurseId)
+        .order("created_at", { ascending: false })
+    ]);
+
+  if (nurseError) {
+    console.error("nurse.profile.load", nurseError);
   }
 
-  const [{ data: nurse }, { data: availability }, { data: reviews }] = await Promise.all([
-    supabase
-      .from("nurses")
-      .select(
-        "id, provider_type, profile_slug, specializations, years_experience, bio, hourly_rate, hourly_rate_max, hourly_rate_range, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, profiles!nurses_id_fkey(full_name, city, barangay, region)"
-      )
-      .eq("id", nurseId)
-      .single(),
-    supabase
-      .from("availability")
-      .select("date, shift, is_open")
-      .eq("nurse_id", nurseId)
-      .eq("is_open", true)
-      .gte("date", new Date().toISOString().slice(0, 10))
-      .order("date", { ascending: true })
-      .limit(14),
-    supabase
-      .from("reviews")
-      .select("id, rating, comment, created_at, reviewer_id, profiles!reviewer_id(full_name)")
-      .eq("reviewee_id", nurseId)
-      .order("created_at", { ascending: false })
-  ]);
+  if (!nurse || nurse.verification_status !== "verified") {
+    notFound();
+  }
 
   const { data: ratingRow } = await supabase
     .from("provider_ratings")
     .select("average_rating, review_count")
-    .eq("reviewee_id", nurseId)
+    .eq("nurse_id", nurseId)
     .maybeSingle();
 
-  if (!nurse) {
-    return (
-      <main className="px-5 py-8">
-        <p className="text-sm text-slate-600">Nurse not found.</p>
-      </main>
-    );
-  }
-
   const profile = Array.isArray(nurse.profiles) ? nurse.profiles[0] : nurse.profiles;
+  const displayName = profile?.full_name?.trim() || "Nurse";
+  const photoUrl = resolveProfilePhotoUrl(nurse.profile_photo_url);
+  const availabilitySlots = availability ?? [];
   const availabilityStatus = deriveAvailabilityStatus(
-    (availability ?? []).map((slot) => ({ date: slot.date, is_open: slot.is_open }))
+    availabilitySlots.map((slot) => ({ date: slot.date, is_open: slot.is_open }))
   );
   const availabilityText =
     availabilityStatus === "available_now"
@@ -144,70 +163,118 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
       ? "bg-emerald-100 text-emerald-700"
       : availabilityStatus === "available_next_week"
         ? "bg-amber-100 text-amber-700"
-        : "bg-rose-100 text-rose-700";
-  const hourlyRateLabel = formatHourlyRateBandLabel(
+        : "bg-slate-100 text-slate-600";
+
+  const hasHourlyRate = hasConfiguredRate(
     nurse.hourly_rate_range,
     nurse.hourly_rate,
     nurse.hourly_rate_max
   );
-  const dailyRateLabel = formatDailyRateBandLabel(
+  const hasDailyRate = hasConfiguredRate(
     nurse.daily_rate_range,
     nurse.daily_rate_12hr,
     nurse.daily_rate_12hr_max
   );
+  const hourlyRateLabel = hasHourlyRate
+    ? formatHourlyRateBandLabel(nurse.hourly_rate_range, nurse.hourly_rate, nurse.hourly_rate_max)
+    : null;
+  const dailyRateLabel = hasDailyRate
+    ? formatDailyRateBandLabel(nurse.daily_rate_range, nurse.daily_rate_12hr, nurse.daily_rate_12hr_max)
+    : null;
+  const ratesConfigured = hasHourlyRate || hasDailyRate;
 
-  const avgRating = ratingRow?.average_rating != null ? Number(ratingRow.average_rating) : null;
-  const reviewCount = ratingRow?.review_count != null ? Number(ratingRow.review_count) : 0;
+  const rawAvg = ratingRow?.average_rating;
+  const avgRating =
+    rawAvg != null && !Number.isNaN(Number(rawAvg)) ? Number(rawAvg) : null;
+  const reviewCount =
+    ratingRow?.review_count != null && !Number.isNaN(Number(ratingRow.review_count))
+      ? Number(ratingRow.review_count)
+      : 0;
+  const showRating = avgRating != null && reviewCount > 0;
+
+  const specializations = (nurse.specializations ?? []).filter(Boolean);
+  const bioText = nurse.bio?.trim() ?? "";
+  const locationParts = [profile?.region, profile?.city, profile?.barangay].filter(Boolean);
+  const profilePath = `/nurses/${nurse.profile_slug ?? nurseId}`;
 
   return (
     <main className="px-5 py-8">
       <div className="mx-auto flex max-w-md flex-col gap-6">
         <div className="space-y-3">
-          <div className="flex items-start justify-between gap-3">
-            <h1 className="text-2xl font-semibold text-navy-900">{profile?.full_name ?? "Nurse"}</h1>
-            <div className="flex items-center gap-2">
-              <ShareProfileButton
-                profileUrl={appUrl(`/nurses/${nurse.profile_slug ?? nurseId}`)}
-                nurseName={profile?.full_name ?? "Nurse"}
-              />
-              {auth.user ? (
-                <ReportUserMenu reportedUserId={nurseId} reportedUserName={profile?.full_name ?? "Nurse"} />
-              ) : null}
+          <div className="flex items-start gap-4">
+            <ProfileAvatar src={photoUrl} name={displayName} size="lg" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-start justify-between gap-3">
+                <h1 className="text-2xl font-semibold text-navy-900">{displayName}</h1>
+                <div className="flex shrink-0 items-center gap-2">
+                  <ShareProfileButton
+                    profileUrl={appUrl(profilePath)}
+                    nurseName={displayName}
+                  />
+                  {auth.user ? (
+                    <ReportUserMenu reportedUserId={nurseId} reportedUserName={displayName} />
+                  ) : null}
+                </div>
+              </div>
+              {locationParts.length > 0 ? (
+                <p className="mt-1 text-sm text-slate-600">{locationParts.join(" • ")}</p>
+              ) : (
+                <p className="mt-1 text-sm text-slate-500">Location not listed yet</p>
+              )}
             </div>
           </div>
-          <p className="text-sm text-slate-600">
-            {[profile?.region, profile?.city, profile?.barangay].filter(Boolean).join(" • ")}
-          </p>
-          {avgRating != null && reviewCount > 0 ? (
+
+          {showRating ? (
             <div className="flex items-center gap-2 text-sm">
               <StarDisplay rating={avgRating} size="sm" />
               <span className="font-semibold text-navy-900">{avgRating.toFixed(1)}</span>
               <span className="text-slate-500">({reviewCount} reviews)</span>
             </div>
-          ) : null}
+          ) : (
+            <p className="text-sm text-slate-500">No reviews yet</p>
+          )}
+
           <Badge className={availabilityClass}>{availabilityText}</Badge>
-          <div className="flex flex-wrap gap-2">
-            {(nurse.specializations ?? []).map((item: string) => (
-              <Badge key={item} className="bg-slate-100 text-slate-700">
-                {item}
-              </Badge>
-            ))}
-          </div>
-          <p className="text-sm text-slate-600">{nurse.bio}</p>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <Card>
-              <CardContent className="p-3">
-                <p className="text-xs text-slate-500">Hourly (expected)</p>
-                <p className="font-semibold">{hourlyRateLabel ?? "Rate on request"}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-3">
-                <p className="text-xs text-slate-500">Daily (expected)</p>
-                <p className="font-semibold">{dailyRateLabel ?? "Rate on request"}</p>
-              </CardContent>
-            </Card>
-          </div>
+
+          {specializations.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {specializations.map((item: string) => (
+                <Badge key={item} className="bg-slate-100 text-slate-700">
+                  {item}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">Specializations not listed yet</p>
+          )}
+
+          {bioText ? (
+            <p className="text-sm text-slate-600">{bioText}</p>
+          ) : (
+            <p className="text-sm italic text-slate-500">This provider hasn&apos;t added a bio yet</p>
+          )}
+
+          {ratesConfigured ? (
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <Card>
+                <CardContent className="p-3">
+                  <p className="text-xs text-slate-500">Hourly (expected)</p>
+                  <p className="font-semibold">{hourlyRateLabel ?? "Rate on request"}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-3">
+                  <p className="text-xs text-slate-500">Daily (expected)</p>
+                  <p className="font-semibold">{dailyRateLabel ?? "Rate on request"}</p>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <p className="rounded-2xl border border-slate-200 bg-white p-3 text-sm text-slate-600">
+              Rate not set — contact for details
+            </p>
+          )}
+
           <p className="text-xs text-slate-500">
             Rates shown are starting expectations. Final rates can be negotiated privately.
           </p>
@@ -215,25 +282,28 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
 
         <div className="space-y-3">
           <h2 className="text-lg font-semibold text-navy-900">Availability</h2>
-          <div className="space-y-2 text-sm text-slate-600">
-            {(availability ?? []).map((slot) => (
-              <Card key={`${slot.date}-${slot.shift}`}>
-                <CardContent className="p-3">
-                  {slot.date} • {slot.shift.replace("_", " ")}
-                </CardContent>
-              </Card>
-            ))}
-            {availability?.length === 0 ? (
-              <p className="rounded-2xl border border-slate-200 bg-white p-3">No upcoming availability posted.</p>
-            ) : null}
-          </div>
+          {availabilitySlots.length > 0 ? (
+            <div className="space-y-2 text-sm text-slate-600">
+              {availabilitySlots.map((slot) => (
+                <Card key={`${slot.date}-${slot.shift ?? "open"}`}>
+                  <CardContent className="p-3">
+                    {slot.date} • {formatShiftLabel(slot.shift)}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <p className="rounded-2xl border border-slate-200 bg-white p-3 text-sm text-slate-600">
+              This provider hasn&apos;t set their availability yet
+            </p>
+          )}
         </div>
 
         <div className="space-y-3">
           <h2 className="text-lg font-semibold text-navy-900">Reviews</h2>
-          {avgRating != null && reviewCount > 0 ? (
+          {showRating ? (
             <ReviewBreakdown
-              reviews={(reviews ?? []).map((r) => ({ rating: r.rating as number }))}
+              reviews={(reviews ?? []).map((r) => ({ rating: Number(r.rating) || 0 }))}
               averageRating={avgRating}
               reviewCount={reviewCount}
             />
@@ -249,9 +319,11 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
                 <Card key={review.id as string}>
                   <CardContent className="space-y-2 p-3">
                     <div className="flex items-center justify-between gap-2">
-                      <StarDisplay rating={review.rating as number} size="sm" />
+                      <StarDisplay rating={Number(review.rating) || 0} size="sm" />
                       <span className="text-xs text-slate-500">
-                        {new Date(review.created_at as string).toLocaleDateString()}
+                        {review.created_at
+                          ? new Date(review.created_at as string).toLocaleDateString()
+                          : ""}
                       </span>
                     </div>
                     <p className="text-xs font-medium text-slate-500">{firstName}</p>
@@ -260,7 +332,7 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
                 </Card>
               );
             })}
-            {reviews?.length === 0 ? (
+            {(reviews ?? []).length === 0 ? (
               <EmptyState
                 icon={Star}
                 title="No reviews yet"
@@ -270,13 +342,9 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
           </div>
         </div>
 
-        {availabilityStatus === "not_accepting" ? (
-          <Button disabled>Request Booking</Button>
-        ) : (
-          <Button asChild>
-            <Link href={bookingHref}>Request Booking</Link>
-          </Button>
-        )}
+        <Button asChild>
+          <Link href={bookingHref}>Request Booking</Link>
+        </Button>
       </div>
     </main>
   );

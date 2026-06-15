@@ -10,8 +10,6 @@ import { PageHeader } from "@/components/page-header";
 import { Calendar } from "lucide-react";
 import { isVerifiedProvider, type VerificationStatus } from "@/lib/verification";
 import { appUrl } from "@/lib/email/templates/layout";
-import { DocumentExpiryCard } from "@/components/document-expiry-card";
-import { getDocumentExpiryItems } from "@/lib/license-expiry";
 
 export default async function NurseDashboardPage() {
   const supabase = createClient();
@@ -22,7 +20,7 @@ export default async function NurseDashboardPage() {
     supabase
       .from("nurses")
       .select(
-        "verification_status, rejection_reason, bio, specializations, daily_rate_range, hourly_rate_range, profile_slug, prc_license_expiry, tesda_cert_expiry, nbi_expiry"
+        "verification_status, rejection_reason, bio, specializations, daily_rate_range, hourly_rate_range, profile_slug, prc_license_no, tesda_certificate_no, provider_type"
       )
       .eq("id", userId)
       .single(),
@@ -44,10 +42,11 @@ export default async function NurseDashboardPage() {
 
   const verificationStatus = (nurse?.verification_status ?? "pending") as VerificationStatus;
   const isVerified = isVerifiedProvider(verificationStatus);
-  const documentExpiry = getDocumentExpiryItems(nurse ?? {});
-  const showExpiryCard =
-    isVerified &&
-    documentExpiry.some((item) => item.status === "expired" || item.status === "expiring_soon");
+  const providerType = (nurse?.provider_type ?? "nurse") as "nurse" | "caregiver";
+  const hasLicenseNumber =
+    providerType === "caregiver"
+      ? Boolean(nurse?.tesda_certificate_no?.trim())
+      : Boolean(nurse?.prc_license_no?.trim());
 
   const profileUrl = nurse?.profile_slug
     ? appUrl(`/nurses/${nurse.profile_slug}`)
@@ -70,6 +69,7 @@ export default async function NurseDashboardPage() {
                   nurse.hourly_rate_range
               ),
               hasAvailability: (availability?.length ?? 0) > 0,
+              hasLicenseNumber,
               verificationStatus,
               rejectionReason: nurse?.rejection_reason
             }}
@@ -77,7 +77,6 @@ export default async function NurseDashboardPage() {
           {isVerified && (nurse?.profile_slug || profile?.full_name) ? (
             <ShareProfileButton profileUrl={profileUrl} nurseName={profile?.full_name ?? "Nurse"} variant="card" />
           ) : null}
-          {showExpiryCard ? <DocumentExpiryCard documents={documentExpiry} /> : null}
           <NotificationsPanel />
           <div className="space-y-3">
             {(bookings ?? []).map((booking) => (

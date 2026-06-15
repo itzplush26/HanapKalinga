@@ -55,6 +55,8 @@ interface VerificationReviewPanelProps {
   dailyRateRange: string | null;
   hourlyRateRange: string | null;
   profilePhotoUrl: string | null;
+  prcLicenseNo?: string | null;
+  tesdaCertificateNo?: string | null;
   prcLicenseExpiry?: string | null;
   tesdaCertExpiry?: string | null;
   nbiExpiry?: string | null;
@@ -82,6 +84,8 @@ export function VerificationReviewPanel({
   dailyRateRange,
   hourlyRateRange,
   profilePhotoUrl,
+  prcLicenseNo,
+  tesdaCertificateNo,
   prcLicenseExpiry: initialPrcExpiry,
   tesdaCertExpiry: initialTesdaExpiry,
   nbiExpiry: initialNbiExpiry,
@@ -358,6 +362,14 @@ export function VerificationReviewPanel({
               {isCaregiver ? (
                 <div className="space-y-2">
                   <DocumentViewer label="TESDA NC II Certificate" url={tesdaSignedUrl} />
+                  {tesdaCertificateNo ? (
+                    <p className="text-xs text-slate-600">
+                      Entered TESDA Certificate Number:{" "}
+                      <span className="font-medium text-slate-900">{tesdaCertificateNo}</span>
+                    </p>
+                  ) : (
+                    <p className="text-xs text-amber-700">No TESDA certificate number entered.</p>
+                  )}
                   <label className="block text-xs font-medium text-slate-600">
                     TESDA expiry date <span className="text-rose-600">*</span>
                   </label>
@@ -370,6 +382,14 @@ export function VerificationReviewPanel({
               ) : (
                 <div className="space-y-2">
                   <DocumentViewer label="PRC License" url={prcSignedUrl} />
+                  {prcLicenseNo ? (
+                    <p className="text-xs text-slate-600">
+                      Entered PRC License Number:{" "}
+                      <span className="font-medium text-slate-900">{prcLicenseNo}</span>
+                    </p>
+                  ) : (
+                    <p className="text-xs text-amber-700">No PRC license number entered.</p>
+                  )}
                   <label className="block text-xs font-medium text-slate-600">
                     PRC license expiry date <span className="text-rose-600">*</span>
                   </label>

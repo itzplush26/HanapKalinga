@@ -5,7 +5,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 export const PENDING_VERIFICATION_STATUSES = ["pending"] as const;
 
 export const VERIFICATION_QUEUE_SELECT =
-  "id, provider_type, verification_status, submitted_at, profile_photo_url, prc_document_url, tesda_document_url, nbi_document_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry, bio, specializations, daily_rate_range, hourly_rate_range, profiles!nurses_id_fkey(full_name, first_name, last_name, city, region, profile_photo_url)";
+  "id, provider_type, verification_status, submitted_at, profile_photo_url, prc_license_no, tesda_certificate_no, prc_document_url, tesda_document_url, nbi_document_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry, bio, specializations, daily_rate_range, hourly_rate_range, profiles!nurses_id_fkey(full_name, first_name, last_name, city, region, profile_photo_url)";
 
 export function getAdminDataClient(sessionClient: SupabaseClient) {
   try {

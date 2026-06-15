@@ -47,7 +47,33 @@ export const nurseProfileFieldsSchema = z.object({
   tesdaCertificateNo: z.string().optional()
 });
 
-export const nurseProfileFormSchema = nurseProfileFieldsSchema.superRefine(validateCityInRegion);
+export const nurseProfileFormSchema = nurseProfileFieldsSchema
+  .superRefine(validateCityInRegion)
+  .superRefine((values, ctx) => {
+    if (values.providerType === "nurse") {
+      const prcNo = values.prcLicenseNo?.trim() ?? "";
+      if (!prcNo) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "PRC license number is required.",
+          path: ["prcLicenseNo"]
+        });
+      } else if (!/^\d{5,10}$/.test(prcNo)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "PRC license number must be 5–10 digits.",
+          path: ["prcLicenseNo"]
+        });
+      }
+    }
+    if (values.providerType === "caregiver" && !values.tesdaCertificateNo?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "TESDA certificate number is required.",
+        path: ["tesdaCertificateNo"]
+      });
+    }
+  });
 
 export type NurseProfileFormValues = z.infer<typeof nurseProfileFormSchema>;
 

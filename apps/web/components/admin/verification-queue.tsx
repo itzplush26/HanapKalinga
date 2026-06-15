@@ -23,6 +23,8 @@ export interface VerificationQueueNurse {
   verification_status: VerificationStatus;
   submitted_at: string | null;
   profile_photo_url: string | null;
+  prc_license_no: string | null;
+  tesda_certificate_no: string | null;
   prc_document_url: string | null;
   tesda_document_url: string | null;
   nbi_document_url: string | null;
@@ -309,6 +311,18 @@ export function VerificationQueue({ initialNurses, initialTab }: VerificationQue
                         </p>
                         {nurse.email ? (
                           <p className="mt-1 text-xs text-slate-500">{nurse.email}</p>
+                        ) : null}
+                        {nurse.provider_type === "caregiver" && nurse.tesda_certificate_no ? (
+                          <p className="mt-1 text-xs text-slate-600">
+                            Entered TESDA Certificate Number:{" "}
+                            <span className="font-medium">{nurse.tesda_certificate_no}</span>
+                          </p>
+                        ) : null}
+                        {nurse.provider_type !== "caregiver" && nurse.prc_license_no ? (
+                          <p className="mt-1 text-xs text-slate-600">
+                            Entered PRC License Number:{" "}
+                            <span className="font-medium">{nurse.prc_license_no}</span>
+                          </p>
                         ) : null}
                         <p className="mt-1 text-xs text-slate-500">
                           Submitted {nurse.submitted_at ? new Date(nurse.submitted_at).toLocaleString() : "—"}

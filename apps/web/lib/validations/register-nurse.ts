@@ -21,10 +21,17 @@ export const completeNurseRegistrationSchema = nurseProfileFieldsSchema
     const hasTesda = Boolean(values.tesdaDocumentPath?.trim());
 
     if (values.providerType === "nurse") {
-      if (!values.prcLicenseNo?.trim()) {
+      const prcNo = values.prcLicenseNo?.trim() ?? "";
+      if (!prcNo) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "PRC license number is required.",
+          path: ["prcLicenseNo"]
+        });
+      } else if (!/^\d{5,10}$/.test(prcNo)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "PRC license number must be 5–10 digits.",
           path: ["prcLicenseNo"]
         });
       }

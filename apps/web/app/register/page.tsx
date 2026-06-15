@@ -14,6 +14,7 @@ import { familyProfileSchema, nurseProfileFormSchema, type NurseProfileFormValue
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { TermsAcceptanceModal } from "@/components/terms-acceptance-modal";
+import { TurnstileWidget } from "@/components/turnstile-widget";
 import { hasValidTermsAcceptance, recordTermsAcceptance } from "@/lib/terms-acceptance";
 import { mapUploadErrorMessage } from "@/lib/storage/parse-upload-response";
 import { Input } from "@/components/ui/input";
@@ -57,7 +58,9 @@ export default function RegisterPage() {
   } | null>(null);
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const supabase = createClient();
+  const turnstileRequired = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 
   const requiredLabel = (label: string, hasError?: boolean) => (
     <span className={hasError ? "text-sm font-medium text-rose-600" : "text-sm font-medium text-slate-700"}>
@@ -141,15 +144,28 @@ export default function RegisterPage() {
     setStatus(null);
     setIsSubmitting(true);
 
+    if (turnstileRequired && !captchaToken) {
+      setStatus("Please complete the verification challenge.");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const { data, error } = await supabase.auth.signUp({
         email: values.email,
-        password: values.password
+        password: values.password,
+        options: captchaToken ? { captchaToken } : undefined
       });
 
       if (error) {
         console.error("signup.sign_up.error", error);
-        setStatus(mapSupabaseError(error, "signup"));
+        const lowered = error.message.toLowerCase();
+        if (lowered.includes("captcha") || lowered.includes("turnstile")) {
+          setStatus("Verification failed. Please try again.");
+          setCaptchaToken(null);
+        } else {
+          setStatus(mapSupabaseError(error, "signup"));
+        }
         setIsSubmitting(false);
         return;
       }
@@ -403,6 +419,14 @@ export default function RegisterPage() {
   }
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const prefillEmail = params.get("email");
+    if (prefillEmail) {
+      credentialsForm.setValue("email", prefillEmail);
+    }
+  }, [credentialsForm]);
+
+  useEffect(() => {
     async function restoreSignupSession() {
       const userId = await resolveAuthUserId(supabase, null);
       clearSignupStageIfStale(userId);
@@ -590,11 +614,18 @@ export default function RegisterPage() {
                 {credentialsForm.formState.errors.confirmPassword.message}
               </p>
             ) : null}
+            <TurnstileWidget
+              className="flex justify-center"
+              onToken={setCaptchaToken}
+              onExpire={() => setCaptchaToken(null)}
+              onError={() => setCaptchaToken(null)}
+            />
             <LoadingButton
               type="submit"
               loading={isSubmitting}
               loadingText="Creating account..."
               className="w-full"
+              disabled={turnstileRequired && !captchaToken}
             >
               Continue
             </LoadingButton>
@@ -830,20 +861,29 @@ export default function RegisterPage() {
             </div>
             {nurseForm.watch("providerType") === "nurse" ? (
               <div className="space-y-1">
-                {requiredLabel("PRC license number", !!nurseForm.formState.errors.prcLicenseNo)}
+                {requiredLabel("PRC License Number", !!nurseForm.formState.errors.prcLicenseNo)}
                 <Input
-                  placeholder="PRC license number"
+                  placeholder="7-digit number"
+                  inputMode="numeric"
+                  autoComplete="off"
                   {...nurseForm.register("prcLicenseNo")}
                   className={
                     nurseForm.formState.errors.prcLicenseNo ? "border-rose-500 focus:ring-rose-500" : undefined
                   }
                 />
+                <p className="text-xs text-slate-500">
+                  You can find this on your PRC ID card, usually a 7-digit number.
+                </p>
+                {nurseForm.formState.errors.prcLicenseNo ? (
+                  <p className="text-xs text-rose-600">{nurseForm.formState.errors.prcLicenseNo.message}</p>
+                ) : null}
               </div>
             ) : (
               <div className="space-y-1">
-                {requiredLabel("TESDA certificate number", !!nurseForm.formState.errors.tesdaCertificateNo)}
+                {requiredLabel("TESDA Certificate Number", !!nurseForm.formState.errors.tesdaCertificateNo)}
                 <Input
-                  placeholder="TESDA NC II certificate number"
+                  placeholder="Certificate number"
+                  autoComplete="off"
                   {...nurseForm.register("tesdaCertificateNo")}
                   className={
                     nurseForm.formState.errors.tesdaCertificateNo
@@ -851,6 +891,14 @@ export default function RegisterPage() {
                       : undefined
                   }
                 />
+                <p className="text-xs text-slate-500">
+                  You can find this on your TESDA NC II certificate.
+                </p>
+                {nurseForm.formState.errors.tesdaCertificateNo ? (
+                  <p className="text-xs text-rose-600">
+                    {nurseForm.formState.errors.tesdaCertificateNo.message}
+                  </p>
+                ) : null}
               </div>
             )}
             {requiredLabel(
