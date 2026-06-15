@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { BookingStatusBadge } from "@/components/booking-status-badge";
+import { EmptyState } from "@/components/empty-state";
+import { Button } from "@/components/ui/button";
 import { fetchUnreadCountByBooking } from "@/lib/messages";
+import { Calendar } from "lucide-react";
 
 export default async function FamilyBookingsPage() {
   const supabase = createClient();
@@ -47,9 +50,16 @@ export default async function FamilyBookingsPage() {
             );
           })}
           {bookings?.length === 0 ? (
-            <p className="rounded-2xl border border-slate-200 bg-white p-3 text-sm text-slate-600">
-              No bookings yet.
-            </p>
+            <EmptyState
+              icon={Calendar}
+              title="No bookings yet"
+              description="Find a nurse or caregiver and send your first booking request."
+              action={
+                <Button asChild size="sm">
+                  <Link href="/nurses">Browse caregivers</Link>
+                </Button>
+              }
+            />
           ) : null}
         </div>
       </div>

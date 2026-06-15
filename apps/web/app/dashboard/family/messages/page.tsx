@@ -4,6 +4,7 @@ import { MessagesLayoutSuspense } from "@/components/messages-layout-suspense";
 import { buildInbox } from "@/lib/messages";
 import { PageHeader } from "@/components/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
+import { parseTooltipsDismissed } from "@/lib/family-onboarding";
 
 function MessagesLoading() {
   return (
@@ -19,12 +20,19 @@ async function FamilyMessagesContent() {
   const userId = auth.user?.id ?? "";
   const rows = userId ? await buildInbox(supabase, "family", userId) : [];
 
+  const { data: family } = userId
+    ? await supabase.from("families").select("tooltips_dismissed").eq("id", userId).maybeSingle()
+    : { data: null };
+  const tooltips = parseTooltipsDismissed(family?.tooltips_dismissed);
+  const showMessagesTooltip = !tooltips.messages;
+
   return (
     <MessagesLayoutSuspense
       rows={rows}
       role="family"
       userId={userId}
       bookingDetailBasePath="/dashboard/family/bookings"
+      showMessagesTooltip={showMessagesTooltip}
     />
   );
 }
