@@ -20,6 +20,7 @@ import { deriveAvailabilityStatus } from "@/lib/availability-status";
 import { parseTooltipsDismissed } from "@/lib/family-onboarding";
 import type { Shift } from "@/lib/availability-schedule";
 import { formatDailyRateBandLabel, formatHourlyRateBandLabel } from "@/lib/data/rates";
+import { NurseProfileBackLink } from "@/components/nurse-profile-back-link";
 import { Star } from "lucide-react";
 
 export const revalidate = 3600;
@@ -211,6 +212,7 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
   return (
     <main className="px-5 py-8">
       <div className="mx-auto flex max-w-md flex-col gap-6">
+        <NurseProfileBackLink />
         <div className="space-y-3">
           <div className="flex items-start gap-4">
             <ProfileAvatar src={photoUrl} name={displayName} size="lg" />

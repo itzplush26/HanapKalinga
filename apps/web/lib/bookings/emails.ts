@@ -7,6 +7,10 @@ import { bookingCompletionRequestedEmail } from "@/lib/email/templates/booking-c
 import { bookingCompletedEmail } from "@/lib/email/templates/booking-completed";
 import { bookingCancelledEmail } from "@/lib/email/templates/booking-cancelled";
 import {
+  buildBookingDisputeAdminEmailHtml,
+  buildBookingDisputeAdminEmailText
+} from "@/lib/email/templates/booking-dispute-admin";
+import {
   formatBudgetRange,
   formatPatientCondition,
   formatShiftLabel,
@@ -194,7 +198,16 @@ export async function sendDisputeAdminEmail(bookingId: string, description: stri
     sendEmailSafe({
       to: email,
       subject: "[Admin] Booking dispute on HanapKalinga",
-      html: `<p>Booking ${bookingId} disputed by ${ctx.familyName}.</p><p>${description}</p>`
+      html: buildBookingDisputeAdminEmailHtml({
+        bookingId,
+        familyName: ctx.familyName,
+        description
+      }),
+      text: buildBookingDisputeAdminEmailText({
+        bookingId,
+        familyName: ctx.familyName,
+        description
+      })
     });
   }
 }
