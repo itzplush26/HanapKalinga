@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Turnstile } from "@marsidev/react-turnstile";
 
 interface TurnstileWidgetProps {
@@ -10,14 +10,38 @@ interface TurnstileWidgetProps {
   className?: string;
 }
 
-export function TurnstileWidget({ onToken, onExpire, onError, className }: TurnstileWidgetProps) {
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-  const [loadFailed, setLoadFailed] = useState(false);
+function turnstileErrorMessage(code?: string): string {
+  switch (code) {
+    case "110200":
+      return "This domain is not authorized for the Turnstile site key. Add the exact hostname (including www) in Cloudflare → Turnstile → Hostname management.";
+    case "110100":
+    case "110110":
+    case "400020":
+      return "The Turnstile site key is invalid or does not match your Cloudflare widget. In Vercel, set NEXT_PUBLIC_TURNSTILE_SITE_KEY to the Site Key from the same widget (not the Secret Key).";
+    case "400070":
+      return "This Turnstile widget is disabled in Cloudflare. Re-enable it or create a new widget.";
+    default:
+      return "Verification could not load. Confirm the site key in Vercel matches Cloudflare Turnstile, disable ad blockers, and refresh.";
+  }
+}
 
-  const handleError = useCallback(() => {
-    setLoadFailed(true);
-    onError?.();
-  }, [onError]);
+export function TurnstileWidget({ onToken, onExpire, onError, className }: TurnstileWidgetProps) {
+  const siteKey = useMemo(
+    () => process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim(),
+    []
+  );
+  const [errorCode, setErrorCode] = useState<string | null>(null);
+
+  const handleError = useCallback(
+    (code?: string) => {
+      if (code) {
+        console.error("[Turnstile]", code);
+        setErrorCode(code);
+      }
+      onError?.();
+    },
+    [onError]
+  );
 
   if (!siteKey) {
     return (
@@ -27,10 +51,10 @@ export function TurnstileWidget({ onToken, onExpire, onError, className }: Turns
     );
   }
 
-  if (loadFailed) {
+  if (errorCode) {
     return (
       <p className="rounded-xl border border-error-border bg-error-bg px-3 py-2 text-sm text-error">
-        Unable to load verification. Please check your connection and refresh the page.
+        {turnstileErrorMessage(errorCode)}
       </p>
     );
   }
@@ -39,14 +63,14 @@ export function TurnstileWidget({ onToken, onExpire, onError, className }: Turns
     <div className={className}>
       <Turnstile
         siteKey={siteKey}
-        options={{ theme: "auto", size: "flexible" }}
+        options={{ theme: "auto", size: "normal" }}
         onSuccess={onToken}
         onExpire={() => {
           onExpire?.();
         }}
         onError={handleError}
-        onUnsupported={() => handleError()}
-        onTimeout={() => handleError()}
+        onUnsupported={() => handleError("unsupported")}
+        onTimeout={() => handleError("timeout")}
       />
     </div>
   );

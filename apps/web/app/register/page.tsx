@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
@@ -15,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { TermsAcceptanceModal } from "@/components/terms-acceptance-modal";
 import { TurnstileWidget } from "@/components/turnstile-widget";
-import { hasValidTermsAcceptance, recordTermsAcceptance } from "@/lib/terms-acceptance";
+import { recordTermsAcceptance } from "@/lib/terms-acceptance";
 import { mapUploadErrorMessage } from "@/lib/storage/parse-upload-response";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -51,6 +50,7 @@ export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSavingRole, setIsSavingRole] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [termsAcceptedThisSignup, setTermsAcceptedThisSignup] = useState(false);
   const [pendingCredentials, setPendingCredentials] = useState<{
     email: string;
     password: string;
@@ -127,7 +127,7 @@ export default function RegisterPage() {
   }) {
     setStatus(null);
 
-    if (!hasValidTermsAcceptance()) {
+    if (!termsAcceptedThisSignup) {
       setPendingCredentials(values);
       setShowTermsModal(true);
       return;
@@ -411,6 +411,7 @@ export default function RegisterPage() {
 
   function handleTermsAccepted() {
     recordTermsAcceptance();
+    setTermsAcceptedThisSignup(true);
     setShowTermsModal(false);
     if (pendingCredentials && step === 1) {
       void performSignUp(pendingCredentials);
@@ -949,13 +950,21 @@ export default function RegisterPage() {
         {status ? <p className="text-sm text-rose-600">{status}</p> : null}
         <p className="text-xs text-text-muted">
           By continuing you agree to our{" "}
-          <button type="button" className="underline" onClick={() => setShowTermsModal(true)}>
+          <button
+            type="button"
+            className="legal-inline-link"
+            onClick={() => setShowTermsModal(true)}
+          >
             Terms of Service
           </button>{" "}
           and{" "}
-          <Link href="/privacy" target="_blank" className="underline">
+          <button
+            type="button"
+            className="legal-inline-link"
+            onClick={() => setShowTermsModal(true)}
+          >
             Privacy Policy
-          </Link>
+          </button>
           .
         </p>
       </div>
