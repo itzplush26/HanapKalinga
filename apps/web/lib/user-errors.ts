@@ -49,6 +49,12 @@ export function mapSupabaseError(
   }
 
   if (context === "password") {
+    if (message === "Token has expired or is invalid") {
+      return AUTH_MESSAGES["Token has expired or is invalid"];
+    }
+    if (message.toLowerCase().includes("otp") || code === "otp_expired") {
+      return "This code has expired. Request a new one and try again.";
+    }
     return "We could not update your password. Please try again.";
   }
 

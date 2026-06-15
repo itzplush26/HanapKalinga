@@ -11,6 +11,7 @@ import {
 import { hasRequiredDocuments } from "@/lib/admin/verification-documents";
 import { isProviderRole } from "@/lib/provider-role";
 import { revalidatePublicNursePages } from "@/lib/nurses/revalidate-public";
+import { ensureNurseProfileSlug } from "@/lib/nurse/ensure-profile-slug";
 import {
   buildVerificationRejectedEmailHtml,
   buildVerificationRejectedEmailText,
@@ -182,7 +183,8 @@ export async function POST(request: Request) {
     }
 
     if (action === "approve") {
-      revalidatePublicNursePages(nurse.profile_slug, nurseId);
+      const slug = await ensureNurseProfileSlug(service, nurseId, profile?.full_name);
+      revalidatePublicNursePages(slug ?? nurse.profile_slug, nurseId);
     }
 
     const { data: authUser } = await service.auth.admin.getUserById(nurseId);

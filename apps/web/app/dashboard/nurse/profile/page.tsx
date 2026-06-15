@@ -322,6 +322,16 @@ export default function NurseProfilePage() {
             <DocumentExpiryCard documents={documentExpiry} showRenewCta={false} />
           ) : null}
 
+          {isVerifiedProvider(verificationStatus) &&
+          ((providerType === "nurse" && !form.watch("prcLicenseNo")?.trim()) ||
+            (providerType === "caregiver" && !form.watch("tesdaCertificateNo")?.trim())) ? (
+            <div className="rounded-2xl border border-warning-border bg-warning-bg p-4 text-sm text-warning">
+              {providerType === "nurse"
+                ? "Add your PRC license number to help admins verify your credentials. This does not affect your verified status."
+                : "Add your TESDA certificate number to help admins verify your credentials. This does not affect your verified status."}
+            </div>
+          ) : null}
+
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4" id="documents">
             <div className="space-y-1">
               <Label htmlFor="firstName">First name</Label>
