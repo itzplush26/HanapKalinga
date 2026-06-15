@@ -18,6 +18,16 @@ import {
   VERIFICATION_REJECTED_SUBJECT
 } from "@/lib/email/templates/verification-rejected";
 import {
+  buildVerificationResubmissionEmailHtml,
+  buildVerificationResubmissionEmailText,
+  VERIFICATION_RESUBMISSION_SUBJECT
+} from "@/lib/email/templates/verification-resubmission-required";
+import {
+  buildVerificationUnderReviewEmailHtml,
+  buildVerificationUnderReviewEmailText,
+  VERIFICATION_UNDER_REVIEW_SUBJECT
+} from "@/lib/email/templates/verification-under-review";
+import {
   actionToStatus,
   getVerificationNotificationContent,
   type VerificationAction
@@ -195,7 +205,6 @@ export async function POST(request: Request) {
 
     if (recipientEmail) {
       const firstName = profile?.full_name?.trim().split(/\s+/)[0] ?? "there";
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://hanapkalinga.com";
 
       const mailResult =
         newStatus === "verified"
@@ -205,26 +214,48 @@ export async function POST(request: Request) {
               text: buildVerificationApprovedEmailText(firstName),
               html: buildVerificationApprovedEmailHtml(firstName)
             })
-          : action === "reject" && trimmedReason
+          : newStatus === "under_review"
             ? await sendMail({
                 to: recipientEmail,
-                subject: VERIFICATION_REJECTED_SUBJECT,
-                text: buildVerificationRejectedEmailText({
-                  firstName,
-                  reason: trimmedReason,
-                  details: trimmedNotes
-                }),
-                html: buildVerificationRejectedEmailHtml({
-                  firstName,
-                  reason: trimmedReason,
-                  details: trimmedNotes
-                })
+                subject: VERIFICATION_UNDER_REVIEW_SUBJECT,
+                text: buildVerificationUnderReviewEmailText(firstName),
+                html: buildVerificationUnderReviewEmailHtml(firstName)
               })
-            : await sendMail({
-                to: recipientEmail,
-                subject: `[HanapKalinga] ${notification.title}`,
-                text: `${notification.body}\n\nSign in to view your dashboard: ${appUrl}`
-              });
+            : newStatus === "resubmission_required" && trimmedReason
+              ? await sendMail({
+                  to: recipientEmail,
+                  subject: VERIFICATION_RESUBMISSION_SUBJECT,
+                  text: buildVerificationResubmissionEmailText({
+                    firstName,
+                    reason: trimmedReason,
+                    details: trimmedNotes
+                  }),
+                  html: buildVerificationResubmissionEmailHtml({
+                    firstName,
+                    reason: trimmedReason,
+                    details: trimmedNotes
+                  })
+                })
+              : action === "reject" && trimmedReason
+                ? await sendMail({
+                    to: recipientEmail,
+                    subject: VERIFICATION_REJECTED_SUBJECT,
+                    text: buildVerificationRejectedEmailText({
+                      firstName,
+                      reason: trimmedReason,
+                      details: trimmedNotes
+                    }),
+                    html: buildVerificationRejectedEmailHtml({
+                      firstName,
+                      reason: trimmedReason,
+                      details: trimmedNotes
+                    })
+                  })
+                : await sendMail({
+                    to: recipientEmail,
+                    subject: `[HanapKalinga] ${notification.title}`,
+                    text: `${notification.body}\n\nSign in to view your dashboard: ${process.env.NEXT_PUBLIC_APP_URL ?? "https://hanapkalinga.com"}`
+                  });
       emailSent = mailResult.sent;
       emailError = mailResult.error;
     }
