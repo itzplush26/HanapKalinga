@@ -8,14 +8,17 @@ import { ShareProfileButton } from "@/components/share-profile-button";
 import { ReviewBreakdown } from "@/components/review-breakdown";
 import { ReportUserMenu } from "@/components/report-user-menu";
 import { ProfileAvatar } from "@/components/profile-avatar";
+import { PublicWeeklyAvailabilityGrid } from "@/components/public-weekly-availability-grid";
+import { NurseProfileBookSection } from "@/components/nurse-profile-book-section";
 import { appUrl } from "@/lib/email/templates/layout";
 import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { StarDisplay } from "@/components/star-display";
 import { EmptyState } from "@/components/empty-state";
 import { deriveAvailabilityStatus } from "@/lib/availability-status";
+import { parseTooltipsDismissed } from "@/lib/family-onboarding";
+import type { Shift } from "@/lib/availability-schedule";
 import { formatDailyRateBandLabel, formatHourlyRateBandLabel } from "@/lib/data/rates";
 import { Star } from "lucide-react";
 
@@ -34,11 +37,6 @@ function hasConfiguredRate(
   if (min != null && min > 0) return true;
   if (max != null && max > 0) return true;
   return false;
-}
-
-function formatShiftLabel(shift: string | null | undefined): string {
-  if (!shift?.trim()) return "Shift not specified";
-  return shift.replace(/_/g, " ");
 }
 
 export async function generateStaticParams() {
@@ -96,18 +94,22 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
 
   const { data: auth } = await supabase.auth.getUser();
   let bookingHref = `/login?redirect=${encodeURIComponent(`/dashboard/family/bookings/new?nurse=${nurseId}`)}`;
+  let isFamilyViewer = false;
+  let showBookingTooltip = false;
   if (auth.user) {
-    const { data: viewerProfile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", auth.user.id)
-      .maybeSingle();
+    const [{ data: viewerProfile }, { data: familyRow }] = await Promise.all([
+      supabase.from("profiles").select("role").eq("id", auth.user.id).maybeSingle(),
+      supabase.from("families").select("tooltips_dismissed").eq("id", auth.user.id).maybeSingle()
+    ]);
     if (viewerProfile?.role === "family") {
+      isFamilyViewer = true;
       bookingHref = `/dashboard/family/bookings/new?nurse=${nurseId}`;
+      const tooltips = parseTooltipsDismissed(familyRow?.tooltips_dismissed);
+      showBookingTooltip = !tooltips.booking;
     }
   }
 
-  const [{ data: nurse, error: nurseError }, { data: availability }, { data: reviews }] =
+  const [{ data: nurse, error: nurseError }, { data: availability }, { data: weeklyAvailability }, { data: reviews }] =
     await Promise.all([
       supabase
         .from("nurses")
@@ -124,6 +126,10 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
         .gte("date", new Date().toISOString().slice(0, 10))
         .order("date", { ascending: true })
         .limit(14),
+      supabase
+        .from("provider_weekly_availability")
+        .select("day_of_week, shift, is_open")
+        .eq("nurse_id", nurseId),
       supabase
         .from("reviews")
         .select("id, rating, comment, created_at, reviewer_id, profiles!reviewer_id(full_name)")
@@ -148,6 +154,11 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
   const profile = Array.isArray(nurse.profiles) ? nurse.profiles[0] : nurse.profiles;
   const displayName = profile?.full_name?.trim() || "Nurse";
   const photoUrl = resolveProfilePhotoUrl(nurse.profile_photo_url);
+  const weeklySlots = (weeklyAvailability ?? []).map((row) => ({
+    dayOfWeek: row.day_of_week as number,
+    shift: row.shift as Shift,
+    isOpen: Boolean(row.is_open)
+  }));
   const availabilitySlots = availability ?? [];
   const availabilityStatus = deriveAvailabilityStatus(
     availabilitySlots.map((slot) => ({ date: slot.date, is_open: slot.is_open }))
@@ -282,21 +293,7 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
 
         <div className="space-y-3">
           <h2 className="text-lg font-semibold text-navy-900">Availability</h2>
-          {availabilitySlots.length > 0 ? (
-            <div className="space-y-2 text-sm text-slate-600">
-              {availabilitySlots.map((slot) => (
-                <Card key={`${slot.date}-${slot.shift ?? "open"}`}>
-                  <CardContent className="p-3">
-                    {slot.date} • {formatShiftLabel(slot.shift)}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <p className="rounded-2xl border border-slate-200 bg-white p-3 text-sm text-slate-600">
-              This provider hasn&apos;t set their availability yet
-            </p>
-          )}
+          <PublicWeeklyAvailabilityGrid slots={weeklySlots} />
         </div>
 
         <div className="space-y-3">
@@ -342,9 +339,16 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
           </div>
         </div>
 
-        <Button asChild>
-          <Link href={bookingHref}>Request Booking</Link>
-        </Button>
+        {isFamilyViewer ? (
+          <NurseProfileBookSection bookingHref={bookingHref} showBookingTooltip={showBookingTooltip} />
+        ) : (
+          <Link
+            href={bookingHref}
+            className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-white"
+          >
+            Request Booking
+          </Link>
+        )}
       </div>
     </main>
   );

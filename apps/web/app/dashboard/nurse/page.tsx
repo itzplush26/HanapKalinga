@@ -16,7 +16,7 @@ export default async function NurseDashboardPage() {
   const { data: auth } = await supabase.auth.getUser();
   const userId = auth.user?.id ?? "";
 
-  const [{ data: nurse }, { data: profile }, { data: availability }] = await Promise.all([
+  const [{ data: nurse }, { data: profile }, { data: weeklyAvailability }] = await Promise.all([
     supabase
       .from("nurses")
       .select(
@@ -26,11 +26,10 @@ export default async function NurseDashboardPage() {
       .single(),
     supabase.from("profiles").select("profile_photo_url, full_name").eq("id", userId).single(),
     supabase
-      .from("availability")
+      .from("provider_weekly_availability")
       .select("id")
       .eq("nurse_id", userId)
       .eq("is_open", true)
-      .gte("date", new Date().toISOString().slice(0, 10))
       .limit(1)
   ]);
 
@@ -65,10 +64,9 @@ export default async function NurseDashboardPage() {
               profileComplete: Boolean(
                 nurse?.bio &&
                   (nurse.specializations?.length ?? 0) > 0 &&
-                  nurse.daily_rate_range &&
-                  nurse.hourly_rate_range
+                  nurse.daily_rate_range
               ),
-              hasAvailability: (availability?.length ?? 0) > 0,
+              hasAvailability: (weeklyAvailability?.length ?? 0) > 0,
               hasLicenseNumber,
               verificationStatus,
               rejectionReason: nurse?.rejection_reason

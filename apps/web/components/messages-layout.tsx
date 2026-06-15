@@ -9,6 +9,7 @@ import { SHIFT_LABELS } from "@/lib/booking-notes";
 import type { InboxRow } from "@/lib/messages";
 import { formatMessageTimestamp } from "@/lib/messages-format";
 import { MessagesInbox } from "@/components/messages-inbox";
+import { FamilyMessagesOnboarding } from "@/components/family-messages-onboarding";
 import { MessageThread, type Message } from "@/components/message-thread";
 import { BookingStatusBadge } from "@/components/booking-status-badge";
 import { ProfileAvatar } from "@/components/profile-avatar";
@@ -21,13 +22,15 @@ interface MessagesLayoutProps {
   role: "family" | "nurse";
   userId: string;
   bookingDetailBasePath: string;
+  showMessagesTooltip?: boolean;
 }
 
 export function MessagesLayout({
   rows,
   role,
   userId,
-  bookingDetailBasePath
+  bookingDetailBasePath,
+  showMessagesTooltip = false
 }: MessagesLayoutProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -135,11 +138,18 @@ export function MessagesLayout({
             <div className="border-b border-slate-200 px-4 py-3">
               <h2 className="text-sm font-semibold text-navy-900">Conversations</h2>
             </div>
-            <div className="flex-1 overflow-y-auto p-3">
+            <div
+              id={role === "family" ? "family-messages-list" : undefined}
+              className="flex-1 overflow-y-auto p-3"
+            >
+              {role === "family" ? (
+                <FamilyMessagesOnboarding showMessagesTooltip={showMessagesTooltip} />
+              ) : null}
               <MessagesInbox
                 rows={rows}
                 selectedBookingId={selectedBookingId}
                 onSelect={selectConversation}
+                role={role}
               />
             </div>
           </div>

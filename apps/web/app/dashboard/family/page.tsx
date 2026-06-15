@@ -2,22 +2,28 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { BookingStatusBadge } from "@/components/booking-status-badge";
-import { FamilyWelcomeBanner } from "@/components/family-welcome-banner";
+import { FamilyFirstLoginBanner } from "@/components/family-first-login-banner";
+import { FamilyOnboardingChecklist } from "@/components/family-onboarding-checklist";
 import { NotificationsPanel } from "@/components/notifications-panel";
 import { PageHeader } from "@/components/page-header";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { EmptyState } from "@/components/empty-state";
 import { Calendar } from "lucide-react";
 import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
+import { parseTooltipsDismissed } from "@/lib/family-onboarding";
 
-interface FamilyDashboardPageProps {
-  searchParams?: Record<string, string | string[] | undefined>;
-}
-
-export default async function FamilyDashboardPage({ searchParams }: FamilyDashboardPageProps) {
-  const showWelcome = searchParams?.welcome === "1";
+export default async function FamilyDashboardPage() {
   const supabase = createClient();
-  const [{ data: bookings }, { data: completedBookings }] = await Promise.all([
+  const { data: auth } = await supabase.auth.getUser();
+  const userId = auth.user?.id ?? "";
+
+  const [
+    { data: bookings },
+    { data: completedBookings },
+    { data: profile },
+    { data: family },
+    { data: allBookings }
+  ] = await Promise.all([
     supabase
       .from("bookings")
       .select("id, status, requested_date, nurse_id")
@@ -27,7 +33,20 @@ export default async function FamilyDashboardPage({ searchParams }: FamilyDashbo
       .from("bookings")
       .select("id, status, requested_date, nurse_id")
       .eq("status", "completed")
-      .order("created_at", { ascending: false })
+      .order("created_at", { ascending: false }),
+    userId
+      ? supabase.from("profiles").select("region, city, address").eq("id", userId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    userId
+      ? supabase
+          .from("families")
+          .select("has_browsed, checklist_dismissed, welcome_seen, tooltips_dismissed")
+          .eq("id", userId)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    userId
+      ? supabase.from("bookings").select("id, status").eq("family_id", userId)
+      : Promise.resolve({ data: [] })
   ]);
 
   const completedIds = (completedBookings ?? []).map((b) => b.id);
@@ -50,16 +69,28 @@ export default async function FamilyDashboardPage({ searchParams }: FamilyDashbo
   const nurseById = new Map(
     pendingReviewBookings.map((booking) => {
       const nurse = Array.isArray(booking.nurses) ? booking.nurses[0] : booking.nurses;
-      const profile = Array.isArray(nurse?.profiles) ? nurse?.profiles[0] : nurse?.profiles;
+      const profileRow = Array.isArray(nurse?.profiles) ? nurse?.profiles[0] : nurse?.profiles;
       return [
         booking.nurse_id as string,
         {
-          name: profile?.full_name?.trim() || "Nurse",
+          name: profileRow?.full_name?.trim() || "Nurse",
           photo: resolveProfilePhotoUrl(nurse?.profile_photo_url)
         }
       ];
     })
   );
+
+  const familyOnboarding = {
+    has_browsed: family?.has_browsed ?? false,
+    checklist_dismissed: family?.checklist_dismissed ?? false,
+    welcome_seen: family?.welcome_seen ?? false,
+    tooltips_dismissed: parseTooltipsDismissed(family?.tooltips_dismissed)
+  };
+
+  const bookingStats = {
+    hasAnyBooking: (allBookings ?? []).length > 0,
+    hasConfirmedBooking: (allBookings ?? []).some((booking) => booking.status === "accepted")
+  };
 
   return (
     <>
@@ -67,7 +98,16 @@ export default async function FamilyDashboardPage({ searchParams }: FamilyDashbo
       <main className="px-5 py-6">
         <div className="mx-auto flex max-w-md flex-col gap-6">
           <p className="text-sm text-slate-600">Your latest booking activity.</p>
-          {showWelcome ? <FamilyWelcomeBanner /> : null}
+          {!familyOnboarding.welcome_seen ? <FamilyFirstLoginBanner /> : null}
+          <FamilyOnboardingChecklist
+            profile={{
+              region: profile?.region ?? null,
+              city: profile?.city ?? null,
+              address: profile?.address ?? null
+            }}
+            family={familyOnboarding}
+            bookings={bookingStats}
+          />
           <NotificationsPanel />
           {pendingReviewBookings.map((booking) => {
             const nurse = nurseById.get(booking.nurse_id);
