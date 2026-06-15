@@ -6,28 +6,20 @@ import { sendEmailSafe } from "@/lib/email/send-safe";
 import { getUserEmail } from "@/lib/email/user-email";
 import { careRequestPostedEmail } from "@/lib/email/templates/care-request-posted";
 import { getDailyRateBand } from "@/lib/data/rates";
+import { careRequestSchema } from "@/lib/validations/care-request";
 
-const bodySchema = z.object({
-  title: z.string().min(5),
-  patientCondition: z.string().min(5),
-  careType: z.enum(["full_time", "part_time", "live_in", "per_shift"]),
-  requiredSpecializations: z.array(z.string()).min(1),
-  preferredProviderType: z.enum(["nurse", "caregiver", "both"]),
-  region: z.string().optional(),
-  city: z.string().optional(),
-  budgetBand: z.string().optional(),
-  shiftPreference: z.string().optional(),
-  startDate: z.string().optional(),
-  durationDescription: z.string().optional()
-});
+function validationError(error: z.ZodError) {
+  const message = error.issues[0]?.message ?? "Invalid request.";
+  return NextResponse.json({ error: message }, { status: 400 });
+}
 
 export async function POST(request: Request) {
   const supabase = createClient();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
 
-  const parsed = bodySchema.safeParse(await request.json());
-  if (!parsed.success) return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  const parsed = careRequestSchema.safeParse(await request.json());
+  if (!parsed.success) return validationError(parsed.error);
 
   const { data: careRequest, error } = await supabase
     .from("care_requests")
@@ -38,12 +30,13 @@ export async function POST(request: Request) {
       care_type: parsed.data.careType,
       required_specializations: parsed.data.requiredSpecializations,
       preferred_provider_type: parsed.data.preferredProviderType,
-      region: parsed.data.region ?? null,
-      city: parsed.data.city ?? null,
-      budget_band: parsed.data.budgetBand ?? null,
+      region: parsed.data.region,
+      city: parsed.data.city,
+      barangay: parsed.data.barangay,
+      budget_band: parsed.data.budgetBand,
       shift_preference: parsed.data.shiftPreference ?? null,
       start_date: parsed.data.startDate ?? null,
-      duration_description: parsed.data.durationDescription ?? null
+      duration_description: parsed.data.durationDescription
     })
     .select("id")
     .single();
@@ -59,14 +52,14 @@ export async function POST(request: Request) {
 
 async function notifyMatchingNurses(
   careRequestId: string,
-  data: z.infer<typeof bodySchema>
+  data: z.infer<typeof careRequestSchema>
 ) {
   const service = createServiceClient();
   const { data: nurses } = await service
     .from("nurses")
     .select("id, specializations, profiles!nurses_id_fkey(full_name, region)")
     .eq("verification_status", "verified");
-  const budgetLabel = getDailyRateBand(data.budgetBand ?? "")?.label ?? "Open to discuss";
+  const budgetLabel = getDailyRateBand(data.budgetBand)?.label ?? "Open to discuss";
 
   for (const nurse of nurses ?? []) {
     const profile = Array.isArray(nurse.profiles) ? nurse.profiles[0] : nurse.profiles;
@@ -80,7 +73,7 @@ async function notifyMatchingNurses(
     const { subject, html } = careRequestPostedEmail({
       nurseName: profile?.full_name?.trim() || "Nurse",
       title: data.title,
-      city: data.city ?? "your area",
+      city: [data.barangay, data.city].filter(Boolean).join(", ") || "your area",
       careType: data.careType.replace("_", " "),
       budgetLabel,
       careRequestId
