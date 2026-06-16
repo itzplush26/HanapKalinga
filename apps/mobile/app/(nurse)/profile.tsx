@@ -14,6 +14,8 @@ import { Separator } from '../../src/components/ui/Separator';
 import { RegionCitySelects } from '../../src/components/domain/RegionCitySelects';
 import { DocumentUploader } from '../../src/components/domain/DocumentUploader';
 import { PROVIDER_SPECIALIZATIONS } from '@hanapkalinga/shared/constants';
+import { ProfilePhotoUploader } from '../../src/components/ProfilePhotoUploader';
+import { ThemeToggle } from '../../src/components/ThemeToggle';
 import { colors } from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
 import { rounded } from '../../src/theme/rounded';
@@ -35,6 +37,7 @@ export default function NurseProfileScreen() {
   const [address, setAddress] = useState('');
   const [prcLicense, setPrcLicense] = useState('');
   const [specializations, setSpecializations] = useState<string[]>([]);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [yearsExperience, setYearsExperience] = useState('');
   const [bio, setBio] = useState('');
   const [hourlyRate, setHourlyRate] = useState('');
@@ -67,6 +70,7 @@ export default function NurseProfileScreen() {
       setCity(p.city ?? '');
       setBarangay(p.barangay ?? '');
       setAddress(p.address ?? '');
+      setPhotoUrl(p.profile_photo_url ?? null);
 
       const { data: nurseData, error: nurseError } = await supabase
         .from('nurses')
@@ -234,6 +238,16 @@ export default function NurseProfileScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.pageTitle}>Edit Profile</Text>
 
+        <Card title="Profile Photo" roundedSize="md">
+          <ProfilePhotoUploader
+            photoUrl={photoUrl}
+            displayName={fullName || 'Nurse'}
+            onPhotoChange={(url) => setPhotoUrl(url)}
+          />
+        </Card>
+
+        <Separator />
+
         <Card title="Personal Information" roundedSize="md">
           <View style={styles.formFields}>
             <Input label="Full name" value={fullName} onChangeText={setFullName} placeholder="Enter full name" />
@@ -337,6 +351,12 @@ export default function NurseProfileScreen() {
               selectedFile={nbiDoc}
             />
           </View>
+        </Card>
+
+        <Separator />
+
+        <Card title="Appearance" roundedSize="md">
+          <ThemeToggle />
         </Card>
 
         {error && (
