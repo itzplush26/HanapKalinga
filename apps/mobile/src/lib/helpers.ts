@@ -37,6 +37,8 @@ export function getStatusColor(
     declined: 'error',
     completed: 'info',
     cancelled: 'neutral',
+    pending_completion: 'pending',
+    disputed: 'error',
     under_review: 'info',
     verified: 'success',
     rejected: 'error',
