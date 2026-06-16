@@ -5,7 +5,11 @@ export function parseSafeRedirect(value: string | null | undefined): string | nu
   return value;
 }
 
-export type AuthRole = "family" | "nurse" | "admin";
+export type AuthRole = "family" | "nurse" | "caregiver" | "admin";
+
+function isProviderAuthRole(role: AuthRole): boolean {
+  return role === "nurse" || role === "caregiver";
+}
 
 export function getPostLoginPath(role: AuthRole, safeRedirect: string | null): string {
   if (safeRedirect) {
@@ -16,14 +20,14 @@ export function getPostLoginPath(role: AuthRole, safeRedirect: string | null): s
       if (role === "admin") return "/admin";
       return "/dashboard/nurse";
     }
-    if (safeRedirect.startsWith("/dashboard/nurse") && role !== "nurse") {
+    if (safeRedirect.startsWith("/dashboard/nurse") && !isProviderAuthRole(role)) {
       if (role === "admin") return "/admin";
       return "/dashboard/family";
     }
     return safeRedirect;
   }
   if (role === "family") return "/dashboard/family";
-  if (role === "nurse") return "/dashboard/nurse";
+  if (isProviderAuthRole(role)) return "/dashboard/nurse";
   return "/admin";
 }
 

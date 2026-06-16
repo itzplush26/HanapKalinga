@@ -7,6 +7,7 @@ interface OnboardingData {
   hasPhoto: boolean;
   profileComplete: boolean;
   hasAvailability: boolean;
+  hasLicenseNumber?: boolean;
   verificationStatus: VerificationStatus;
   rejectionReason?: string | null;
 }
@@ -50,6 +51,17 @@ export function NurseOnboardingChecklist({ data }: { data: OnboardingData }) {
       href: "/dashboard/nurse/availability",
       hint: data.hasAvailability ? null : "Families book based on your schedule"
     },
+    ...(data.verificationStatus === "verified" && data.hasLicenseNumber === false
+      ? [
+          {
+            label: "Add your license or certificate number",
+            complete: false,
+            state: "action" as const,
+            href: "/dashboard/nurse/profile",
+            hint: "Helps admins verify your credentials faster"
+          }
+        ]
+      : []),
     {
       label: "Verification approved",
       complete: data.verificationStatus === "verified",

@@ -1,8 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getPostLoginPath, parseSafeRedirect } from "@/lib/auth-redirect";
+import { isProviderRole, type ProfileRole } from "@/lib/provider-role";
 import { mapSupabaseError } from "@/lib/user-errors";
 
-export type ProfileRole = "family" | "nurse" | "admin";
+export type { ProfileRole };
 
 export async function fetchProfileRole(
   supabase: SupabaseClient,
@@ -20,8 +21,8 @@ export async function fetchProfileRole(
   }
 
   const role = data?.role;
-  if (role === "family" || role === "nurse" || role === "admin") {
-    return { role, error: null };
+  if (role === "family" || role === "admin" || isProviderRole(role)) {
+    return { role: role as ProfileRole, error: null };
   }
 
   return { role: null, error: null };

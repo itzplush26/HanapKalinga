@@ -13,9 +13,15 @@ interface ProfileAvatarProps {
 }
 
 const sizeClasses = {
-  sm: "h-11 w-11 text-xs",
+  sm: "h-14 w-14 text-xs",
   md: "h-16 w-16 text-sm",
-  lg: "h-20 w-20 text-base"
+  lg: "h-[120px] w-[120px] text-base"
+};
+
+const imageSizes = {
+  sm: 56,
+  md: 64,
+  lg: 120
 };
 
 function initialsFromName(name: string) {
@@ -51,8 +57,8 @@ export function ProfileAvatar({ src, name = "", size = "md", className }: Profil
           src={src}
           alt={name ? `${name} profile photo` : "Profile photo"}
           fill
+          sizes={`${imageSizes[size]}px`}
           className="object-cover"
-          unoptimized
           onError={() => setBroken(true)}
         />
       ) : name ? (

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { SESSION_TOKEN_COOKIE } from "@/lib/session-lock";
+import { isProviderRole } from "@/lib/provider-role";
 
 const protectedPrefixes = ["/dashboard", "/admin"];
 
@@ -54,7 +55,7 @@ export async function middleware(request: NextRequest) {
     if (role === "family") {
       return NextResponse.redirect(new URL("/dashboard/family", request.url));
     }
-    if (role === "nurse") {
+    if (isProviderRole(role)) {
       return NextResponse.redirect(new URL("/dashboard/nurse", request.url));
     }
   }
@@ -93,7 +94,7 @@ export async function middleware(request: NextRequest) {
       if (role === "family") {
         return NextResponse.redirect(new URL("/dashboard/family", request.url));
       }
-      if (role === "nurse") {
+      if (isProviderRole(role)) {
         return NextResponse.redirect(new URL("/dashboard/nurse", request.url));
       }
       return NextResponse.redirect(new URL("/login?error=no_profile", request.url));
@@ -102,13 +103,13 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith("/dashboard/family") && role && role !== "family" && role !== "admin") {
-    if (role === "nurse") {
+    if (isProviderRole(role)) {
       return NextResponse.redirect(new URL("/dashboard/nurse", request.url));
     }
     return NextResponse.redirect(new URL("/login?error=no_profile", request.url));
   }
 
-  if (pathname.startsWith("/dashboard/nurse") && role && role !== "nurse" && role !== "admin") {
+  if (pathname.startsWith("/dashboard/nurse") && role && !isProviderRole(role) && role !== "admin") {
     if (role === "family") {
       return NextResponse.redirect(new URL("/dashboard/family", request.url));
     }

@@ -2,10 +2,17 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { AdminPageHeader } from "@/components/admin/admin-shell";
 import { VerificationStatusBadge } from "@/components/verification-status-badge";
+import {
+  countPendingVerifications,
+  countPendingVerificationsByProviderType,
+  getAdminDataClient,
+  PENDING_VERIFICATION_STATUSES
+} from "@/lib/admin/verification-queries";
 import type { VerificationStatus } from "@/lib/verification";
 
 export default async function AdminDashboardPage() {
-  const supabase = createClient();
+  const sessionClient = createClient();
+  const adminClient = getAdminDataClient(sessionClient);
 
   const in30Days = new Date();
   in30Days.setDate(in30Days.getDate() + 30);
@@ -15,38 +22,56 @@ export default async function AdminDashboardPage() {
     { count: pendingCount },
     { count: underReviewCount },
     { count: bookingCount },
-    { count: newSignupCount },
-    { count: expiryCount }
+    { count: familySignupCount },
+    { count: providerSignupCount },
+    { count: expiryCount },
+    pendingBreakdown
   ] = await Promise.all([
-    supabase.from("nurses").select("id", { count: "exact", head: true }).eq("verification_status", "pending"),
-    supabase
+    countPendingVerifications(adminClient),
+    adminClient
       .from("nurses")
       .select("id", { count: "exact", head: true })
       .eq("verification_status", "under_review"),
-    supabase.from("bookings").select("id", { count: "exact", head: true }),
-    supabase.from("profiles").select("id", { count: "exact", head: true }),
-    supabase
+    adminClient.from("bookings").select("id", { count: "exact", head: true }),
+    adminClient
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("role", "family"),
+    adminClient
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .in("role", ["nurse", "caregiver"]),
+    adminClient
       .from("nurses")
       .select("id", { count: "exact", head: true })
-      .or(`prc_license_expiry.lte.${expiryCutoff},tesda_cert_expiry.lte.${expiryCutoff},nbi_expiry.lte.${expiryCutoff}`)
+      .or(`prc_license_expiry.lte.${expiryCutoff},tesda_cert_expiry.lte.${expiryCutoff},nbi_expiry.lte.${expiryCutoff}`),
+    countPendingVerificationsByProviderType(adminClient)
   ]);
 
   const cards = [
     {
       label: "Pending verifications",
       value: pendingCount ?? 0,
+      detail: `${pendingBreakdown.nurses} nurses · ${pendingBreakdown.caregivers} caregivers`,
       href: "/admin/verifications?status=pending"
     },
     {
       label: "Under review",
       value: underReviewCount ?? 0,
+      detail: null,
       href: "/admin/verifications?status=under_review"
     },
-    { label: "Total bookings", value: bookingCount ?? 0, href: "/admin/bookings" },
-    { label: "Total signups", value: newSignupCount ?? 0, href: "/admin/nurses" },
+    { label: "Total bookings", value: bookingCount ?? 0, detail: null, href: "/admin/bookings" },
+    {
+      label: "Total signups",
+      value: (familySignupCount ?? 0) + (providerSignupCount ?? 0),
+      detail: `${familySignupCount ?? 0} families · ${providerSignupCount ?? 0} providers`,
+      href: "/admin/nurses"
+    },
     {
       label: "Licenses expiring (30d)",
       value: expiryCount ?? 0,
+      detail: null,
       href: "/admin/nurses?expiring=1"
     }
   ];
@@ -66,6 +91,7 @@ export default async function AdminDashboardPage() {
           >
             <p className="text-sm text-slate-500">{card.label}</p>
             <p className="mt-2 text-3xl font-semibold text-slate-900">{card.value}</p>
+            {card.detail ? <p className="mt-1 text-xs text-slate-500">{card.detail}</p> : null}
           </Link>
         ))}
       </div>
@@ -76,7 +102,7 @@ export default async function AdminDashboardPage() {
             Review verifications
           </Link>
           <Link href="/admin/nurses" className="text-brand-700 hover:underline">
-            View nurses
+            View providers
           </Link>
           <Link href="/admin/families" className="text-brand-700 hover:underline">
             View families

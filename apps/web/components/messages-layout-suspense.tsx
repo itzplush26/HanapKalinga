@@ -10,6 +10,7 @@ interface MessagesLayoutSuspenseProps {
   role: "family" | "nurse";
   userId: string;
   bookingDetailBasePath: string;
+  showMessagesTooltip?: boolean;
 }
 
 export function MessagesLayoutSuspense(props: MessagesLayoutSuspenseProps) {

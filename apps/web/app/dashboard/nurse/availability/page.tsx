@@ -40,7 +40,7 @@ export default function NurseAvailabilityPage() {
 
     const [{ data: weekly }, { data: dateExceptions }] = await Promise.all([
       supabase
-        .from("nurse_weekly_availability")
+        .from("provider_weekly_availability")
         .select("day_of_week, shift, is_open")
         .eq("nurse_id", user.id),
       supabase
@@ -111,8 +111,8 @@ export default function NurseAvailabilityPage() {
       }
     }
 
-    await supabase.from("nurse_weekly_availability").delete().eq("nurse_id", user.id);
-    await supabase.from("nurse_weekly_availability").insert(weeklyRows);
+    await supabase.from("provider_weekly_availability").delete().eq("nurse_id", user.id);
+    await supabase.from("provider_weekly_availability").insert(weeklyRows);
 
     const exceptionRows = [...exceptions.entries()].map(([date, is_open]) => ({
       nurse_id: user.id,

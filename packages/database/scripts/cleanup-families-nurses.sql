@@ -60,7 +60,7 @@ where nurse_id in (select id from _users_to_delete);
 delete from public.availability_date_exceptions
 where nurse_id in (select id from _users_to_delete);
 
-delete from public.nurse_weekly_availability
+delete from public.provider_weekly_availability
 where nurse_id in (select id from _users_to_delete);
 
 delete from public.availability

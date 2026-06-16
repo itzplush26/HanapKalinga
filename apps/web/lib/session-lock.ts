@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { clearSignupStage } from "@/lib/signup-stage";
 
 export const SESSION_TOKEN_COOKIE = "hk_session_token";
 export const SESSION_TOKEN_STORAGE_KEY = "hk_session_token";
@@ -102,6 +103,7 @@ export async function signOutWithSessionCleanup(
 
   if (typeof window !== "undefined") {
     window.localStorage.removeItem(SESSION_TOKEN_STORAGE_KEY);
+    clearSignupStage();
     window.location.href = options?.redirectTo ?? "/login";
   }
 }
