@@ -42,6 +42,22 @@ export const resetPasswordRequestSchema = z.object({
   email: z.string().email()
 });
 
+export const passwordResetCompleteSchema = z
+  .object({
+    email: z.string().email(),
+    otp: z
+      .string()
+      .min(6, "Enter the 6-digit code from your email.")
+      .max(6, "Enter the 6-digit code from your email.")
+      .regex(/^\d{6}$/, "Enter the 6-digit code from your email."),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string().min(8, "Confirm your password")
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"]
+  });
+
 export const roleSchema = z.object({
   role: z.enum(["family", "nurse"])
 });

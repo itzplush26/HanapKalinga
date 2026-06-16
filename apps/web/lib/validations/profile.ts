@@ -31,7 +31,7 @@ export const familyProfileSchema = z
   })
   .superRefine(validateCityInRegion);
 
-const nurseProfileFieldsSchema = z.object({
+export const nurseProfileFieldsSchema = z.object({
   firstName: z.string().min(1, "First name is required."),
   middleName: z.string().optional(),
   lastName: z.string().min(1, "Last name is required."),
@@ -42,10 +42,38 @@ const nurseProfileFieldsSchema = z.object({
   bio: z.string().optional(),
   hourlyRateRange: hourlyRateRangeField,
   dailyRateRange: dailyRateRangeField,
-  specializations: z.array(z.string()).min(1, "Select at least one specialization.")
+  specializations: z.array(z.string()).min(1, "Select at least one specialization."),
+  prcLicenseNo: z.string().optional(),
+  tesdaCertificateNo: z.string().optional()
 });
 
-export const nurseProfileFormSchema = nurseProfileFieldsSchema.superRefine(validateCityInRegion);
+export const nurseProfileFormSchema = nurseProfileFieldsSchema
+  .superRefine(validateCityInRegion)
+  .superRefine((values, ctx) => {
+    if (values.providerType === "nurse") {
+      const prcNo = values.prcLicenseNo?.trim() ?? "";
+      if (!prcNo) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "PRC license number is required.",
+          path: ["prcLicenseNo"]
+        });
+      } else if (!/^\d{5,10}$/.test(prcNo)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "PRC license number must be 5–10 digits.",
+          path: ["prcLicenseNo"]
+        });
+      }
+    }
+    if (values.providerType === "caregiver" && !values.tesdaCertificateNo?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "TESDA certificate number is required.",
+        path: ["tesdaCertificateNo"]
+      });
+    }
+  });
 
 export type NurseProfileFormValues = z.infer<typeof nurseProfileFormSchema>;
 
@@ -84,6 +112,7 @@ export const nurseProfileEditSchema = z
     barangay: z.string().min(2, "Barangay is required."),
     address: z.string().optional(),
     prcLicenseNo: z.string().optional(),
+    tesdaCertificateNo: z.string().optional(),
     specializations: z.string().min(1, "Enter at least one specialization."),
     yearsExperience: z.number().min(0, "Years of experience cannot be negative."),
     bio: z.string().optional(),

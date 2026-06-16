@@ -84,6 +84,16 @@ export function emailCalloutStep(stepNumber: number, text: string): string {
   </tr>`;
 }
 
+export function emailOtpCode(token: string): string {
+  const safe = escapeHtml(token);
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:20px 0;">
+  <tr><td align="center" style="padding:24px 16px;background-color:${C.surfaceAlt};border-radius:12px;border:2px dashed ${C.primary};">
+    <p style="margin:0 0 10px;font-size:12px;font-weight:600;color:${C.textMuted};letter-spacing:0.08em;text-transform:uppercase;">Your reset code</p>
+    <p style="margin:0;font-size:36px;font-weight:700;letter-spacing:0.3em;color:${C.secondary};font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;">${safe}</p>
+    <p style="margin:12px 0 0;font-size:12px;color:${C.textMuted};">Expires in 1 hour</p>
+  </td></tr></table>`;
+}
+
 export function appUrl(path = ""): string {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://hanapkalinga.com";
   return `${base.replace(/\/$/, "")}${path}`;

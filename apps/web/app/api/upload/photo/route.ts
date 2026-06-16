@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { isProviderRole } from "@/lib/provider-role";
 import { getUploadAuthContext } from "@/lib/storage/upload-auth";
 import { compressProfilePhoto } from "@/lib/storage/compress-image";
 
@@ -29,7 +29,6 @@ export async function POST(request: Request) {
     const compressed = await compressProfilePhoto(input);
     const storagePath = `${auth.userId}/avatar.${compressed.extension}`;
 
-    const supabase = createClient();
     const service = createServiceClient();
 
     console.info("[upload/photo]", {
@@ -56,7 +55,7 @@ export async function POST(request: Request) {
       data: { publicUrl }
     } = service.storage.from(AVATARS_BUCKET).getPublicUrl(storagePath);
 
-    const { error: profileError } = await supabase
+    const { error: profileError } = await service
       .from("profiles")
       .update({ profile_photo_url: publicUrl })
       .eq("id", auth.userId);
@@ -66,8 +65,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: profileError.message }, { status: 500 });
     }
 
-    if (auth.role === "nurse") {
-      const { error: nurseError } = await supabase
+    if (isProviderRole(auth.role)) {
+      const { error: nurseError } = await service
         .from("nurses")
         .update({ profile_photo_url: publicUrl })
         .eq("id", auth.userId);

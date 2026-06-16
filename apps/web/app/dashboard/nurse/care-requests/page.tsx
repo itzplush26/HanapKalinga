@@ -10,7 +10,7 @@ export default async function NurseCareRequestsPage() {
   const { data: auth } = await supabase.auth.getUser();
   const { data: requests } = await supabase
     .from("care_requests")
-    .select("id, title, city, region, care_type, budget_band, start_date, created_at, required_specializations")
+    .select("id, title, city, region, barangay, care_type, budget_band, start_date, created_at, required_specializations")
     .eq("status", "open")
     .order("created_at", { ascending: false });
 
@@ -31,7 +31,7 @@ export default async function NurseCareRequestsPage() {
             <div key={request.id as string} className="rounded-2xl border border-slate-200 bg-white p-4">
               <h2 className="font-semibold text-navy-900">{request.title as string}</h2>
               <p className="mt-1 text-sm text-slate-600">
-                {[request.city, request.region].filter(Boolean).join(", ")}
+                {[request.barangay, request.city, request.region].filter(Boolean).join(", ")}
               </p>
               <div className="mt-2 flex flex-wrap gap-1">
                 <Badge className="bg-brand-50 text-brand-800">{(request.care_type as string).replace("_", " ")}</Badge>

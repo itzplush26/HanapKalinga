@@ -8,6 +8,25 @@ import {
   buildVerificationApprovedEmailText,
   VERIFICATION_APPROVED_SUBJECT
 } from "@/lib/email/verification-approved-email";
+import { hasRequiredDocuments } from "@/lib/admin/verification-documents";
+import { isProviderRole } from "@/lib/provider-role";
+import { revalidatePublicNursePages } from "@/lib/nurses/revalidate-public";
+import { ensureNurseProfileSlug } from "@/lib/nurse/ensure-profile-slug";
+import {
+  buildVerificationRejectedEmailHtml,
+  buildVerificationRejectedEmailText,
+  VERIFICATION_REJECTED_SUBJECT
+} from "@/lib/email/templates/verification-rejected";
+import {
+  buildVerificationResubmissionEmailHtml,
+  buildVerificationResubmissionEmailText,
+  VERIFICATION_RESUBMISSION_SUBJECT
+} from "@/lib/email/templates/verification-resubmission-required";
+import {
+  buildVerificationUnderReviewEmailHtml,
+  buildVerificationUnderReviewEmailText,
+  VERIFICATION_UNDER_REVIEW_SUBJECT
+} from "@/lib/email/templates/verification-under-review";
 import {
   actionToStatus,
   getVerificationNotificationContent,
@@ -65,7 +84,9 @@ export async function POST(request: Request) {
 
     const { data: nurse, error: nurseError } = await service
       .from("nurses")
-      .select("id, verification_status, provider_type, profiles(full_name, role)")
+      .select(
+        "id, profile_slug, verification_status, provider_type, prc_document_url, tesda_document_url, nbi_document_url, profiles!nurses_id_fkey(full_name, role)"
+      )
       .eq("id", nurseId)
       .maybeSingle();
 
@@ -74,11 +95,17 @@ export async function POST(request: Request) {
     }
 
     const profile = Array.isArray(nurse.profiles) ? nurse.profiles[0] : nurse.profiles;
-    if (profile?.role !== "nurse") {
+    if (!profile?.role || !isProviderRole(profile.role)) {
       return NextResponse.json({ error: "Invalid applicant." }, { status: 400 });
     }
 
     if (action === "approve") {
+      if (!hasRequiredDocuments(nurse)) {
+        return NextResponse.json(
+          { error: "Cannot verify this nurse until all required documents are uploaded." },
+          { status: 400 }
+        );
+      }
       if (!nbiExpiry) {
         return NextResponse.json({ error: "NBI expiry date is required before approval." }, { status: 400 });
       }
@@ -101,15 +128,22 @@ export async function POST(request: Request) {
 
     if (action === "approve") {
       updatePayload.verified_at = new Date().toISOString();
+      updatePayload.verified_by = auth.user.id;
+      updatePayload.verification_notes = trimmedNotes;
       updatePayload.rejection_reason = null;
+      updatePayload.rejection_notes = null;
       updatePayload.prc_license_expiry = prcLicenseExpiry ?? null;
       updatePayload.tesda_cert_expiry = tesdaCertExpiry ?? null;
       updatePayload.nbi_expiry = nbiExpiry ?? null;
     } else if (action === "reject" || action === "request_resubmission") {
       updatePayload.rejection_reason = trimmedReason;
+      updatePayload.rejection_notes = trimmedNotes;
       updatePayload.verified_at = null;
+      updatePayload.verified_by = null;
+      updatePayload.verification_notes = null;
     } else if (action === "mark_under_review") {
       updatePayload.rejection_reason = null;
+      updatePayload.rejection_notes = null;
     }
 
     const { error: updateError } = await service.from("nurses").update(updatePayload).eq("id", nurseId);
@@ -132,7 +166,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: auditError.message }, { status: 500 });
     }
 
-    const notification = getVerificationNotificationContent(newStatus, trimmedReason);
+    const rejectionSummary =
+      action === "reject" && trimmedReason
+        ? trimmedNotes
+          ? `${trimmedReason}. ${trimmedNotes}`
+          : trimmedReason
+        : trimmedReason;
+
+    const notification = getVerificationNotificationContent(newStatus, rejectionSummary);
     const { error: notificationError } = await service.from("notifications").insert({
       user_id: nurseId,
       type: notification.type,
@@ -142,12 +183,18 @@ export async function POST(request: Request) {
         nurse_id: nurseId,
         previous_status: previousStatus,
         new_status: newStatus,
-        rejection_reason: trimmedReason
+        rejection_reason: rejectionSummary,
+        profile_url: "/dashboard/nurse/profile#documents"
       }
     });
 
     if (notificationError) {
       return NextResponse.json({ error: notificationError.message }, { status: 500 });
+    }
+
+    if (action === "approve") {
+      const slug = await ensureNurseProfileSlug(service, nurseId, profile?.full_name);
+      revalidatePublicNursePages(slug ?? nurse.profile_slug, nurseId);
     }
 
     const { data: authUser } = await service.auth.admin.getUserById(nurseId);
@@ -158,7 +205,6 @@ export async function POST(request: Request) {
 
     if (recipientEmail) {
       const firstName = profile?.full_name?.trim().split(/\s+/)[0] ?? "there";
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://hanapkalinga.com";
 
       const mailResult =
         newStatus === "verified"
@@ -168,11 +214,48 @@ export async function POST(request: Request) {
               text: buildVerificationApprovedEmailText(firstName),
               html: buildVerificationApprovedEmailHtml(firstName)
             })
-          : await sendMail({
-              to: recipientEmail,
-              subject: `[HanapKalinga] ${notification.title}`,
-              text: `${notification.body}\n\nSign in to view your dashboard: ${appUrl}`
-            });
+          : newStatus === "under_review"
+            ? await sendMail({
+                to: recipientEmail,
+                subject: VERIFICATION_UNDER_REVIEW_SUBJECT,
+                text: buildVerificationUnderReviewEmailText(firstName),
+                html: buildVerificationUnderReviewEmailHtml(firstName)
+              })
+            : newStatus === "resubmission_required" && trimmedReason
+              ? await sendMail({
+                  to: recipientEmail,
+                  subject: VERIFICATION_RESUBMISSION_SUBJECT,
+                  text: buildVerificationResubmissionEmailText({
+                    firstName,
+                    reason: trimmedReason,
+                    details: trimmedNotes
+                  }),
+                  html: buildVerificationResubmissionEmailHtml({
+                    firstName,
+                    reason: trimmedReason,
+                    details: trimmedNotes
+                  })
+                })
+              : action === "reject" && trimmedReason
+                ? await sendMail({
+                    to: recipientEmail,
+                    subject: VERIFICATION_REJECTED_SUBJECT,
+                    text: buildVerificationRejectedEmailText({
+                      firstName,
+                      reason: trimmedReason,
+                      details: trimmedNotes
+                    }),
+                    html: buildVerificationRejectedEmailHtml({
+                      firstName,
+                      reason: trimmedReason,
+                      details: trimmedNotes
+                    })
+                  })
+                : await sendMail({
+                    to: recipientEmail,
+                    subject: `[HanapKalinga] ${notification.title}`,
+                    text: `${notification.body}\n\nSign in to view your dashboard: ${process.env.NEXT_PUBLIC_APP_URL ?? "https://hanapkalinga.com"}`
+                  });
       emailSent = mailResult.sent;
       emailError = mailResult.error;
     }

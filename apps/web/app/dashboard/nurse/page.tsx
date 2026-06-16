@@ -10,29 +10,26 @@ import { PageHeader } from "@/components/page-header";
 import { Calendar } from "lucide-react";
 import { isVerifiedProvider, type VerificationStatus } from "@/lib/verification";
 import { appUrl } from "@/lib/email/templates/layout";
-import { DocumentExpiryCard } from "@/components/document-expiry-card";
-import { getDocumentExpiryItems } from "@/lib/license-expiry";
 
 export default async function NurseDashboardPage() {
   const supabase = createClient();
   const { data: auth } = await supabase.auth.getUser();
   const userId = auth.user?.id ?? "";
 
-  const [{ data: nurse }, { data: profile }, { data: availability }] = await Promise.all([
+  const [{ data: nurse }, { data: profile }, { data: weeklyAvailability }] = await Promise.all([
     supabase
       .from("nurses")
       .select(
-        "verification_status, rejection_reason, bio, specializations, daily_rate_range, hourly_rate_range, profile_slug, prc_license_expiry, tesda_cert_expiry, nbi_expiry"
+        "verification_status, rejection_reason, bio, specializations, daily_rate_range, hourly_rate_range, profile_slug, prc_license_no, tesda_certificate_no, provider_type"
       )
       .eq("id", userId)
       .single(),
     supabase.from("profiles").select("profile_photo_url, full_name").eq("id", userId).single(),
     supabase
-      .from("availability")
+      .from("provider_weekly_availability")
       .select("id")
       .eq("nurse_id", userId)
       .eq("is_open", true)
-      .gte("date", new Date().toISOString().slice(0, 10))
       .limit(1)
   ]);
 
@@ -44,10 +41,11 @@ export default async function NurseDashboardPage() {
 
   const verificationStatus = (nurse?.verification_status ?? "pending") as VerificationStatus;
   const isVerified = isVerifiedProvider(verificationStatus);
-  const documentExpiry = getDocumentExpiryItems(nurse ?? {});
-  const showExpiryCard =
-    isVerified &&
-    documentExpiry.some((item) => item.status === "expired" || item.status === "expiring_soon");
+  const providerType = (nurse?.provider_type ?? "nurse") as "nurse" | "caregiver";
+  const hasLicenseNumber =
+    providerType === "caregiver"
+      ? Boolean(nurse?.tesda_certificate_no?.trim())
+      : Boolean(nurse?.prc_license_no?.trim());
 
   const profileUrl = nurse?.profile_slug
     ? appUrl(`/nurses/${nurse.profile_slug}`)
@@ -66,10 +64,10 @@ export default async function NurseDashboardPage() {
               profileComplete: Boolean(
                 nurse?.bio &&
                   (nurse.specializations?.length ?? 0) > 0 &&
-                  nurse.daily_rate_range &&
-                  nurse.hourly_rate_range
+                  nurse.daily_rate_range
               ),
-              hasAvailability: (availability?.length ?? 0) > 0,
+              hasAvailability: (weeklyAvailability?.length ?? 0) > 0,
+              hasLicenseNumber,
               verificationStatus,
               rejectionReason: nurse?.rejection_reason
             }}
@@ -77,7 +75,6 @@ export default async function NurseDashboardPage() {
           {isVerified && (nurse?.profile_slug || profile?.full_name) ? (
             <ShareProfileButton profileUrl={profileUrl} nurseName={profile?.full_name ?? "Nurse"} variant="card" />
           ) : null}
-          {showExpiryCard ? <DocumentExpiryCard documents={documentExpiry} /> : null}
           <NotificationsPanel />
           <div className="space-y-3">
             {(bookings ?? []).map((booking) => (
