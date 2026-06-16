@@ -3,6 +3,10 @@ import type {
   Nurse,
   Family,
   Booking,
+  CareRequest,
+  CareRequestApplication,
+  IncidentReport,
+  UserBlock,
   Availability,
   Message,
   Review,
@@ -13,6 +17,9 @@ import type {
   ProviderType,
   PatientCondition,
   BudgetRange,
+  CareRequestStatus,
+  ApplicationStatus,
+  IncidentReportStatus,
 } from '@hanapkalinga/shared/types';
 
 export type {
@@ -20,6 +27,10 @@ export type {
   Nurse,
   Family,
   Booking,
+  CareRequest,
+  CareRequestApplication,
+  IncidentReport,
+  UserBlock,
   Availability,
   Message,
   Review,
@@ -30,6 +41,9 @@ export type {
   ProviderType,
   PatientCondition,
   BudgetRange,
+  CareRequestStatus,
+  ApplicationStatus,
+  IncidentReportStatus,
 };
 
 export interface Database {
@@ -55,6 +69,16 @@ export interface Database {
         Insert: Omit<Booking, 'id' | 'created_at' | 'status'>;
         Update: Partial<Omit<Booking, 'id' | 'created_at'>>;
       };
+      care_requests: {
+        Row: CareRequest;
+        Insert: Omit<CareRequest, 'id' | 'created_at' | 'updated_at' | 'status'>;
+        Update: Partial<Omit<CareRequest, 'id' | 'created_at'>>;
+      };
+      care_request_applications: {
+        Row: CareRequestApplication;
+        Insert: Omit<CareRequestApplication, 'id' | 'created_at' | 'status'>;
+        Update: Partial<Omit<CareRequestApplication, 'id' | 'created_at'>>;
+      };
       availability: {
         Row: Availability;
         Insert: Omit<Availability, 'id'>;
@@ -69,6 +93,16 @@ export interface Database {
         Row: Review;
         Insert: Omit<Review, 'id' | 'created_at'>;
         Update: Partial<Omit<Review, 'id' | 'created_at'>>;
+      };
+      incident_reports: {
+        Row: IncidentReport;
+        Insert: Omit<IncidentReport, 'id' | 'created_at' | 'status' | 'reviewed_at' | 'admin_notes'>;
+        Update: Partial<Omit<IncidentReport, 'id' | 'created_at'>>;
+      };
+      user_blocks: {
+        Row: UserBlock;
+        Insert: Omit<UserBlock, 'id' | 'created_at'>;
+        Update: never;
       };
     };
   };
