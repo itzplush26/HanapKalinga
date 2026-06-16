@@ -1,29 +1,133 @@
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { useAuth } from '../../../src/contexts/AuthContext';
 import { useBookingDetail } from '../../../src/lib/hooks/useBookingDetail';
+import { getApiUrl } from '@hanapkalinga/shared/api';
 import { ScreenWrapper } from '../../../src/components/ScreenWrapper';
 import { Button } from '../../../src/components/ui/Button';
 import { Badge } from '../../../src/components/ui/Badge';
 import { Card } from '../../../src/components/ui/Card';
 import { Skeleton } from '../../../src/components/ui/Skeleton';
-import { TouchableOpacity } from 'react-native';
 import { Separator } from '../../../src/components/ui/Separator';
 import { BookingDetailCard } from '../../../src/components/BookingDetailCard';
 import { BookingReviewForm } from '../../../src/components/BookingReviewForm';
 import { MessageThread } from '../../../src/components/message-thread';
+import { CancelBookingModal } from '../../../src/components/CancelBookingModal';
+import { ReportUserMenu } from '../../../src/components/ReportUserMenu';
 import { getShiftLabel, getStatusColor, formatDate, getInitials } from '../../../src/lib/helpers';
 import { colors } from '../../../src/theme/colors';
 import { spacing } from '../../../src/theme/spacing';
 import { rounded } from '../../../src/theme/rounded';
 import { typography } from '../../../src/theme/typography';
 
+const API_URL = getApiUrl();
+
 export default function FamilyBookingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
-  const { booking, family, nurse, messages, review, loading, error, refetch } = useBookingDetail(id);
+  const {
+    booking, family, nurse, messages, review,
+    loading, error, actionLoading, refetch,
+    cancel, confirmCompletion, dispute,
+  } = useBookingDetail(id);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showDisputeInput, setShowDisputeInput] = useState(false);
+  const [disputeText, setDisputeText] = useState('');
+
+  const isPastDate = booking?.requested_date
+    ? booking.requested_date <= new Date().toISOString().split('T')[0]
+    : false;
+
+  const handleCancelConfirm = async (reason: string) => {
+    const result = await cancel(reason, 'family');
+    if (result.error) {
+      Alert.alert('Error', result.error);
+    } else {
+      setShowCancelModal(false);
+    }
+  };
+
+  const handleConfirmCompletion = async () => {
+    Alert.alert(
+      'Confirm Shift Complete',
+      'Are you sure the nurse has completed the shift?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          onPress: async () => {
+            const result = await confirmCompletion();
+            if (result.error) {
+              Alert.alert('Error', result.error);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDispute = async () => {
+    if (disputeText.trim().length < 10) {
+      Alert.alert('Validation', 'Please provide at least 10 characters describing the issue.');
+      return;
+    }
+    const result = await dispute(disputeText.trim());
+    if (result.error) {
+      Alert.alert('Error', result.error);
+    } else {
+      Alert.alert('Dispute Submitted', 'An admin will review your dispute.');
+      setShowDisputeInput(false);
+      setDisputeText('');
+    }
+  };
+
+  const handleReportUser = async (category: string, description: string) => {
+    if (!booking || !user) return;
+    const targetId = booking.nurse_id;
+    try {
+      const res = await fetch(`${API_URL}/api/incident-reports`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reportedUserId: targetId,
+          bookingId: booking.id,
+          category,
+          description,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        Alert.alert('Error', json.error ?? 'Failed to submit report');
+      } else {
+        Alert.alert('Report Submitted', 'Thank you. An admin will review your report.');
+      }
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to submit report');
+    }
+  };
+
+  const handleBlockUser = async () => {
+    if (!booking || !user) return;
+    const targetId = booking.nurse_id;
+    try {
+      const res = await fetch(`${API_URL}/api/user-blocks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ blockedId: targetId }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        Alert.alert('Error', json.error ?? 'Failed to block user');
+      } else {
+        Alert.alert('User Blocked', 'This user has been blocked from contacting you.');
+      }
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to block user');
+    }
+  };
 
   if (loading) {
     return (
@@ -52,18 +156,28 @@ export default function FamilyBookingDetailScreen() {
   const isCompleted = booking.status === 'completed';
   const hasReview = !!review;
   const showReviewForm = isCompleted && !hasReview && !!nurse;
+  const canCancel = booking.status === 'pending' || booking.status === 'accepted';
+  const showCompletionActions = booking.status === 'pending_completion';
 
   return (
     <ScreenWrapper>
       <ScrollView contentContainerStyle={styles.container}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <ArrowLeft size={24} color={colors.ink} />
-        </TouchableOpacity>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <ArrowLeft size={24} color={colors.ink} />
+          </TouchableOpacity>
+          {nurse && (
+            <ReportUserMenu
+              onReport={handleReportUser}
+              onBlock={handleBlockUser}
+            />
+          )}
+        </View>
 
         <View style={styles.header}>
           <View style={styles.headerInfo}>
@@ -88,6 +202,64 @@ export default function FamilyBookingDetailScreen() {
                 {nurse.city && <Text style={styles.nurseCity}>{nurse.city}</Text>}
               </View>
             </View>
+          </Card>
+        )}
+
+        {canCancel && (
+          <View>
+            <Button
+              variant="secondary"
+              onPress={() => setShowCancelModal(true)}
+            >
+              Cancel Booking
+            </Button>
+          </View>
+        )}
+
+        {showCompletionActions && (
+          <Card roundedSize="md" variant="cream">
+            <Text style={styles.completionTitle}>Shift Completion</Text>
+            <Text style={styles.completionText}>
+              The nurse has marked this shift as complete. Please confirm or dispute.
+            </Text>
+            <View style={styles.completionActions}>
+              <Button
+                variant="primary"
+                onPress={handleConfirmCompletion}
+                loading={actionLoading}
+                style={styles.actionButton}
+              >
+                Confirm Shift Complete
+              </Button>
+              <Button
+                variant="secondary"
+                onPress={() => setShowDisputeInput(!showDisputeInput)}
+                style={styles.actionButton}
+              >
+                Dispute
+              </Button>
+            </View>
+            {showDisputeInput && (
+              <View style={styles.disputeSection}>
+                <TextInput
+                  style={styles.disputeInput}
+                  value={disputeText}
+                  onChangeText={setDisputeText}
+                  placeholder="Describe the issue (min. 10 characters)..."
+                  placeholderTextColor={colors.muted}
+                  multiline
+                  numberOfLines={3}
+                  accessibilityLabel="Dispute description"
+                />
+                <Button
+                  variant="primary"
+                  onPress={handleDispute}
+                  loading={actionLoading}
+                >
+                  Submit Dispute
+                </Button>
+              </View>
+            )}
           </Card>
         )}
 
@@ -128,6 +300,13 @@ export default function FamilyBookingDetailScreen() {
           />
         )}
       </ScrollView>
+
+      <CancelBookingModal
+        visible={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={handleCancelConfirm}
+        loading={actionLoading}
+      />
     </ScreenWrapper>
   );
 }
@@ -148,6 +327,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.xl,
     gap: spacing.md,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   backButton: {
     width: 44,
@@ -205,6 +389,40 @@ const styles = StyleSheet.create({
     fontSize: typography.size.caption,
     fontFamily: typography.fontFamily.body,
     color: colors.muted,
+  },
+  completionTitle: {
+    fontSize: typography.size.titleSm,
+    fontFamily: typography.fontFamily.bodySemiBold,
+    color: colors.ink,
+    marginBottom: spacing.xxs,
+  },
+  completionText: {
+    fontSize: typography.size.body,
+    fontFamily: typography.fontFamily.body,
+    color: colors.body,
+    marginBottom: spacing.sm,
+  },
+  completionActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  actionButton: {
+    flex: 1,
+  },
+  disputeSection: {
+    marginTop: spacing.sm,
+    gap: spacing.sm,
+  },
+  disputeInput: {
+    borderWidth: 1,
+    borderColor: colors.hairline,
+    borderRadius: rounded.sm,
+    padding: spacing.sm,
+    fontSize: typography.size.body,
+    fontFamily: typography.fontFamily.body,
+    color: colors.ink,
+    minHeight: 80,
+    textAlignVertical: 'top',
   },
   sectionTitle: {
     fontSize: typography.size.titleMd,

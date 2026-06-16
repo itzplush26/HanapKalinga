@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Tabs, useRouter } from 'expo-router';
-import { House, Search, Calendar, MessageSquare, User } from 'lucide-react-native';
+import { House, Search, Calendar, MessageSquare, User, FileText } from 'lucide-react-native';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
@@ -55,6 +55,13 @@ export default function FamilyTabLayout() {
         options={{
           title: 'Browse',
           tabBarIcon: ({ color }) => <Search size={22} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="care-requests"
+        options={{
+          title: 'Care Requests',
+          tabBarIcon: ({ color }) => <FileText size={22} color={color} />,
         }}
       />
       <Tabs.Screen

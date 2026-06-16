@@ -4,7 +4,10 @@ import { useAuth } from '../../src/contexts/AuthContext';
 import { ScreenWrapper } from '../../src/components/ScreenWrapper';
 import { Input } from '../../src/components/ui/Input';
 import { Button } from '../../src/components/ui/Button';
+import { Card } from '../../src/components/ui/Card';
 import { RegionCitySelects } from '../../src/components/domain/RegionCitySelects';
+import { ProfilePhotoUploader } from '../../src/components/ProfilePhotoUploader';
+import { ThemeToggle } from '../../src/components/ThemeToggle';
 import { colors } from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
 import { typography } from '../../src/theme/typography';
@@ -20,6 +23,7 @@ export default function FamilyProfileScreen() {
   const [city, setCity] = useState('');
   const [barangay, setBarangay] = useState('');
   const [address, setAddress] = useState('');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [patientName, setPatientName] = useState('');
 
   const [saving, setSaving] = useState(false);
@@ -33,6 +37,7 @@ export default function FamilyProfileScreen() {
       setCity(profile.city ?? '');
       setBarangay(profile.barangay ?? '');
       setAddress(profile.address ?? '');
+      setPhotoUrl(profile.profile_photo_url ?? null);
       setLoading(false);
 
       if (user) {
@@ -127,6 +132,12 @@ export default function FamilyProfileScreen() {
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Family Profile</Text>
 
+        <ProfilePhotoUploader
+          photoUrl={photoUrl}
+          displayName={fullName || 'Family'}
+          onPhotoChange={(url) => setPhotoUrl(url)}
+        />
+
         <Input
           label="Full name"
           value={fullName}
@@ -169,6 +180,10 @@ export default function FamilyProfileScreen() {
           onChangeText={setPatientName}
           placeholder="Name of person needing care"
         />
+
+        <Card title="Appearance" roundedSize="md">
+          <ThemeToggle />
+        </Card>
 
         <Button variant="primary" loading={saving} onPress={handleSave}>
           Save

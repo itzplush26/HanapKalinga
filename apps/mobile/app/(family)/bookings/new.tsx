@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Platform, StyleSheet, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker from '@expo/ui/community/datetime-picker';
 import { CalendarDays, ArrowLeft } from 'lucide-react-native';
 import { useAuth } from '../../../src/contexts/AuthContext';
 import { ScreenWrapper } from '../../../src/components/ScreenWrapper';
