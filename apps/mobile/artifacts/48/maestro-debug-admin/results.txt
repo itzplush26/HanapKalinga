@@ -1,0 +1,9 @@
+# shard: admin
+# total: 5
+approve-verification|FAIL|    Tap on id: login_input_password... FAILED
+dashboard-metrics|FAIL|    Assert that id: login_button_submit is not visible... FAILED
+reject-verification|FAIL|    Assert that id: login_button_submit is not visible... FAILED
+verification-detail|FAIL|    Assert that id: login_button_submit is not visible... FAILED
+verification-queue|FAIL|    Assert that id: login_button_submit is not visible... FAILED
+# passed: 0
+# failed: 5

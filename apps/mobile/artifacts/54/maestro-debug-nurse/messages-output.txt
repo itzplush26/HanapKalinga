@@ -1,0 +1,37 @@
+Running on Pixel_6
+ > Flow messages
+Run ../shared/setup.yaml...
+  Launch app "${APP_ID}" with clear state and clear keychain... COMPLETED
+  Wait for animation to end within 10000 ms... COMPLETED
+  Run flow when "Profile" is visible...
+  Run flow when "Profile" is visible... SKIPPED
+  Run flow when id: dashboard_metrics_pendingVerifications is visible...
+  Run flow when id: dashboard_metrics_pendingVerifications is visible... SKIPPED
+  Assert that id: landing_button_login is visible... COMPLETED
+Run ../shared/setup.yaml... COMPLETED
+Run ../shared/helpers.yaml...
+  Run ../shared/login-actions.yaml when ${TEST_EMAIL != null && TEST_PASSWORD != null} is true...
+    Tap on id: landing_button_login... COMPLETED
+    Tap on id: login_input_email... COMPLETED
+    Input text ${EMAIL}... COMPLETED
+    Tap on id: login_input_password... COMPLETED
+    Input text ${PASSWORD}... COMPLETED
+    Hide Keyboard... COMPLETED
+    Run flow when id: login_captcha_widget is visible...
+      Assert that id: login_captcha_ready is visible... COMPLETED
+    Run flow when id: login_captcha_widget is visible... COMPLETED
+    Tap on id: login_button_submit... COMPLETED
+    Assert that id: login_button_submit is not visible... COMPLETED
+  Run ../shared/login-actions.yaml when true is true... COMPLETED
+  Run ../shared/logout-actions.yaml when ${LOGOUT == "true"} is true...
+  Run ../shared/logout-actions.yaml when false is true... SKIPPED
+Run ../shared/helpers.yaml... COMPLETED
+Assert that "Messages" is visible... COMPLETED
+Tap on "Messages"... COMPLETED
+Assert that (Optional) id: messages_list_conversations is visible... WARNED
+
+
+ Warning: Assertion is false: id: messages_list_conversations is visible
+Run flow when id: messages_list_conversations is not visible...
+  Assert that "No messages yet" is visible... COMPLETED
+Run flow when id: messages_list_conversations is not visible... COMPLETED

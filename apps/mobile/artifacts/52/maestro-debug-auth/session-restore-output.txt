@@ -1,0 +1,34 @@
+Running on Pixel_6
+ > Flow session-restore
+Run ../shared/setup.yaml...
+  Launch app "${APP_ID}" with clear state and clear keychain... COMPLETED
+  Wait for animation to end within 10000 ms... COMPLETED
+  Run flow when id: tab_profile is visible...
+  Run flow when id: tab_profile is visible... SKIPPED
+  Run flow when id: dashboard_metrics_pendingVerifications is visible...
+  Run flow when id: dashboard_metrics_pendingVerifications is visible... SKIPPED
+  Assert that id: landing_button_login is visible... COMPLETED
+Run ../shared/setup.yaml... COMPLETED
+Tap on id: landing_button_login... COMPLETED
+Tap on id: login_input_email... COMPLETED
+Input text ${TEST_EMAIL}... COMPLETED
+Tap on id: login_input_password... COMPLETED
+Input text ${TEST_PASSWORD}... COMPLETED
+Run flow when id: login_captcha_widget is visible...
+  Assert that id: login_captcha_ready is visible... COMPLETED
+Run flow when id: login_captcha_widget is visible... COMPLETED
+Tap on id: login_button_submit... COMPLETED
+Assert that id: login_button_submit is not visible... FAILED
+
+Assertion is false: id: login_button_submit is not visible
+
+Assertion 'id: login_button_submit is not visible' failed. Check the UI hierarchy in debug artifacts to verify the element state and properties.
+
+Possible causes:
+- Element selector may be incorrect - check if there are similar elements with slightly different names/properties.
+- Element may be temporarily unavailable due to loading state
+- This could be a real regression that needs to be addressed
+
+==== Debug output (logs & screenshots) ====
+
+/home/runner/.maestro/tests/2026-06-25_144313

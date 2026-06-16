@@ -1,0 +1,9 @@
+# shard: auth
+# total: 5
+forgot-password|FAIL|Assert that id: forgotPassword_button_submit is not visible... FAILED
+login-failure|PASS|
+login-success-family|PASS|
+login-success|PASS|
+session-restore|PASS|
+# passed: 4
+# failed: 1

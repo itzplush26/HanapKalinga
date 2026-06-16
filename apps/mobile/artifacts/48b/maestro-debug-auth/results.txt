@@ -1,0 +1,11 @@
+# shard: auth
+# total: 7
+forgot-password|FAIL|  Assert that id: forgotPassword_captcha_ready is visible... FAILED
+login-failure|FAIL| > Flow login-failure
+login-success-family|FAIL|  Assert that id: login_captcha_ready is visible... FAILED
+login-success|FAIL|  Assert that id: login_captcha_ready is visible... FAILED
+register-family|FAIL|  Assert that id: register_captcha_ready is visible... FAILED
+register-nurse|FAIL|  Assert that id: register_captcha_ready is visible... FAILED
+session-restore|FAIL|  Assert that id: login_captcha_ready is visible... FAILED
+# passed: 0
+# failed: 7

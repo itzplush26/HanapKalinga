@@ -1,0 +1,29 @@
+Running on Pixel_6
+ > Flow register-family
+Run ../shared/setup.yaml...
+  Launch app "${APP_ID}" with clear state and clear keychain... COMPLETED
+  Wait for animation to end within 10000 ms... COMPLETED
+  Run flow when id: tab_profile is visible...
+  Run flow when id: tab_profile is visible... SKIPPED
+  Run flow when id: dashboard_metrics_pendingVerifications is visible...
+  Run flow when id: dashboard_metrics_pendingVerifications is visible... SKIPPED
+  Assert that id: landing_button_login is visible... COMPLETED
+Run ../shared/setup.yaml... COMPLETED
+Tap on id: landing_button_register... COMPLETED
+Tap on id: register_input_email... COMPLETED
+Input text ${REGISTER_EMAIL}... COMPLETED
+Tap on id: register_button_sendOtp... COMPLETED
+Assert that id: verifyOtp_input_0 is visible... FAILED
+
+Assertion is false: id: verifyOtp_input_0 is visible
+
+Assertion 'id: verifyOtp_input_0 is visible' failed. Check the UI hierarchy in debug artifacts to verify the element state and properties.
+
+Possible causes:
+- Element selector may be incorrect - check if there are similar elements with slightly different names/properties.
+- Element may be temporarily unavailable due to loading state
+- This could be a real regression that needs to be addressed
+
+==== Debug output (logs & screenshots) ====
+
+/home/runner/.maestro/tests/2026-06-23_154739

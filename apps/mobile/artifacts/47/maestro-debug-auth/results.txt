@@ -1,0 +1,11 @@
+# shard: auth
+# total: 7
+forgot-password|FAIL|Assert that id: forgotPassword_button_submit is not visible... FAILED
+login-failure|PASS|
+login-success-family|FAIL|Assert that id: login_button_submit is not visible... FAILED
+login-success|FAIL|Assert that id: login_button_submit is not visible... FAILED
+register-family|FAIL|Assert that id: verifyOtp_input_0 is visible... FAILED
+register-nurse|FAIL|Assert that id: verifyOtp_input_0 is visible... FAILED
+session-restore|FAIL|Assert that id: login_button_submit is not visible... FAILED
+# passed: 1
+# failed: 6

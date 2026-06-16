@@ -1,0 +1,11 @@
+# shard: nurse
+# total: 7
+accept-booking|FAIL|Tap on id: tab_bookings... FAILED
+bookings-list|FAIL|Tap on id: tab_bookings... FAILED
+decline-booking|FAIL|Tap on id: tab_bookings... FAILED
+login-success|FAIL|Assert that id: availability_button_save is visible... FAILED
+messages|FAIL|Tap on id: tab_messages... FAILED
+session-restore|FAIL|Assert that id: login_button_submit is not visible... FAILED
+set-availability|FAIL|Parsing Failed at /home/runner/work/HanapKalinga/HanapKalinga/apps/mobile/maestro/nurse/set-availability.yaml:23:15
+# passed: 0
+# failed: 7

@@ -1,0 +1,9 @@
+# shard: auth
+# total: 5
+forgot-password|PASS|
+login-failure|PASS|
+login-success-family|PASS|
+login-success|PASS|
+session-restore|PASS|
+# passed: 5
+# failed: 0

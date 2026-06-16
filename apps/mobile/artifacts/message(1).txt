@@ -1,0 +1,64 @@
+we are not using playwright for web, right now we are only testing the mobile using maestro
+10:29 AM
+
+Got it — so the setup is:
+
+    Web — manual testing (your checklist) + Cursor CI checks
+    Mobile — Maestro E2E automated testing
+
+Same solution applies, just targeted at Maestro instead of Playwright. Maestro runs on a real device or emulator but it can't solve a managed Turnstile challenge because there's no real human interaction — it just taps coordinates.
+
+The fix for your colleague is simple — two things:
+
+Thing 1 — Add the Cloudflare test key to the Maestro CI environment
+
+In whatever environment Maestro runs against (likely a staging build or local Expo dev build), set the Turnstile site key to Cloudflare's official test key:
+
+TURNSTILE_SITE_KEY=1x00000000000000000000AA
+
+And the corresponding secret for server-side verification:
+
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+
+These always pass. Cloudflare provides them specifically for this use case. No security risk because they only work in test environments — Cloudflare's servers recognize them as test keys and validate accordingly without doing real bot detection.
+
+Thing 2 — Make the mobile Expo app use invisible mode site key in production
+
+For the actual mobile app in production (not CI), create a separate invisible mode Turnstile site key in Cloudflare for the mobile app. The Expo app uses this key, generates a token silently on screen load, and passes it to Supabase. No widget shown to the user, no interaction needed, still fully verified.
+
+So the three keys your setup needs:
+Environment	Key type	Used by
+Web production (hanapkalinga.ph)	Managed mode	Next.js web app
+Mobile production (Expo app)	Invisible mode	Expo app
+Maestro CI / testing	Cloudflare test key	Maestro test runs
+
+Tell your colleague the immediate fix — swap the Turnstile site key in the Maestro test environment to 1x00000000000000000000AA and the secret to 1x0000000000000000000000000000000AA. That unblocks E2E testing today without touching any production configuration or changing any mode on the existing keys. The managed mode on web stays untouched.
+
+on cloudfare for the turnstile that is invis, do i do just the same like the web? same hostnames?
+10:32 AM
+
+Yes, same hostnames — but create it as a separate site in Turnstile, not a new mode on the existing one.
+
+Here's exactly what to do in Cloudflare:
+
+Go to Cloudflare Dashboard → Turnstile → Add Site
+
+Fill it in like this:
+Field	Value
+Site name	HanapKalinga Mobile
+Domain	hanapkalinga.ph
+Widget type	Invisible
+
+Yes, use the same domain hanapkalinga.ph even though it's for the mobile app. Cloudflare validates the token against the domain the API call originates from — since your Supabase auth calls go through your backend which is on hanapkalinga.ph, the domain must match. Adding localhost is also fine for local mobile development.
+
+After creating it, Cloudflare gives you a new Site Key and Secret Key — these are completely separate from your managed mode web keys even though the domain is the same. One domain can have multiple Turnstile sites with different widget types.
+
+Your Cloudflare Turnstile dashboard should end up with three entries:
+Site name	Domain	Mode	Used by
+HanapKalinga Web	hanapkalinga.ph	Managed	Next.js web
+HanapKalinga Mobile	hanapkalinga.ph	Invisible	Expo app
+(Test key — built in, no setup needed)	—	—	Maestro CI
+
+The test key 1x00000000000000000000AA doesn't need any Cloudflare setup — it's a global Cloudflare-provided key that works everywhere automatically.
+
+One thing to double check — when your colleague integrates the invisible key into the Expo app, the token still needs to be passed to Supabase the same way the web does it via captchaToken in the auth call options. The only difference is the token is generated silently in the background rather than after a user interaction. If the Expo app is using a Turnstile React Native library, check that it supports invisible mode — some libraries only implement managed mode and need a prop like mode="invisible" or an equivalent.

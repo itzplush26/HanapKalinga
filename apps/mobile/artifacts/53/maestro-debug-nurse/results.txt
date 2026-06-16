@@ -1,0 +1,11 @@
+# shard: nurse
+# total: 7
+accept-booking|FAIL|    Tap on id: login_input_email... FAILED
+bookings-list|PASS|
+decline-booking|PASS|
+login-success|PASS|
+messages|FAIL|Assert that id: messages_list_conversations is visible... FAILED
+session-restore|FAIL|Assert that id: availability_button_save is visible... FAILED
+set-availability|FAIL|Tap on id: availability_toggle_${dateStr}_morning... FAILED
+# passed: 3
+# failed: 4

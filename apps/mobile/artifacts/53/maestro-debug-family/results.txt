@@ -1,0 +1,9 @@
+# shard: family
+# total: 5
+booking-detail|PASS|
+bookings-list|PASS|
+browse-nurses|FAIL|Assert that id: browse_input_search is visible... FAILED
+nurse-detail|FAIL|Assert that id: browse_input_search is visible... FAILED
+request-booking|FAIL|Assert that id: browse_input_search is visible... FAILED
+# passed: 2
+# failed: 3

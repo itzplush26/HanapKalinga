@@ -1,0 +1,11 @@
+# shard: nurse
+# total: 7
+accept-booking|PASS|
+bookings-list|PASS|
+decline-booking|FAIL|Assert that id: nurseBookingDetail_button_decline is visible... FAILED
+login-success|PASS|
+messages|PASS|
+session-restore|PASS|
+set-availability|PASS|
+# passed: 6
+# failed: 1

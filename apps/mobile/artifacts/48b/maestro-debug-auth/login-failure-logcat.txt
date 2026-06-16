@@ -1,0 +1,543 @@
+--------- beginning of main
+06-24 07:05:28.344  7235  7288 D Maestro : View hierarchy received in 48 ms
+06-24 07:05:28.436  7235  7444 D Maestro : Requesting view hierarchy
+06-24 07:05:28.437  7235  7444 W QueryController: Could not detect idle state.
+06-24 07:05:28.437  7235  7444 W QueryController: Could not detect idle state.
+06-24 07:05:28.447  7235  7444 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@12895; boundsInParent: Rect(0, 0 - 320, 0); boundsInScreen: Rect(0, 0 - 320, 0); boundsInWindow: Rect(0, 0 - 320, 0); packageName: com.hanapkalinga.mobile; className: android.widget.LinearLayout; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:28.448  7235  7444 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@124d4; boundsInParent: Rect(0, 0 - 320, 0); boundsInScreen: Rect(0, 0 - 320, 0); boundsInWindow: Rect(0, 0 - 320, 0); packageName: com.hanapkalinga.mobile; className: android.view.ViewGroup; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:28.448  7235  7444 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@1a476; boundsInParent: Rect(0, 0 - 320, 0); boundsInScreen: Rect(0, 0 - 320, 0); boundsInWindow: Rect(0, 0 - 320, 0); packageName: com.hanapkalinga.mobile; className: android.widget.LinearLayout; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:28.448  7235  7444 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@1a0b5; boundsInParent: Rect(0, 0 - 320, 0); boundsInScreen: Rect(0, 0 - 320, 0); boundsInWindow: Rect(0, 0 - 320, 0); packageName: com.hanapkalinga.mobile; className: android.view.ViewGroup; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:28.449  7235  7444 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@182ad; boundsInParent: Rect(0, 0 - 1, 1); boundsInScreen: Rect(20, 293 - 21, 294); boundsInWindow: Rect(20, 293 - 21, 294); packageName: com.hanapkalinga.mobile; className: android.view.ViewGroup; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: login_captcha_ready; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: true; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:28.454  7235  7444 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@18df0; boundsInParent: Rect(0, 0 - 280, 34); boundsInScreen: Rect(20, 450 - 300, 484); boundsInWindow: Rect(20, 450 - 300, 484); packageName: com.hanapkalinga.mobile; className: android.view.View; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: Forgot password?; tooltipText: null; containerTitle: null; viewIdResName: login_link_forgotPassword; uniqueId: null; checkable: false; checked: false; focusable: true; focused: false; selected: false; clickable: true; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: true; visible: false; actions: [AccessibilityAction: ACTION_FOCUS - null, AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_CLICK - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:28.455  7235  7444 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@19572; boundsInParent: Rect(0, 0 - 169, 22); boundsInScreen: Rect(11, 508 - 180, 530); boundsInWindow: Rect(11, 508 - 180, 530); packageName: com.hanapkalinga.mobile; className: android.widget.TextView; text: Don't have an account? ; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: true; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_NEXT_AT_MOVEMENT_GRANULARITY - null, AccessibilityAction: ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY - null, AccessibilityAction: ACTION_SET_SELECTION - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:28.455  7235  7444 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@19933; boundsInParent: Rect(0, 0 - 128, 22); boundsInScreen: Rect(181, 508 - 309, 530); boundsInWindow: Rect(181, 508 - 309, 530); packageName: com.hanapkalinga.mobile; className: android.view.View; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: Create an account; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: true; focused: false; selected: false; clickable: true; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: true; visible: false; actions: [AccessibilityAction: ACTION_FOCUS - null, AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_CLICK - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:28.477  7235  7444 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@13b54; boundsInParent: Rect(0, 0 - 320, 0); boundsInScreen: Rect(0, 640 - 320, 640); boundsInWindow: Rect(0, 640 - 320, 640); packageName: com.google.android.inputmethod.latin; className: android.widget.FrameLayout; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: com.google.android.inputmethod.latin:id/0_resource_name_obfuscated; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:28.477  7235  7444 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@13f15; boundsInParent: Rect(0, 0 - 320, 0); boundsInScreen: Rect(0, 640 - 320, 640); boundsInWindow: Rect(0, 640 - 320, 640); packageName: com.google.android.inputmethod.latin; className: android.view.View; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: com.google.android.inputmethod.latin:id/0_resource_name_obfuscated; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: true; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: true; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_CLICK - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:28.478  7235  7444 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@d5f9; boundsInParent: Rect(0, 0 - 320, 0); boundsInScreen: Rect(0, 640 - 320, 640); boundsInWindow: Rect(0, 640 - 320, 640); packageName: com.google.android.inputmethod.latin; className: android.widget.FrameLayout; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:28.478  7235  7444 D Maestro : View hierarchy received in 42 ms
+06-24 07:05:28.494  7235  7444 D Maestro : Requesting view hierarchy
+06-24 07:05:28.495  7235  7444 W QueryController: Could not detect idle state.
+06-24 07:05:28.495  7235  7444 W QueryController: Could not detect idle state.
+06-24 07:05:28.507  7235  7444 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@12895; boundsInParent: Rect(0, 0 - 320, 0); boundsInScreen: Rect(0, 0 - 320, 0); boundsInWindow: Rect(0, 0 - 320, 0); packageName: com.hanapkalinga.mobile; className: android.widget.LinearLayout; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:28.507  7235  7444 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@124d4; boundsInParent: Rect(0, 0 - 320, 0); boundsInScreen: Rect(0, 0 - 320, 0); boundsInWindow: Rect(0, 0 - 320, 0); packageName: com.hanapkalinga.mobile; className: android.view.ViewGroup; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:28.508  7235  7444 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@1a476; boundsInParent: Rect(0, 0 - 320, 0); boundsInScreen: Rect(0, 0 - 320, 0); boundsInWindow: Rect(0, 0 - 320, 0); packageName: com.hanapkalinga.mobile; className: android.widget.LinearLayout; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:28.508  7235  7444 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@1a0b5; boundsInParent: Rect(0, 0 - 320, 0); boundsInScreen: Rect(0, 0 - 320, 0); boundsInWindow: Rect(0, 0 - 320, 0); packageName: com.hanapkalinga.mobile; className: android.view.ViewGroup; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:28.509  7235  7444 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@182ad; boundsInParent: Rect(0, 0 - 1, 1); boundsInScreen: Rect(20, 293 - 21, 294); boundsInWindow: Rect(20, 293 - 21, 294); packageName: com.hanapkalinga.mobile; className: android.view.ViewGroup; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: login_captcha_ready; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: true; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:28.515  7235  7444 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@18df0; boundsInParent: Rect(0, 0 - 280, 34); boundsInScreen: Rect(20, 450 - 300, 484); boundsInWindow: Rect(20, 450 - 300, 484); packageName: com.hanapkalinga.mobile; className: android.view.View; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: Forgot password?; tooltipText: null; containerTitle: null; viewIdResName: login_link_forgotPassword; uniqueId: null; checkable: false; checked: false; focusable: true; focused: false; selected: false; clickable: true; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: true; visible: false; actions: [AccessibilityAction: ACTION_FOCUS - null, AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_CLICK - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:28.515  7235  7444 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@19572; boundsInParent: Rect(0, 0 - 169, 22); boundsInScreen: Rect(11, 508 - 180, 530); boundsInWindow: Rect(11, 508 - 180, 530); packageName: com.hanapkalinga.mobile; className: android.widget.TextView; text: Don't have an account? ; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: true; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_NEXT_AT_MOVEMENT_GRANULARITY - null, AccessibilityAction: ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY - null, AccessibilityAction: ACTION_SET_SELECTION - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:28.515  7235  7444 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@19933; boundsInParent: Rect(0, 0 - 128, 22); boundsInScreen: Rect(181, 508 - 309, 530); boundsInWindow: Rect(181, 508 - 309, 530); packageName: com.hanapkalinga.mobile; className: android.view.View; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: Create an account; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: true; focused: false; selected: false; clickable: true; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: true; visible: false; actions: [AccessibilityAction: ACTION_FOCUS - null, AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_CLICK - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:28.549  7235  7444 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@13b54; boundsInParent: Rect(0, 0 - 320, 0); boundsInScreen: Rect(0, 640 - 320, 640); boundsInWindow: Rect(0, 640 - 320, 640); packageName: com.google.android.inputmethod.latin; className: android.widget.FrameLayout; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: com.google.android.inputmethod.latin:id/0_resource_name_obfuscated; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:28.550  7235  7444 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@13f15; boundsInParent: Rect(0, 0 - 320, 0); boundsInScreen: Rect(0, 640 - 320, 640); boundsInWindow: Rect(0, 640 - 320, 640); packageName: com.google.android.inputmethod.latin; className: android.view.View; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: com.google.android.inputmethod.latin:id/0_resource_name_obfuscated; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: true; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: true; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_CLICK - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:28.551  7235  7444 I Maestro : Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@d5f9; boundsInParent: Rect(0, 0 - 320, 0); boundsInScreen: Rect(0, 640 - 320, 640); boundsInWindow: Rect(0, 640 - 320, 640); packageName: com.google.android.inputmethod.latin; className: android.widget.FrameLayout; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:28.551  7235  7444 D Maestro : View hierarchy received in 57 ms
+06-24 07:05:28.559  7379  7399 D EGL_emulation: app_time_stats: avg=499.75ms min=499.45ms max=500.08ms count=3
+--------- beginning of system
+06-24 07:05:28.641   519   897 D WindowManager: captureDisplay
+06-24 07:05:29.292   519   548 I ActivityManager: Force stopping dev.mobile.maestro appid=10195 user=-1: deletePackageX
+06-24 07:05:29.292   519   548 E libprocessgroup: No such cgroup attribute: /sys/fs/cgroup/uid_4294877491/cgroup.freeze
+06-24 07:05:29.292   519   548 W libprocessgroup: Failed to apply Frozen process profile: No such file or directory
+06-24 07:05:29.293   519   548 I ActivityManager: Killing 7235:dev.mobile.maestro/u0a195 (adj 0): stop dev.mobile.maestro due to deletePackageX
+06-24 07:05:29.293   519   548 W ActivityManager: Crash of app dev.mobile.maestro running instrumentation ComponentInfo{dev.mobile.maestro.test/androidx.test.runner.AndroidJUnitRunner}
+06-24 07:05:29.293   519   548 I ActivityManager: Force stopping dev.mobile.maestro appid=10195 user=0: finished inst
+06-24 07:05:29.294   519   539 D DisplayManagerService: Drop pending events for gone uid 10195
+06-24 07:05:29.296  7222  7222 I app_process: System.exit called, status: 0
+06-24 07:05:29.297  7222  7222 I AndroidRuntime: VM exiting with result code 0.
+06-24 07:05:29.297   519   548 D OomAdjuster: Not killing cached processes
+06-24 07:05:29.300   519   548 E libprocessgroup: No such cgroup attribute: /sys/fs/cgroup/uid_4294877491/cgroup.freeze
+06-24 07:05:29.300   519   548 W libprocessgroup: Failed to apply Unfrozen process profile: No such file or directory
+--------- beginning of kernel
+06-24 07:05:29.492     0     0 I servicemanager: Since 'artd' could not be found, trying to start it as a lazy AIDL service. (if it's not configured to be a lazy service, it may be stuck starting or still starting).
+06-24 07:05:29.498     0     0 I init    : starting service 'artd'...
+06-24 07:05:29.320   519  1708 V ActivityManager: Got obituary of 7235:dev.mobile.maestro
+06-24 07:05:29.320  1613  1679 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+06-24 07:05:29.321   519   534 W WindowMagnificationMgr: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+06-24 07:05:29.321  1613  1950 I AiAiEcho: Predicting[0]: 
+06-24 07:05:29.321  1613  1950 I AiAiEcho: EchoTargets: 
+06-24 07:05:29.321  1613  1950 I AiAiEcho: Filtered by AiAi flag check: 
+06-24 07:05:29.321  1613  1950 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata: 
+06-24 07:05:29.321  1613  1950 I AiAiEcho: Predicting[0]: 
+06-24 07:05:29.321  1613  1950 I AiAiEcho: EchoTargets: 
+06-24 07:05:29.321  1613  1950 I AiAiEcho: Filtered by AiAi flag check: 
+06-24 07:05:29.321  1613  1950 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata: 
+06-24 07:05:29.321   519   534 W WindowMagnificationMgr: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+06-24 07:05:29.322   337   337 I Zygote  : Process 7235 exited due to signal 9 (Killed)
+06-24 07:05:29.332  1762  2275 I A       : NGA enabled in interactor.
+06-24 07:05:29.332  1762  2275 I A       : Nga state changed to NgaStateDetails{state=ENABLED, isSpecialExperience=false}
+06-24 07:05:29.518     0     0 I binder  : undelivered transaction 847452, process died.
+06-24 07:05:29.520     0     0 I init    : ... started service 'artd' has pid 7585
+06-24 07:05:29.521     0     0 I init    : Control message: Processed ctl.interface_start for 'aidl/artd' from pid: 135 (/system/bin/servicemanager)
+06-24 07:05:29.522     0     0 I init    : Untracked pid 7222 exited with status 0
+06-24 07:05:29.523     0     0 I init    : Untracked pid 7222 did not have an associated service entry and will not be reaped
+06-24 07:05:29.332  1613  1950 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+06-24 07:05:29.346   827   827 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+06-24 07:05:29.346  1621  4596 I A       : Initializing all components
+06-24 07:05:29.346  1621  4596 I A       : APA or Classic session decision: SessionDecision(sessionVariance=CLASSIC, platformVariance=CLASSIC, justification=CURRENT_PLATFORM_VARIANCE).
+06-24 07:05:29.346  1621  4596 I A       : [Memory] eligibility: StashEligibility{6}
+06-24 07:05:29.350  1613  1679 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+06-24 07:05:29.350  1613  1950 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+06-24 07:05:29.354  1621  2118 I A       : onIsEnabledChanged, isEnabled: false
+06-24 07:05:29.354  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.354  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.354  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.354  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.354   519   519 D BatterySaverPolicy: accessibility changed to false, updating policy.
+06-24 07:05:29.354  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 I A       : onOpaVisibilityChanged: false
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 I A       : Setting session to type: NO_SESSION
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 I A       : setNavBarVisible: GestureNavBarVisible{navbarVisible=true}
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:29.355  1621  2118 I A       : onDisabled. Registered: false
+06-24 07:05:29.355  1613  1950 I AiAiEcho: Predicting[0]: 
+06-24 07:05:29.355  1613  1950 I AiAiEcho: EchoTargets: 
+06-24 07:05:29.355  1613  1950 I AiAiEcho: Filtered by AiAi flag check: 
+06-24 07:05:29.355  1613  1950 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata: 
+06-24 07:05:29.355  1613  1950 I AiAiEcho: Predicting[0]: 
+06-24 07:05:29.355  1613  1950 I AiAiEcho: EchoTargets: 
+06-24 07:05:29.355  1613  1950 I AiAiEcho: Filtered by AiAi flag check: 
+06-24 07:05:29.356  1613  1950 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata: 
+06-24 07:05:29.357  1613  1950 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+06-24 07:05:29.357   827   827 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+06-24 07:05:29.358  1613  1950 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+06-24 07:05:29.364  1621  2134 I A       : on opa visibility changed false
+06-24 07:05:29.364  1621  2134 I A       : on opa visibility changed false
+06-24 07:05:29.366  1621  2134 I A       : State changed: IDLE => IDLE by NGA_STATE_CHANGED and N/A with Optional.empty
+06-24 07:05:29.366  1621  2134 I A       : Recognizer choice: (recognizer_type: 1, recognizer_mode: 1, choice_reason: 4)
+06-24 07:05:29.367  7585  7585 I artd    : Starting artd
+06-24 07:05:29.367  7585  7585 I AidlLazyServiceRegistrar: Registering service artd
+06-24 07:05:29.367  1621  2134 I A       : onActiveStateChangeEvent: IDLE => IDLE
+06-24 07:05:29.369  1621  2134 I A       : #onActiveStateChangeEvent, newState: IDLE, previousState: IDLE.
+06-24 07:05:29.553     0     0 I BpBinder: onLastStrongRef automatically unlinking death recipients:
+06-24 07:05:29.554     0     0 I servicemanager: Notifying artd they do (previously: don't) have clients when service is guaranteed to be in use
+06-24 07:05:29.372   519  2212 D CompatibilityChangeReporter: Compat change id reported: 197654537; UID 10192; state: ENABLED
+06-24 07:05:29.373  1621  2134 I A       : stopListening(NGA_PAUSED_UNKNOWN_REASON, NGA_CREATE), idleOverride=NOT_LISTENING
+06-24 07:05:29.373  7585  7589 I AidlLazyServiceRegistrar: Process has 1 (of 1 available) client(s) in use after notification artd has clients: 1
+06-24 07:05:29.582     0     0 I logd    : start watching /data/system/packages.list ...
+06-24 07:05:29.583     0     0 I logd    : ReadPackageList, total packages: 201
+06-24 07:05:29.399   519   571 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+06-24 07:05:29.399   519   571 D PackageManager: Clear ephemeral installer activity
+06-24 07:05:29.400  1621  2118 I A       : Initialize
+06-24 07:05:29.402  1621  2134 I NgaEntryPointEventSendr: setupConnection
+06-24 07:05:29.405   519  3093 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+06-24 07:05:29.410   519   534 W ProcessStats: Tracking association SourceState{97b9a6e com.google.android.googlequicksearchbox:interactor/10131 BFgs #12768} whose proc state 4 is better than process ProcessState{eb228f6 com.google.android.googlequicksearchbox:search/10131 pkg=com.google.android.googlequicksearchbox} proc state 14 (112 skipped)
+06-24 07:05:29.415  1621  2134 I NgaEntryPointEventSendr: State changed: Disconnected => Connecting
+06-24 07:05:29.415   519   571 I ActivityManager: Force stopping dev.mobile.maestro appid=10195 user=0: pkg removed
+06-24 07:05:29.418  1762  1762 I A       : Creating pss binder().
+06-24 07:05:29.451  1621  1621 V ClearcutMetricXmitter: Transmission is done.
+06-24 07:05:29.455  1621  2134 I A       : Successfully initialized all components
+06-24 07:05:29.457  1041  1041 D CarrierSvcBindHelper: onPackageRemoved: dev.mobile.maestro
+06-24 07:05:29.457  1041  1041 D CarrierSvcBindHelper: No carrier app for: 0
+06-24 07:05:29.462  3940  3940 V MediaPlayerList: mPackageChangedBroadcastReceiver: action: android.intent.action.PACKAGE_REMOVED
+06-24 07:05:29.462  3940  3940 V MediaPlayerList: mPackageChangedBroadcastReceiver: action: android.intent.action.PACKAGE_REMOVED
+06-24 07:05:29.466  1621  2134 I NgaEntryPointEventSendr: onServiceConnected
+06-24 07:05:29.467  1762  7069 I A       : Calling beginBinderSession().
+06-24 07:05:29.468   519   548 D ActivityManager: sync unfroze 2789 com.android.chrome for 3
+06-24 07:05:29.470  1762  7069 I A       : beginBinderSession(): calling binder
+06-24 07:05:29.470  1631  1631 W MediaProvider: WorkProfileOwnerApps cache is empty
+06-24 07:05:29.472  1621  2134 I NgaEntryPointEventSendr: State changed: Connecting => Ready
+06-24 07:05:29.479   519  2212 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+06-24 07:05:29.487   519   548 I ActivityManager: Force stopping dev.mobile.maestro.test appid=10196 user=-1: deletePackageX
+06-24 07:05:29.488  1631  2306 I MediaProvider: Begin Intent { act=android.intent.action.PACKAGE_FULLY_REMOVED dat=package: flg=0x5000010 cmp=com.google.android.providers.media.module/com.android.providers.media.MediaService (has extras) }
+06-24 07:05:29.488  1631  2306 D MediaProvider: Deleted 0 Android/media items belonging to dev.mobile.maestro on /data/user/0/com.google.android.providers.media.module/databases/external.db
+06-24 07:05:29.489   519   548 E libprocessgroup: No such cgroup attribute: /sys/fs/cgroup/uid_4294877492/cgroup.freeze
+06-24 07:05:29.489   519   548 W libprocessgroup: Failed to apply Frozen process profile: No such file or directory
+06-24 07:05:29.489  1631  2306 D MediaGrants: Removed 0 media_grants for 0 user for dev.mobile.maestro. Reason: Package orphaned
+06-24 07:05:29.491   519   548 E libprocessgroup: No such cgroup attribute: /sys/fs/cgroup/uid_4294877492/cgroup.freeze
+06-24 07:05:29.491   519   548 W libprocessgroup: Failed to apply Unfrozen process profile: No such file or directory
+06-24 07:05:29.493  1631  2306 I MediaProvider: End Intent { act=android.intent.action.PACKAGE_FULLY_REMOVED dat=package: flg=0x5000010 cmp=com.google.android.providers.media.module/com.android.providers.media.MediaService (has extras) }
+06-24 07:05:29.510  1762  2390 W A       : UiCallbackStub-onGenericEvent[ServiceEvent = 60] task was not run. Callback from Service received after client was disposed.
+06-24 07:05:29.510  1762  2388 I PBSessionCacheImpl: Deleted sessionId[7751140237086668] from persistence.
+06-24 07:05:29.511  1762  2390 W SearchServiceCore: Abort, client detached.
+06-24 07:05:29.514   519   628 V StorageManagerService: Package dev.mobile.maestro does not have legacy storage
+06-24 07:05:29.515   519   603 I RollbackManager: broadcast=ACTION_PACKAGE_FULLY_REMOVED pkg=dev.mobile.maestro
+06-24 07:05:29.523   519   762 E AppOps  : attributionTag VCN not declared in manifest of android
+06-24 07:05:29.525   519   749 W WifiService: Couldn't get PackageInfo for package:dev.mobile.maestro
+06-24 07:05:29.525   519   749 D WifiService: Remove settings for package:dev.mobile.maestro
+06-24 07:05:29.525   519   749 D WifiConfigManager: Remove all networks for app ApplicationInfo{fa5e239 dev.mobile.maestro}
+06-24 07:05:29.526   519   548 D ActivityManager: sync unfroze 2301 com.google.android.documentsui for 3
+06-24 07:05:29.534   519   620 I InputReader: Reconfiguring input devices, changes=KEYBOARD_LAYOUTS
+06-24 07:05:29.538   519   749 D WifiConfigStore: Writing to stores completed in 5 ms.
+06-24 07:05:29.538   519   749 I PasspointManager: No app ops listener found for dev.mobile.maestro
+06-24 07:05:29.730     0     0 I logd    : start watching /data/system/packages.list ...
+06-24 07:05:29.731     0     0 I logd    : ReadPackageList, total packages: 200
+06-24 07:05:29.549   519   571 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+06-24 07:05:29.549   519   571 D PackageManager: Clear ephemeral installer activity
+06-24 07:05:29.552   519   749 W WifiService: Couldn't get PackageInfo for package:dev.mobile.maestro
+06-24 07:05:29.553   519   749 D WifiService: Remove settings for package:dev.mobile.maestro
+06-24 07:05:29.553   519  3093 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+06-24 07:05:29.554   519   749 D WifiConfigManager: Remove all networks for app ApplicationInfo{6eb30be dev.mobile.maestro}
+06-24 07:05:29.555   827   827 D ControlsListingControllerImpl: ServiceConfig reloaded, count: 0
+06-24 07:05:29.556  1621  2134 I NgaEntryPointEventSendr: State changed: Ready => Disconnected (onOpaDisconnected)
+06-24 07:05:29.563   519   519 D ActivityManager: sync unfroze 1864 com.android.keychain for 10
+06-24 07:05:29.566   519   749 D WifiConfigStore: Writing to stores completed in 2 ms.
+06-24 07:05:29.566   519   749 I PasspointManager: No app ops listener found for dev.mobile.maestro
+06-24 07:05:29.567   519   519 D ActivityManager: sync unfroze 4870 com.google.android.settings.intelligence for 10
+06-24 07:05:29.571   519   519 D ActivityManager: sync unfroze 5823 com.android.settings for 10
+06-24 07:05:29.571   519   519 D ActivityManager: sync unfroze 3508 com.android.dynsystem:dynsystem for 10
+06-24 07:05:29.572   519   519 D ActivityManager: sync unfroze 3449 com.android.dynsystem for 10
+06-24 07:05:29.572   519   519 D ActivityManager: sync unfroze 2454 com.android.localtransport for 10
+06-24 07:05:29.573   827   895 D StylusManager: Stylus InputDevice changed: 14 virtio_input_multi_touch_11
+06-24 07:05:29.576  7379  7399 D EGL_emulation: app_time_stats: avg=508.16ms min=504.15ms max=512.16ms count=2
+06-24 07:05:29.576   827   895 D StylusManager: Stylus InputDevice changed: 8 virtio_input_multi_touch_5
+06-24 07:05:29.577   519   571 I ActivityManager: Force stopping dev.mobile.maestro.test appid=10196 user=0: pkg removed
+06-24 07:05:29.577   519   571 E libprocessgroup: No such cgroup attribute: /sys/fs/cgroup/uid_10196/cgroup.freeze
+06-24 07:05:29.577   519   571 W libprocessgroup: Failed to apply Frozen process profile: No such file or directory
+06-24 07:05:29.577   519   571 E libprocessgroup: No such cgroup attribute: /sys/fs/cgroup/uid_10196/cgroup.freeze
+06-24 07:05:29.577   519   571 W libprocessgroup: Failed to apply Unfrozen process profile: No such file or directory
+06-24 07:05:29.582  1041  1041 D CarrierSvcBindHelper: onPackageRemoved: dev.mobile.maestro.test
+06-24 07:05:29.582  1041  1041 D CarrierSvcBindHelper: No carrier app for: 0
+06-24 07:05:29.583   519   548 D ActivityManager: sync unfroze 828 com.google.android.permissioncontroller for 3
+06-24 07:05:29.588  3940  3940 V MediaPlayerList: mPackageChangedBroadcastReceiver: action: android.intent.action.PACKAGE_REMOVED
+06-24 07:05:29.589  3940  3940 V MediaPlayerList: mPackageChangedBroadcastReceiver: action: android.intent.action.PACKAGE_REMOVED
+06-24 07:05:29.590   519   519 I Telecom : CarModeTracker: Package dev.mobile.maestro is not tracked.: SSH.oR@AUw🔒
+06-24 07:05:29.590   519   519 I Telecom : InCallController: updateCarModeForConnections: car mode apps: : SSH.oR@AUw🔒
+06-24 07:05:29.591   519   519 I Telecom : InCallController: update carmode current:UserHandle{0} parent:null: SSH.oR@AUw🔒
+06-24 07:05:29.596   827   895 D StylusManager: Stylus InputDevice changed: 13 virtio_input_multi_touch_10
+06-24 07:05:29.598   827   895 D StylusManager: Stylus InputDevice changed: 11 virtio_input_multi_touch_8
+06-24 07:05:29.599   519   609 I RoleService: Granting default roles...
+06-24 07:05:29.601   827   895 D StylusManager: Stylus InputDevice changed: 9 virtio_input_multi_touch_6
+06-24 07:05:29.602   827   895 D StylusManager: Stylus InputDevice changed: 12 virtio_input_multi_touch_9
+06-24 07:05:29.602   827   895 D StylusManager: Stylus InputDevice changed: 7 virtio_input_multi_touch_4
+06-24 07:05:29.603   827   895 D StylusManager: Stylus InputDevice changed: 6 virtio_input_multi_touch_3
+06-24 07:05:29.604   519   530 I system_server: Background concurrent copying GC freed 348464(13MB) AllocSpace objects, 15(308KB) LOS objects, 43% free, 31MB/55MB, paused 43us,51us total 202.858ms
+06-24 07:05:29.604   519  1091 D SafetySourceDataValidator: No cert check requested for package com.google.android.permissioncontroller
+06-24 07:05:29.611   519   548 D ActivityManager: sync unfroze 2010 android.process.media for 3
+06-24 07:05:29.612   827   895 D StylusManager: Stylus InputDevice changed: 4 virtio_input_multi_touch_1
+06-24 07:05:29.614   519   519 I ConditionProviders: Disallowing condition provider dev.mobile.maestro (userSet: true)
+06-24 07:05:29.615   827   895 D StylusManager: Stylus InputDevice changed: 10 virtio_input_multi_touch_7
+06-24 07:05:29.617   827   895 D StylusManager: Stylus InputDevice changed: 5 virtio_input_multi_touch_2
+06-24 07:05:29.620   336   364 I netd    : tetherGetStats() -> {[]} <0.48ms>
+06-24 07:05:29.621  5497  5497 D BoundBrokerSvc: onBind: Intent { act=com.google.android.gms.common.BIND_SHARED_PREFS pkg=com.google.android.gms }
+06-24 07:05:29.621  5497  5497 D BoundBrokerSvc: Loading bound service for intent: Intent { act=com.google.android.gms.common.BIND_SHARED_PREFS pkg=com.google.android.gms }
+06-24 07:05:29.622   397   410 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.622   336   364 I netd    : bandwidthSetGlobalAlert(2097152) <0.11ms>
+06-24 07:05:29.623   397   410 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.623   397   410 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.623   397   410 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.623   397   410 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.623   397   410 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.623   397   410 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.623   397   410 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.623   397   410 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.624   397   410 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.624   397   410 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.624   397   410 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.624   397   410 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.624  1631  1631 W MediaProvider: WorkProfileOwnerApps cache is empty
+06-24 07:05:29.624  5497  5497 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.common.BIND_SHARED_PREFS pkg=com.google.android.gms }
+06-24 07:05:29.626   397   410 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.626   397   410 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.626   397   410 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.637   828   828 D PersistedStoragePackageUninstalledReceiver: Received android.intent.action.PACKAGE_FULLY_REMOVED for dev.mobile.maestro for u0
+06-24 07:05:29.639   827   827 D ControlsListingControllerImpl: ServiceConfig reloaded, count: 0
+06-24 07:05:29.645  5497  5497 D BoundBrokerSvc: onBind: Intent { act=com.google.android.gms.common.BIND_SHARED_PREFS pkg=com.google.android.gms }
+06-24 07:05:29.645  5497  5497 D BoundBrokerSvc: Loading bound service for intent: Intent { act=com.google.android.gms.common.BIND_SHARED_PREFS pkg=com.google.android.gms }
+06-24 07:05:29.647  5497  5497 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.common.BIND_SHARED_PREFS pkg=com.google.android.gms }
+06-24 07:05:29.648  1631  2306 I MediaProvider: Begin Intent { act=android.intent.action.PACKAGE_FULLY_REMOVED dat=package: flg=0x5000010 cmp=com.google.android.providers.media.module/com.android.providers.media.MediaService (has extras) }
+06-24 07:05:29.649  1631  2306 D MediaProvider: Deleted 0 Android/media items belonging to dev.mobile.maestro.test on /data/user/0/com.google.android.providers.media.module/databases/external.db
+06-24 07:05:29.650  1631  2306 D MediaGrants: Removed 0 media_grants for 0 user for dev.mobile.maestro.test. Reason: Package orphaned
+06-24 07:05:29.651  1631  2306 I MediaProvider: End Intent { act=android.intent.action.PACKAGE_FULLY_REMOVED dat=package: flg=0x5000010 cmp=com.google.android.providers.media.module/com.android.providers.media.MediaService (has extras) }
+06-24 07:05:29.652   519  1091 D SafetySourceDataValidator: No cert check requested for package com.google.android.permissioncontroller
+06-24 07:05:29.655  5497  7621 I BlockstoreStorage: Clearing all the Blockstore Data for package dev.mobile.maestro [CONTEXT service_id=258 ]
+06-24 07:05:29.655  5497  7621 I BlockstoreStorage: Clearing all the Blockstore Data for 1 packages [CONTEXT service_id=258 ]
+06-24 07:05:29.659   828   828 D PersistedStoragePackageUninstalledReceiver: Received android.intent.action.PACKAGE_FULLY_REMOVED for dev.mobile.maestro.test for u0
+06-24 07:05:29.676  5447  7629 I ProximityAuth: [RecentAppsMediator] Package removed: (user=UserHandle{0}) dev.mobile.maestro
+06-24 07:05:29.680  5497  7258 I ContentMaintenance: Internal cache bytes used: 0; limit: 100000000; download size: 0
+06-24 07:05:29.687  5497  7626 W SQLiteLog: (28) double-quoted string literal: "dev.mobile.maestro"
+06-24 07:05:29.688  5497  5642 I Icing   : doRemovePackageData dev.mobile.maestro
+06-24 07:05:29.691   519   547 W WindowMagnificationMgr: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+06-24 07:05:29.704  5447  7628 I Fitness : FitCleanupIntentOperation received Intent android.intent.action.PACKAGE_REMOVED [CONTEXT service_id=17 ]
+06-24 07:05:29.704  5447  7637 I ProximityAuth: [RecentAppsMediator] Package removed: (user=UserHandle{0}) dev.mobile.maestro.test
+06-24 07:05:29.708   828  7622 E RoleControllerServiceImpl: Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms.supervision, role: android.app.role.SYSTEM_SUPERVISION
+06-24 07:05:29.710  5497  7258 I RealtimeCacheCleanup: Beginning Realtime garbage collection.
+06-24 07:05:29.712   519   762 E AppOps  : attributionTag VCN not declared in manifest of android
+06-24 07:05:29.712   519   749 W WifiService: Couldn't get PackageInfo for package:dev.mobile.maestro.test
+06-24 07:05:29.712   519   749 D WifiService: Remove settings for package:dev.mobile.maestro.test
+06-24 07:05:29.712   519   749 D WifiConfigManager: Remove all networks for app ApplicationInfo{86d1630 dev.mobile.maestro.test}
+06-24 07:05:29.713   519   628 V StorageManagerService: Package dev.mobile.maestro.test does not have legacy storage
+06-24 07:05:29.713   519   603 I RollbackManager: broadcast=ACTION_PACKAGE_FULLY_REMOVED pkg=dev.mobile.maestro.test
+06-24 07:05:29.715   519   620 I InputReader: Reconfiguring input devices, changes=KEYBOARD_LAYOUTS
+06-24 07:05:29.715   519   749 D WifiConfigStore: Writing to stores completed in 2 ms.
+06-24 07:05:29.715   519   749 I PasspointManager: No app ops listener found for dev.mobile.maestro.test
+06-24 07:05:29.715   519   749 W WifiService: Couldn't get PackageInfo for package:dev.mobile.maestro.test
+06-24 07:05:29.715   519   749 D WifiService: Remove settings for package:dev.mobile.maestro.test
+06-24 07:05:29.715   519   749 D WifiConfigManager: Remove all networks for app ApplicationInfo{ea0f706 dev.mobile.maestro.test}
+06-24 07:05:29.718   519   749 D WifiConfigStore: Writing to stores completed in 3 ms.
+06-24 07:05:29.722   519   749 I PasspointManager: No app ops listener found for dev.mobile.maestro.test
+06-24 07:05:29.727   336   364 I netd    : tetherGetStats() -> {[]} <0.26ms>
+06-24 07:05:29.728  5497  7258 I RealtimeCacheCleanup: Finished Realtime garbage collection.
+06-24 07:05:29.729   519   519 I Telecom : CarModeTracker: Package dev.mobile.maestro.test is not tracked.: SSH.oR@AU8🔒
+06-24 07:05:29.729   519   519 I Telecom : InCallController: updateCarModeForConnections: car mode apps: : SSH.oR@AU8🔒
+06-24 07:05:29.729   519   519 I Telecom : InCallController: update carmode current:UserHandle{0} parent:null: SSH.oR@AU8🔒
+06-24 07:05:29.730   827   895 D StylusManager: Stylus InputDevice changed: 14 virtio_input_multi_touch_11
+06-24 07:05:29.731   828  7622 I Role    : com.google.android.gms not qualified for android.app.role.SYSTEM_CALL_STREAMING due to missing RequiredComponent{mIntentFilterData=IntentFilterData{mAction='android.telecom.CallStreamingService', mCategories='[]', mDataScheme='null', mDataType='null'}, mMinTargetSdkVersion=1, mFlags='0', mPermission='android.permission.BIND_CALL_STREAMING_SERVICE', mQueryFlags=0, mMetaData=[]}
+06-24 07:05:29.731   828  7622 E RoleControllerServiceImpl: Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms, role: android.app.role.SYSTEM_CALL_STREAMING
+06-24 07:05:29.731   827   895 D StylusManager: Stylus InputDevice changed: 8 virtio_input_multi_touch_5
+06-24 07:05:29.731   828  7622 W Role    : Default holder doesn't have required signing certificate: com.google.android.apps.work.clouddpc:23962F4B43B9857638EA66F4D419518EAE282491ACDA4B94707BD59003C45E58
+06-24 07:05:29.732   827   895 D StylusManager: Stylus InputDevice changed: 13 virtio_input_multi_touch_10
+06-24 07:05:29.732   827   895 D StylusManager: Stylus InputDevice changed: 11 virtio_input_multi_touch_8
+06-24 07:05:29.733   827   895 D StylusManager: Stylus InputDevice changed: 9 virtio_input_multi_touch_6
+06-24 07:05:29.733   827   895 D StylusManager: Stylus InputDevice changed: 12 virtio_input_multi_touch_9
+06-24 07:05:29.733   827   895 D StylusManager: Stylus InputDevice changed: 7 virtio_input_multi_touch_4
+06-24 07:05:29.733   827   895 D StylusManager: Stylus InputDevice changed: 6 virtio_input_multi_touch_3
+06-24 07:05:29.733   827   895 D StylusManager: Stylus InputDevice changed: 4 virtio_input_multi_touch_1
+06-24 07:05:29.733   827   895 D StylusManager: Stylus InputDevice changed: 10 virtio_input_multi_touch_7
+06-24 07:05:29.733   827   895 D StylusManager: Stylus InputDevice changed: 5 virtio_input_multi_touch_2
+06-24 07:05:29.736   519   519 I ConditionProviders: Disallowing condition provider dev.mobile.maestro.test (userSet: true)
+06-24 07:05:29.741  5497  5541 I Icing   : IndexChimeraService.getServiceInterface callingPackage=com.google.android.gms componentName=AppsCorpus serviceId=36
+06-24 07:05:29.742   397   990 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.744   397   990 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.744  5447  7654 I Fitness : FitCleanupIntentOperation received Intent android.intent.action.PACKAGE_REMOVED [CONTEXT service_id=17 ]
+06-24 07:05:29.745   397   990 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.745   397   990 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.745   397   990 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.745   397   990 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.745   397   990 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.745   397   990 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.745   397   990 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.745   397   990 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.746   397   990 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.746   397   990 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.746   397   990 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.746   397   990 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.746   397   990 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.746   397   990 D AF::TrackHandle: OpPlayAudio: track:55 usage:13 not muted
+06-24 07:05:29.748  5497  7627 I BlockstoreStorage: Clearing all the Blockstore Data for package dev.mobile.maestro.test [CONTEXT service_id=258 ]
+06-24 07:05:29.748  5497  7627 I BlockstoreStorage: Clearing all the Blockstore Data for 1 packages [CONTEXT service_id=258 ]
+06-24 07:05:29.761  5497  7627 W SQLiteLog: (28) double-quoted string literal: "dev.mobile.maestro.test"
+06-24 07:05:29.765  5497  5497 D BoundBrokerSvc: onBind: Intent { act=com.google.android.gms.feedback.internal.IFeedbackService dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsBoundBrokerService }
+06-24 07:05:29.765  5497  5497 D BoundBrokerSvc: Loading bound service for intent: Intent { act=com.google.android.gms.feedback.internal.IFeedbackService dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsBoundBrokerService }
+06-24 07:05:29.779   336   364 I netd    : tetherGetStats() -> {[]} <0.24ms>
+06-24 07:05:29.791   519  2212 D CompatibilityChangeReporter: Compat change id reported: 161252188; UID 10192; state: DISABLED
+06-24 07:05:29.794  5497  7258 I Icing   : Usage reports ok 1, Failed Usage reports 0, indexed 0, rejected 0
+06-24 07:05:29.794  5497  7258 I Icing   : doRemovePackageData dev.mobile.maestro.test
+06-24 07:05:29.801  1613  1613 I AiAiEcho: AppFetcherImplV2 onPackageRemoved dev.mobile.maestro.
+06-24 07:05:29.805  1613  2006 I AiAiEcho: EchoSearch: WidgetFetcherImpl is initialized with [28] widgets [reason=package removed for userId: 0]
+06-24 07:05:29.806  1085  1085 D Launcher.Model: package removed received dev.mobile.maestro
+06-24 07:05:29.806  1085  1124 D PackageUpdatedTask: Removing app icondev.mobile.maestro
+06-24 07:05:29.812  1085  1124 D ModelWriter: removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro] removedComponents=[]]
+06-24 07:05:29.814  5497  7258 I Icing   : Indexing com.google.android.gms-apps from com.google.android.gms
+06-24 07:05:29.817  1613  1950 I AiAiEcho: [pnb-agg] Reload pnb aggregation on events deleted
+06-24 07:05:29.817  1613  1950 I AiAiEcho: [pnb-agg] pnb aggregation disabled.
+06-24 07:05:29.820   519   547 W WindowMagnificationMgr: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+06-24 07:05:29.822  5497  5541 I Icing   : IndexChimeraService.getServiceInterface callingPackage=com.google.android.gms componentName=null serviceId=30
+06-24 07:05:29.825  1613  1613 I AiAiEcho: AppFetcherImplV2 onPackageRemoved dev.mobile.maestro.test.
+06-24 07:05:29.826  1085  1085 D Launcher.Model: package removed received dev.mobile.maestro.test
+06-24 07:05:29.826  1085  1124 D PackageUpdatedTask: Removing app icondev.mobile.maestro.test
+06-24 07:05:29.828  1613  1950 I AiAiEcho: [pnb-agg] Reload pnb aggregation on events deleted
+06-24 07:05:29.828  1613  1950 I AiAiEcho: [pnb-agg] pnb aggregation disabled.
+06-24 07:05:29.830  1085  1124 D ModelWriter: removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[dev.mobile.maestro.test] removedComponents=[]]
+06-24 07:05:29.831  1613  2006 I AiAiEcho: EchoSearch: WidgetFetcherImpl is initialized with [28] widgets [reason=package removed for userId: 0]
+06-24 07:05:29.835  5497  7258 I Icing   : Indexing done com.google.android.gms-apps
+06-24 07:05:29.871  5497  7258 I Icing   : Usage reports ok 0, Failed Usage reports 0, indexed 0, rejected 0
+06-24 07:05:29.872  5497  7258 I Icing   : Indexing com.google.android.gms-apps from com.google.android.gms
+06-24 07:05:29.872  5497  7258 I Icing   : Indexing done com.google.android.gms-apps
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: <DWB> Application not found: dev.mobile.maestro.test
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: android.content.pm.PackageManager$NameNotFoundException: dev.mobile.maestro.test
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at android.app.ApplicationPackageManager.getApplicationInfoAsUser(ApplicationPackageManager.java:507)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at android.app.ApplicationPackageManager.getApplicationInfo(ApplicationPackageManager.java:490)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at android.app.ApplicationPackageManager.getApplicationInfo(ApplicationPackageManager.java:484)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at czo.e(PG:2)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at czo.f(PG:7)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at crm.f(PG:14)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at cdm.apply(PG:74)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at j$.util.stream.i.accept(SourceFile:27)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at j$.util.stream.P0.accept(SourceFile:3)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at j$.util.a.forEachRemaining(SourceFile:20)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at j$.util.stream.c.v(SourceFile:21)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at j$.util.stream.c.C(SourceFile:8)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at j$.util.stream.I0.e(SourceFile:1)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at j$.util.stream.c.F(SourceFile:35)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at j$.util.stream.g1.collect(SourceFile:83)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at bsv.a(PG:14)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at jza.a(PG:30)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at jza.a(PG:42)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at lne.a(PG:1)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at lmk.run(PG:4)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at lng.run(PG:1)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at llo.run(PG:3)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at idn.run(PG:5)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at huo.run(PG:51)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at java.lang.Thread.run(Thread.java:1012)
+06-24 07:05:29.907  1507  1696 W AppInfoHelper: 	at idx.run(PG:5)
+06-24 07:05:29.945   827   827 D TileServices: Couldn't find tile for ComponentInfo{com.google.android.apps.wellbeing/com.google.android.apps.wellbeing.focusmode.quicksettings.FocusModeTileService}(0)
+06-24 07:05:29.948  1621  1621 I GsaVoiceInteractionSrv: O received Intent { act=android.intent.action.PACKAGE_REMOVED dat=package: flg=0x4000010 (has extras) }
+06-24 07:05:29.951  1621  1621 I GsaVoiceInteractionSrv: O received Intent { act=android.intent.action.PACKAGE_REMOVED dat=package: flg=0x4000010 (has extras) }
+06-24 07:05:29.958  1762  2390 W SearchServiceCore: Abort, client detached.
+06-24 07:05:29.973   827   827 D TileServices: Couldn't find tile for ComponentInfo{com.google.android.apps.wellbeing/com.google.android.apps.wellbeing.focusmode.quicksettings.FocusModeTileService}(0)
+06-24 07:05:30.001  7669  7669 W BpBinder: Linking to death on android.gui.ISurfaceComposer but there are no threads (yet?) listening to incoming transactions. See ProcessState::startThreadPool and ProcessState::setThreadPoolMaxThreadCount. Generally you should setup the binder threadpool before other initialization steps.
+06-24 07:05:30.002  7669  7669 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+06-24 07:05:30.015   136   136 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+06-24 07:05:30.015  7669  7670 I Gralloc4: mapper 4.x is not supported
+06-24 07:05:30.197     0     0 I servicemanager: Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest.
+06-24 07:05:30.143  7671  7671 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+06-24 07:05:30.147  7671  7671 I AndroidRuntime: Using default boot image
+06-24 07:05:30.147  7671  7671 I AndroidRuntime: Leaving lock profiling enabled
+06-24 07:05:30.148  7671  7671 I app_process: Core platform API reporting enabled, enforcing=false
+06-24 07:05:30.149  7671  7671 I app_process: Using CollectorTypeCC GC.
+06-24 07:05:30.236  7671  7671 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+06-24 07:05:30.244  7671  7671 D app_process: Time zone APEX ICU file found: /apex/com.android.tzdata/etc/icu/icu_tzdata.dat
+06-24 07:05:30.245  7671  7671 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt72l.dat
+06-24 07:05:30.251  7671  7671 W app_process: Unexpected CPU variant for x86: x86_64.
+06-24 07:05:30.251  7671  7671 W app_process: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, tremont, kabylake, default
+06-24 07:05:30.254  7671  7671 W app_process: ClassLoaderContext shared library size mismatch. Expected=2, found=0 (PCL[]{PCL[/system/framework/android.test.base.jar*836642756]#PCL[/system/framework/android.test.mock.jar*3186112116]} | PCL[])
+06-24 07:05:30.255  7671  7671 W app_process: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[]{PCL[/system/framework/android.test.runner.jar*4168958247]{PCL[/system/framework/android.test.base.jar*836642756]#PCL[/system/framework/android.test.mock.jar*3186112116]}#PCL[/system/framework/android.test.base.jar*836642756]} | PCL[/system/framework/android.test.runner.jar*4168958247])
+06-24 07:05:30.268  7671  7671 W libc    : Access denied finding property "ro.product.name_for_attestation"
+06-24 07:05:30.268  7671  7671 W libc    : Access denied finding property "ro.product.brand_for_attestation"
+06-24 07:05:30.268  7671  7671 W libc    : Access denied finding property "ro.product.model_for_attestation"
+06-24 07:05:30.269  7671  7671 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+06-24 07:05:30.271  7671  7671 D UiAutomationConnection: Created on user UserHandle{0}
+06-24 07:05:30.271  7671  7671 I UiAutomation: Initialized for user 0 on display 0
+06-24 07:05:30.271  7671  7671 W UiAutomation: Created with deprecatead constructor, assumes DEFAULT_DISPLAY
+06-24 07:05:30.272   519  3263 D AccessibilityManagerService: changeCurrentUserForTestAutomationIfNeededLocked(0): ignoring because device doesn't support visible background users
+06-24 07:05:30.272   519  3263 I UiAutomationManager: Registering UiTestAutomationService (id=com.android.server.accessibility/UiAutomation) when called by user 0
+06-24 07:05:30.264  7671  7671 W main    : type=1400 audit(0.0:71): avc:  denied  { read } for  name="u:object_r:build_attestation_prop:s0" dev="tmpfs" ino=86 scontext=u:r:shell:s0 tcontext=u:object_r:build_attestation_prop:s0 tclass=file permissive=0
+06-24 07:05:30.273   519  3263 W WindowMagnificationMgr: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+06-24 07:05:30.274   519   519 D BatterySaverPolicy: accessibility changed to true, updating policy.
+06-24 07:05:30.264  7671  7671 W main    : type=1400 audit(0.0:72): avc:  denied  { read } for  name="u:object_r:build_attestation_prop:s0" dev="tmpfs" ino=86 scontext=u:r:shell:s0 tcontext=u:object_r:build_attestation_prop:s0 tclass=file permissive=0
+06-24 07:05:30.281  1762  2246 I A       : NGA disabled since it's running Panthera and at least one a11y feature is on.
+06-24 07:05:30.281  1762  2246 I A       : Nga state changed to NgaStateDetails{state=DISABLED, isSpecialExperience=false}
+06-24 07:05:30.264  7671  7671 W main    : type=1400 audit(0.0:73): avc:  denied  { read } for  name="u:object_r:build_attestation_prop:s0" dev="tmpfs" ino=86 scontext=u:r:shell:s0 tcontext=u:object_r:build_attestation_prop:s0 tclass=file permissive=0
+06-24 07:05:30.282  1613  2310 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+06-24 07:05:30.282  1613  1950 I AiAiEcho: Predicting[0]: 
+06-24 07:05:30.282  1613  1950 I AiAiEcho: EchoTargets: 
+06-24 07:05:30.282  1613  1950 I AiAiEcho: Filtered by AiAi flag check: 
+06-24 07:05:30.282  1613  1950 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata: 
+06-24 07:05:30.283  1613  1950 I AiAiEcho: Predicting[0]: 
+06-24 07:05:30.283  1613  1950 I AiAiEcho: EchoTargets: 
+06-24 07:05:30.283  1613  1950 I AiAiEcho: Filtered by AiAi flag check: 
+06-24 07:05:30.283  1613  1950 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata: 
+06-24 07:05:30.284  1621  1675 I A       : APA or Classic session decision: SessionDecision(sessionVariance=CLASSIC, platformVariance=CLASSIC, justification=CURRENT_PLATFORM_VARIANCE).
+06-24 07:05:30.284  1621  1675 I A       : [Memory] eligibility: StashEligibility{4}
+06-24 07:05:30.285  1621  2134 I A       : Unsubscribed to apa or classic variant change.
+06-24 07:05:30.285  1613  1950 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+06-24 07:05:30.285  1613  1950 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+06-24 07:05:30.286   827   827 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+06-24 07:05:30.287  7671  7684 V UiAutomation: Init UiAutomation@379a61[id=5, displayId=0, flags=0]
+06-24 07:05:30.289   519   534 W WindowMagnificationMgr: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+06-24 07:05:30.289  1613  2310 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+06-24 07:05:30.294  1613  1950 I AiAiEcho: Predicting[0]: 
+06-24 07:05:30.294  1613  1950 I AiAiEcho: EchoTargets: 
+06-24 07:05:30.294  1613  1950 I AiAiEcho: Filtered by AiAi flag check: 
+06-24 07:05:30.294  1613  1950 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata: 
+06-24 07:05:30.294  1613  1950 I AiAiEcho: Predicting[0]: 
+06-24 07:05:30.294  1613  1950 I AiAiEcho: EchoTargets: 
+06-24 07:05:30.294  1613  1950 I AiAiEcho: Filtered by AiAi flag check: 
+06-24 07:05:30.294  1613  1950 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata: 
+06-24 07:05:30.295   519   534 D SafetySourceDataValidator: No cert check requested for package com.google.android.permissioncontroller
+06-24 07:05:30.295  1613  1950 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+06-24 07:05:30.295  1613  1950 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+06-24 07:05:30.295   827   827 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+06-24 07:05:30.576  7379  7399 D EGL_emulation: app_time_stats: avg=500.22ms min=499.59ms max=500.85ms count=2
+06-24 07:05:30.634   814   814 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+06-24 07:05:31.282  7671  7671 I AccessibilityNodeInfoDumper: Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@12896; boundsInParent: Rect(0, 0 - 320, 0); boundsInScreen: Rect(0, 0 - 320, 0); boundsInWindow: Rect(0, 0 - 320, 0); packageName: com.hanapkalinga.mobile; className: android.widget.LinearLayout; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:31.282  7671  7671 I AccessibilityNodeInfoDumper: Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@124d5; boundsInParent: Rect(0, 0 - 320, 0); boundsInScreen: Rect(0, 0 - 320, 0); boundsInWindow: Rect(0, 0 - 320, 0); packageName: com.hanapkalinga.mobile; className: android.view.ViewGroup; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:31.282  7671  7671 I AccessibilityNodeInfoDumper: Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@1a477; boundsInParent: Rect(0, 0 - 320, 0); boundsInScreen: Rect(0, 0 - 320, 0); boundsInWindow: Rect(0, 0 - 320, 0); packageName: com.hanapkalinga.mobile; className: android.widget.LinearLayout; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:31.282  7671  7671 I AccessibilityNodeInfoDumper: Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@1a0b6; boundsInParent: Rect(0, 0 - 320, 0); boundsInScreen: Rect(0, 0 - 320, 0); boundsInWindow: Rect(0, 0 - 320, 0); packageName: com.hanapkalinga.mobile; className: android.view.ViewGroup; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: null; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:31.282  7671  7671 I AccessibilityNodeInfoDumper: Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@182ae; boundsInParent: Rect(0, 0 - 1, 1); boundsInScreen: Rect(20, 293 - 21, 294); boundsInWindow: Rect(20, 293 - 21, 294); packageName: com.hanapkalinga.mobile; className: android.view.ViewGroup; text: null; error: null; maxTextLength: -1; stateDescription: null; contentDescription: null; tooltipText: null; containerTitle: null; viewIdResName: login_captcha_ready; uniqueId: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: true; visible: false; actions: [AccessibilityAction: ACTION_SELECT - null, AccessibilityAction: ACTION_CLEAR_SELECTION - null, AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null, AccessibilityAction: ACTION_SHOW_ON_SCREEN - null]; isTextSelectable: false
+06-24 07:05:31.286  7671  7671 W AccessibilityNodeInfoDumper: Fetch time: 6ms
+06-24 07:05:31.287  1613  2310 I AiAiEcho: Settings changed for uri: content://settings/secure/accessibility_enabled
+06-24 07:05:31.287   519   534 W WindowMagnificationMgr: requestConnection duplicated request: connect=false, mConnectionState=DISCONNECTED
+06-24 07:05:31.287   519   534 D AccessibilityManagerService: restoreCurrentUserForTestAutomationIfNeededLocked(): ignoring because device doesn't support visible background users
+06-24 07:05:31.288  1613  1950 I AiAiEcho: Predicting[0]: 
+06-24 07:05:31.288  1613  1950 I AiAiEcho: EchoTargets: 
+06-24 07:05:31.288  1613  1950 I AiAiEcho: Filtered by AiAi flag check: 
+06-24 07:05:31.288  1613  1950 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata: 
+06-24 07:05:31.288   519   519 D BatterySaverPolicy: accessibility changed to false, updating policy.
+06-24 07:05:31.288  1613  1950 I AiAiEcho: Predicting[0]: 
+06-24 07:05:31.288  1613  1950 I AiAiEcho: EchoTargets: 
+06-24 07:05:31.288  1613  1950 I AiAiEcho: Filtered by AiAi flag check: 
+06-24 07:05:31.288  1613  1950 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata: 
+06-24 07:05:31.290  1762  2273 I A       : NGA enabled in interactor.
+06-24 07:05:31.290  1762  2273 I A       : Nga state changed to NgaStateDetails{state=ENABLED, isSpecialExperience=false}
+06-24 07:05:31.292  1621  3992 I A       : Initializing all components
+06-24 07:05:31.292  1621  3992 I A       : APA or Classic session decision: SessionDecision(sessionVariance=CLASSIC, platformVariance=CLASSIC, justification=CURRENT_PLATFORM_VARIANCE).
+06-24 07:05:31.292  1621  3992 I A       : [Memory] eligibility: StashEligibility{6}
+06-24 07:05:31.293  1613  1950 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+06-24 07:05:31.293  1613  1950 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+06-24 07:05:31.296  1621  2118 I A       : onIsEnabledChanged, isEnabled: false
+06-24 07:05:31.296  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.296  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.296  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.296  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.296   827   827 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+06-24 07:05:31.296  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.296  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.296  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.296  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.296  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.296  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.296  1621  2118 I A       : onOpaVisibilityChanged: false
+06-24 07:05:31.296  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.296  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.296  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.296  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.296  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.296  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.296  1621  2118 I A       : Setting session to type: NO_SESSION
+06-24 07:05:31.296  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.296  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.296  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.296  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.296  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.296  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.296  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.297  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.297  1621  2118 I A       : setNavBarVisible: GestureNavBarVisible{navbarVisible=true}
+06-24 07:05:31.297  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.297  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.297  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.297  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.297  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.297  1621  2118 W A       : Disposing empty manager. Did you forgot to subscribe observables?
+06-24 07:05:31.297  1621  2118 I A       : onDisabled. Registered: false
+06-24 07:05:31.297  1621  2118 I A       : on opa visibility changed false
+06-24 07:05:31.297  1621  2118 I A       : on opa visibility changed false
+06-24 07:05:31.298  1621  2134 I A       : State changed: IDLE => IDLE by NGA_STATE_CHANGED and N/A with Optional.empty
+06-24 07:05:31.298  1621  2134 I A       : Recognizer choice: (recognizer_type: 1, recognizer_mode: 1, choice_reason: 4)
+06-24 07:05:31.298  1621  2134 I A       : onActiveStateChangeEvent: IDLE => IDLE
+06-24 07:05:31.298  1621  2134 I A       : #onActiveStateChangeEvent, newState: IDLE, previousState: IDLE.
+06-24 07:05:31.299  1621  2118 I NgaEntryPointEventSendr: setupConnection
+06-24 07:05:31.300  7671  7671 D AndroidRuntime: Shutting down VM
+06-24 07:05:31.311  1762  1762 I A       : Creating pss binder().
+06-24 07:05:31.312  1621  2134 I A       : Initialize
+06-24 07:05:31.313  1621  2134 I A       : stopListening(NGA_PAUSED_UNKNOWN_REASON, NGA_CREATE), idleOverride=NOT_LISTENING
+06-24 07:05:31.313  1621  2118 I NgaEntryPointEventSendr: State changed: Disconnected => Connecting
+06-24 07:05:31.313  1621  2118 I NgaEntryPointEventSendr: onServiceConnected
+06-24 07:05:31.313  1762  2391 I A       : Calling beginBinderSession().
+06-24 07:05:31.314  1762  2391 I A       : beginBinderSession(): calling binder
+06-24 07:05:31.314  1621  2118 I NgaEntryPointEventSendr: State changed: Connecting => Ready
+06-24 07:05:31.316   519   534 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+06-24 07:05:31.319  1621  2134 I A       : Successfully initialized all components
+06-24 07:05:31.322  1621  1621 V ClearcutMetricXmitter: Transmission is done.
+06-24 07:05:31.325  1762  2390 W A       : UiCallbackStub-onGenericEvent[ServiceEvent = 60] task was not run. Callback from Service received after client was disposed.
+06-24 07:05:31.327  1762  2390 W SearchServiceCore: Abort, client detached.
+06-24 07:05:31.329  1762  2388 I PBSessionCacheImpl: Deleted sessionId[7751140237086671] from persistence.
+06-24 07:05:31.330  1621  2118 I NgaEntryPointEventSendr: State changed: Ready => Disconnected (onOpaDisconnected)
+06-24 07:05:31.576  7379  7399 D EGL_emulation: app_time_stats: avg=500.02ms min=499.49ms max=500.55ms count=2
+06-24 07:05:31.979   827   827 D StatusBarIconController: ignoring old pipeline callbacks, because the new mobile icons are enabled

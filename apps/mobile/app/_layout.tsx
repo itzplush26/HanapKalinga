@@ -46,23 +46,6 @@ export default function RootLayout() {
   }
 
   return (
-<<<<<<< HEAD
-    <ErrorBoundary>
-      <AuthProvider>
-        <ThemeProvider>
-        <StatusBar style="dark" />
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" options={{ title: 'Home' }} />
-          <Stack.Screen name="(auth)" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="(public)" />
-          <Stack.Screen name="(family)" />
-          <Stack.Screen name="(nurse)" />
-          <Stack.Screen name="(admin)" />
-        </Stack>
-        </ThemeProvider>
-      </AuthProvider>
-    </ErrorBoundary>
-=======
     <ThemeProvider>
       <ErrorBoundary>
         <AuthProvider>
@@ -78,6 +61,5 @@ export default function RootLayout() {
         </AuthProvider>
       </ErrorBoundary>
     </ThemeProvider>
->>>>>>> f8382e9 (test(mobile): add testIDs to verification and nurse screens)
   );
 }

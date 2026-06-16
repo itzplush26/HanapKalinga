@@ -1,0 +1,11 @@
+# shard: nurse
+# total: 7
+accept-booking|PASS|
+bookings-list|PASS|
+decline-booking|PASS|
+login-success|PASS|
+messages|PASS|
+session-restore|PASS|
+set-availability|PASS|
+# passed: 7
+# failed: 0

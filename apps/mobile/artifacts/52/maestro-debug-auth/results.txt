@@ -1,0 +1,9 @@
+# shard: auth
+# total: 5
+forgot-password|FAIL|Assert that id: forgotPassword_button_submit is not visible... FAILED
+login-failure|FAIL| > Flow login-failure
+login-success-family|PASS|
+login-success|FAIL|Assert that id: login_button_submit is not visible... FAILED
+session-restore|FAIL|Assert that id: login_button_submit is not visible... FAILED
+# passed: 1
+# failed: 4
