@@ -8,7 +8,7 @@ export type VerificationStatus =
   | "rejected"
   | "resubmission_required";
 
-export type BookingStatus = "pending" | "accepted" | "declined" | "completed" | "cancelled";
+export type BookingStatus = "pending" | "accepted" | "declined" | "completed" | "cancelled" | "pending_completion" | "disputed";
 
 export type Shift = "morning" | "afternoon" | "evening" | "full_day";
 
@@ -31,6 +31,7 @@ export interface Profile {
   city: string | null;
   barangay: string | null;
   address: string | null;
+  profile_photo_url: string | null;
   created_at: string;
 }
 
@@ -69,6 +70,59 @@ export interface Booking {
   shift: Shift | null;
   status: BookingStatus;
   notes: string | null;
+  created_at: string;
+}
+
+export type CareRequestStatus = 'open' | 'filled' | 'cancelled';
+
+export type ApplicationStatus = 'pending' | 'shortlisted' | 'accepted' | 'declined';
+
+export interface CareRequest {
+  id: string;
+  family_id: string;
+  title: string;
+  care_type: string;
+  region: string;
+  city: string;
+  barangay: string;
+  required_specializations: string[];
+  budget_band: string;
+  start_date: string;
+  description: string | null;
+  status: CareRequestStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CareRequestApplication {
+  id: string;
+  care_request_id: string;
+  nurse_id: string;
+  message: string | null;
+  status: ApplicationStatus;
+  created_at: string;
+}
+
+export type IncidentReportStatus = 'pending' | 'reviewed' | 'resolved';
+
+export interface IncidentReport {
+  id: string;
+  reporter_id: string;
+  reported_user_id: string;
+  booking_id: string | null;
+  category: string;
+  description: string;
+  evidence_url: string | null;
+  status: IncidentReportStatus;
+  admin_notes: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+}
+
+export interface UserBlock {
+  id: string;
+  blocker_id: string;
+  blocked_id: string;
   created_at: string;
 }
 
