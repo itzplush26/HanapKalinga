@@ -1,7 +1,7 @@
 import { useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
-import { LogOut, LayoutDashboard, ShieldCheck, Stethoscope, Users, CalendarDays } from 'lucide-react-native';
+import { LogOut, LayoutDashboard, ShieldCheck, Stethoscope, Users, CalendarDays, Flag } from 'lucide-react-native';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { colors } from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
@@ -14,6 +14,7 @@ const TABS = [
   { name: 'nurses', label: 'Nurses', icon: Stethoscope },
   { name: 'families', label: 'Families', icon: Users },
   { name: 'bookings', label: 'Bookings', icon: CalendarDays },
+  { name: 'reports', label: 'Reports', icon: Flag },
 ] as const;
 
 function AdminHeader() {
@@ -133,6 +134,7 @@ export default function AdminLayout() {
       <Stack.Screen name="nurses" />
       <Stack.Screen name="families" />
       <Stack.Screen name="bookings" />
+      <Stack.Screen name="reports" />
     </Stack>
   );
 }
