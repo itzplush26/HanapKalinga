@@ -12,3 +12,7 @@ export function getSupabaseConfig(): SupabaseConfig {
   
   return { url, anonKey };
 }
+
+export function getApiUrl(): string {
+  return process.env.NEXT_PUBLIC_API_URL ?? process.env.EXPO_PUBLIC_API_URL ?? "";
+}
