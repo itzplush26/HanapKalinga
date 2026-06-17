@@ -82,9 +82,39 @@ jobs:
           path: ${{ runner.temp }}/app.apk
           retention-days: 1
 
+  seed-e2e:
+    name: Seed E2E test data
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      ADMIN_EMAIL: ${{ steps.seed.outputs.ADMIN_EMAIL }}
+      FAMILY_EMAIL: ${{ steps.seed.outputs.FAMILY_EMAIL }}
+      NURSE_EMAIL: ${{ steps.seed.outputs.NURSE_EMAIL }}
+      PASSWORD: ${{ steps.seed.outputs.PASSWORD }}
+      BOOKING_ID: ${{ steps.seed.outputs.BOOKING_ID }}
+      NURSE_ID: ${{ steps.seed.outputs.NURSE_ID }}
+      VERIFICATION_ID: ${{ steps.seed.outputs.VERIFICATION_ID }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Run seed
+        id: seed
+        run: |
+          cd ${{ github.workspace }}
+          node apps/mobile/scripts/seed-e2e.mjs | tee /tmp/seed-output.txt
+          grep -oE '^[A-Z_]+=.+' /tmp/seed-output.txt >> $GITHUB_OUTPUT
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
   maestro-android:
     name: Maestro (${{ matrix.shard }})
-    needs: build-apk
+    needs: [build-apk, seed-e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -161,12 +191,7 @@ jobs:
           emulator-boot-timeout: 120
           script: |
             adb install ${{ runner.temp }}/app.apk
-
-            cd ${{ github.workspace }} && node apps/mobile/scripts/seed-e2e.mjs
-            maestro test apps/mobile/maestro/${{ matrix.shard }}/ --env APP_ID=com.hanapkalinga.mobile --env ENV=${{ inputs.environment || 'staging' }} --retry-on-failure=2; E=$?; node apps/mobile/scripts/cleanup-e2e.mjs; exit $E
-        env:
-          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+            case ${{ matrix.shard }} in nurse) E="${{ needs.seed-e2e.outputs.NURSE_EMAIL }}" ;; family|auth) E="${{ needs.seed-e2e.outputs.FAMILY_EMAIL }}" ;; admin) E="${{ needs.seed-e2e.outputs.ADMIN_EMAIL }}" ;; esac; maestro test apps/mobile/maestro/${{ matrix.shard }}/ --env APP_ID=com.hanapkalinga.mobile --env ENV=${{ inputs.environment || 'staging' }} --env TEST_EMAIL="$E" --env TEST_PASSWORD="${{ needs.seed-e2e.outputs.PASSWORD }}" --env BOOKING_ID="${{ needs.seed-e2e.outputs.BOOKING_ID }}" --env NURSE_ID="${{ needs.seed-e2e.outputs.NURSE_ID }}" --env VERIFICATION_ID="${{ needs.seed-e2e.outputs.VERIFICATION_ID }}"
 
       - name: Upload Maestro screenshots (on failure)
         if: failure()
@@ -183,3 +208,23 @@ jobs:
           name: maestro-report-${{ matrix.shard }}
           path: ~/.maestro/reports/
           retention-days: 7
+
+  cleanup-e2e:
+    name: Cleanup E2E test data
+    needs: [maestro-android]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Run cleanup
+        run: node apps/mobile/scripts/cleanup-e2e.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
