@@ -17,6 +17,7 @@ env:
     text: "Messages"
 
 # Verify messages screen loaded
-- assertVisible:
-    id: "messages_list_conversations"
+- extendedWaitUntil:
+    visible:
+      id: "messages_list_conversations"
     timeout: 15000
