@@ -86,8 +86,7 @@ async function createUser(email, role, fullName) {
 }
 
 async function createNurse(id, overrides = {}) {
-  await rest("/nurses", "POST", {
-    id,
+  await rest(`/nurses?id=eq.${id}`, "PATCH", {
     provider_type: "nurse",
     prc_license_no: `PRC-${TIMESTAMP}`,
     prc_document_url: `https://example.com/prc-${TIMESTAMP}.pdf`,
