@@ -14,7 +14,7 @@ env:
 
 # Navigate to Verifications tab
 - tapOn:
-    accessibilityLabel: "Verifications tab"
+    text: "Verifications tab"
 
 # Wait for verification queue
 - extendedWaitUntil:
