@@ -18,8 +18,9 @@ env:
     text: "Bookings"
 
 # Wait for bookings list
-- assertVisible:
-    id: "nurseBookings_list_bookings"
+- extendedWaitUntil:
+    visible:
+      id: "nurseBookings_list_bookings"
     timeout: 15000
 
 # Tap on a pending booking
@@ -27,8 +28,9 @@ env:
     id: "nurseBookings_card_${BOOKING_ID}"
 
 # Wait for booking detail
-- assertVisible:
-    id: "nurseBookingDetail_button_accept"
+- extendedWaitUntil:
+    visible:
+      id: "nurseBookingDetail_button_accept"
     timeout: 10000
 
 # Tap accept
@@ -36,6 +38,7 @@ env:
     id: "nurseBookingDetail_button_accept"
 
 # Wait for confirmation state
-- assertNotVisible:
-    id: "nurseBookingDetail_button_accept"
+- extendedWaitUntil:
+    notVisible:
+      id: "nurseBookingDetail_button_accept"
     timeout: 10000

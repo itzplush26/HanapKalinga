@@ -13,8 +13,9 @@ env:
       TEST_PASSWORD: ${TEST_PASSWORD}
 
 # Wait for nurse dashboard (availability is a nurse-specific element)
-- assertVisible:
-    id: "availability_button_save"
+- extendedWaitUntil:
+    visible:
+      id: "availability_button_save"
     timeout: 15000
 
 # Navigate to Schedule tab
@@ -22,8 +23,9 @@ env:
     text: "Schedule"
 
 # Wait for availability grid
-- assertVisible:
-    id: "availability_grid_mon"
+- extendedWaitUntil:
+    visible:
+      id: "availability_grid_mon"
     timeout: 10000
 
 # Toggle a morning shift on Monday
@@ -35,6 +37,7 @@ env:
     id: "availability_button_save"
 
 # Verify save completed (button no longer in loading state)
-- assertNotVisible:
-    text: "Saving"
+- extendedWaitUntil:
+    notVisible:
+      text: "Saving"
     timeout: 10000
