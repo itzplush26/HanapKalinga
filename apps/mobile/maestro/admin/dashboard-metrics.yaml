@@ -13,15 +13,18 @@ env:
       TEST_PASSWORD: ${TEST_PASSWORD}
 
 # Wait for admin dashboard
-- assertVisible:
-    id: "dashboard_metrics_pendingVerifications"
+- extendedWaitUntil:
+    visible:
+      id: "dashboard_metrics_pendingVerifications"
     timeout: 15000
 
 # Verify all metric cards are displayed
-- assertVisible:
-    id: "dashboard_metrics_totalBookings"
+- extendedWaitUntil:
+    visible:
+      id: "dashboard_metrics_totalBookings"
     timeout: 5000
 
-- assertVisible:
-    id: "dashboard_metrics_totalSignups"
+- extendedWaitUntil:
+    visible:
+      id: "dashboard_metrics_totalSignups"
     timeout: 5000

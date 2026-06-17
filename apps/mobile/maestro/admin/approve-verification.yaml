@@ -18,8 +18,9 @@ env:
     accessibilityLabel: "Verifications tab"
 
 # Wait for queue
-- assertVisible:
-    id: "verificationQueue_list_requests"
+- extendedWaitUntil:
+    visible:
+      id: "verificationQueue_list_requests"
     timeout: 15000
 
 # Tap on verification request
@@ -27,8 +28,9 @@ env:
     id: "verificationQueue_card_${VERIFICATION_ID}"
 
 # Wait for detail screen
-- assertVisible:
-    id: "verificationDetail_text_name"
+- extendedWaitUntil:
+    visible:
+      id: "verificationDetail_text_name"
     timeout: 10000
 
 # Tap approve
@@ -36,6 +38,7 @@ env:
     id: "verificationDetail_button_approve"
 
 # Wait for action to complete and return to queue
-- assertVisible:
-    id: "verificationQueue_list_requests"
+- extendedWaitUntil:
+    visible:
+      id: "verificationQueue_list_requests"
     timeout: 15000
