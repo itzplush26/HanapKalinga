@@ -18,8 +18,9 @@ env:
     text: "Browse"
 
 # Wait for nurse list
-- assertVisible:
-    id: "browse_list_nurses"
+- extendedWaitUntil:
+    visible:
+      id: "browse_list_nurses"
     timeout: 10000
 
 # Tap on nurse card
@@ -27,8 +28,9 @@ env:
     id: "browse_card_nurse_${NURSE_ID}"
 
 # Verify nurse detail screen loaded
-- assertVisible:
-    id: "nurseDetail_text_name"
+- extendedWaitUntil:
+    visible:
+      id: "nurseDetail_text_name"
     timeout: 10000
 
 # Tap request booking
@@ -36,8 +38,9 @@ env:
     id: "nurseDetail_button_requestBooking"
 
 # Wait for new booking screen
-- assertVisible:
-    id: "bookingNew_picker_date"
+- extendedWaitUntil:
+    visible:
+      id: "bookingNew_picker_date"
     timeout: 10000
 
 # Select patient condition
@@ -73,6 +76,7 @@ env:
     id: "bookingNew_button_submit"
 
 # Wait for booking success alert
-- assertVisible:
-    text: "Booking Requested"
+- extendedWaitUntil:
+    visible:
+      text: "Booking Requested"
     timeout: 15000
