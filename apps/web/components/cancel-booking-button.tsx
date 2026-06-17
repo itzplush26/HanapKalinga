@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
+import { SUPPORT_EMAIL } from "@/lib/constants";
 
 const FAMILY_REASONS = [
   "Schedule changed",
@@ -30,21 +31,32 @@ export function CancelBookingButton({ bookingId, cancelledBy, onCancelled }: Can
   const [reason, setReason] = useState("");
   const [customReason, setCustomReason] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const reasons = cancelledBy === "family" ? FAMILY_REASONS : NURSE_REASONS;
 
   async function confirmCancel() {
     const finalReason = reason === "Other" ? customReason.trim() : reason;
     if (!finalReason) return;
     setLoading(true);
+    setError(null);
     const response = await fetch(`/api/bookings/${bookingId}/cancel`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cancelledBy, reason: finalReason })
     });
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
     setLoading(false);
     if (response.ok) {
       setOpen(false);
       onCancelled();
+      return;
+    }
+
+    const backendError = payload?.error ?? "";
+    if (backendError.toLowerCase().includes("cannot be cancelled")) {
+      setError(`${backendError} Contact ${SUPPORT_EMAIL} if you need assistance.`);
+    } else {
+      setError(backendError || `Could not cancel this booking. Contact ${SUPPORT_EMAIL}.`);
     }
   }
 
@@ -76,6 +88,7 @@ export function CancelBookingButton({ bookingId, cancelledBy, onCancelled }: Can
                 />
               ) : null}
             </div>
+            {error ? <p className="mt-2 text-sm text-rose-600">{error}</p> : null}
             <div className="mt-4 flex gap-2">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                 Keep booking

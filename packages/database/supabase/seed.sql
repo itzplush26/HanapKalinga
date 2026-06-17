@@ -10,7 +10,7 @@ begin
     raise exception 'auth.instances is empty — cannot seed admin user.';
   end if;
 
-  select id into admin_id from auth.users where email = 'admin@hanapkalinga.ph';
+  select id into admin_id from auth.users where email = 'admin@hanapkalinga.com';
 
   if admin_id is null then
     admin_id := gen_random_uuid();
@@ -33,7 +33,7 @@ begin
       instance,
       'authenticated',
       'authenticated',
-      'admin@hanapkalinga.ph',
+      'admin@hanapkalinga.com',
       crypt('ChangeMe123!', gen_salt('bf')),
       now(),
       now(),

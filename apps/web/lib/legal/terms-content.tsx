@@ -144,7 +144,7 @@ export function TermsContent() {
         </p>
         <h2 className="text-base font-semibold text-text-primary">17. Contact Information</h2>
         <p>For questions regarding these Terms:</p>
-        <p>Email: support@hanapkalinga.ph</p>
+        <p>Email: support@hanapkalinga.com</p>
     </div>
   );
 }

@@ -94,6 +94,8 @@ jobs:
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
     steps:
       - uses: actions/checkout@v6.0.2
       - name: Set up Node.js
@@ -123,8 +125,23 @@ jobs:
       - name: npm audit
         run: npm run audit:critical
 
-  phase5-ci-summary:
-    name: phase 5 - ci summary
+  phase5-secrets-scan:
+    name: phase 5 - secrets scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [phase1-lint]
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - name: Secrets scan
+        run: |
+          ! rg -n "\\bsk_[A-Za-z0-9]{16,}" --glob "*.ts" --glob "*.tsx" --glob "*.js" .
+          ! rg -n "SUPABASE_SERVICE_ROLE\\s*=" --glob "*.ts" --glob "*.tsx" --glob "*.js" .
+          ! rg -n "https://[A-Za-z0-9.-]+\\.r2\\.cloudflarestorage\\.com" --glob "*.ts" --glob "*.tsx" --glob "*.js" .
+          ! rg -n -P "(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d]{32,}" --glob "*.ts" --glob "*.tsx" --glob "!**/node_modules/**" --glob "!**/.next/**" --glob "!apps/web/types/database.types.ts" .
+          ! rg -n "NEXT_PUBLIC_[A-Z0-9_]+" apps/web/lib/supabase/service.ts apps/web/app/api
+
+  phase6-ci-summary:
+    name: phase 6 - ci summary
     runs-on: ubuntu-latest
     timeout-minutes: 5
     if: always()
@@ -133,6 +150,7 @@ jobs:
       - phase2-typecheck
       - phase3-build
       - phase4-dependency-audit
+      - phase5-secrets-scan
     steps:
       - name: Write summary
         run: |
@@ -141,3 +159,4 @@ jobs:
           echo "- Phase 2 (Type Check): ${{ needs.phase2-typecheck.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Phase 3 (Build): ${{ needs.phase3-build.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Phase 4 (Dependency Audit): ${{ needs.phase4-dependency-audit.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Phase 5 (Secrets Scan): ${{ needs.phase5-secrets-scan.result }}" >> $GITHUB_STEP_SUMMARY

@@ -33,6 +33,8 @@ export function MessageThread({
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const supabase = createClient();
 
@@ -54,6 +56,24 @@ export function MessageThread({
 
     markRead();
   }, [bookingId, currentUserId, readOnly, supabase]);
+
+  useEffect(() => {
+    if (!currentUserId || readOnly) return;
+
+    async function loadBlockState() {
+      const response = await fetch(`/api/messages?bookingId=${encodeURIComponent(bookingId)}`);
+      const payload = (await response.json().catch(() => null)) as
+        | { blocked?: boolean; error?: string }
+        | null;
+      if (!response.ok) {
+        setErrorMessage(payload?.error ?? "Unable to verify messaging availability.");
+        return;
+      }
+      setBlocked(Boolean(payload?.blocked));
+    }
+
+    void loadBlockState();
+  }, [bookingId, currentUserId, readOnly]);
 
   useEffect(() => {
     const channel = supabase
@@ -89,7 +109,7 @@ export function MessageThread({
 
   async function handleSend() {
     const content = draft.trim();
-    if (!content || readOnly || !currentUserId) return;
+    if (!content || readOnly || !currentUserId || blocked) return;
 
     const optimisticId = `temp-${Date.now()}`;
     const optimisticMessage: Message = {
@@ -103,29 +123,34 @@ export function MessageThread({
     setDraft("");
     setSending(true);
 
-    const { data, error } = await supabase
-      .from("messages")
-      .insert({
-        booking_id: bookingId,
-        sender_id: currentUserId,
-        content
-      })
-      .select("id, sender_id, content, created_at")
-      .single();
+    const response = await fetch("/api/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bookingId, content })
+    });
+    const payload = (await response.json().catch(() => null)) as
+      | { message?: Message; error?: string }
+      | null;
 
-    if (error || !data) {
+    if (!response.ok || !payload?.message) {
       setMessages((prev) => prev.filter((message) => message.id !== optimisticId));
       setDraft(content);
+      setErrorMessage(payload?.error ?? "Failed to send message.");
+      if (response.status === 403) {
+        setBlocked(true);
+      }
       setSending(false);
       return;
     }
 
     setSending(false);
+    setErrorMessage(null);
 
+    const sentMessage = payload.message;
     setMessages((prev) => {
       const withoutOptimistic = prev.filter((message) => message.id !== optimisticId);
-      if (withoutOptimistic.some((message) => message.id === data.id)) return withoutOptimistic;
-      return [...withoutOptimistic, data as Message];
+      if (withoutOptimistic.some((message) => message.id === sentMessage.id)) return withoutOptimistic;
+      return [...withoutOptimistic, sentMessage as Message];
     });
   }
 
@@ -162,11 +187,17 @@ export function MessageThread({
           Admin view — read only
         </p>
       ) : (
-        <div className="flex gap-2 border-t border-slate-200 p-3">
+        <div className="border-t border-slate-200 p-3">
+          {blocked ? (
+            <p className="mb-2 text-xs text-rose-600">Messaging is unavailable for this conversation.</p>
+          ) : null}
+          {errorMessage ? <p className="mb-2 text-xs text-rose-600">{errorMessage}</p> : null}
+          <div className="flex gap-2">
           <Input
             placeholder="Type a message"
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
+            disabled={blocked || sending}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault();
@@ -174,9 +205,16 @@ export function MessageThread({
               }
             }}
           />
-          <LoadingButton type="button" loading={sending} loadingText="Sending..." onClick={() => void handleSend()}>
+          <LoadingButton
+            type="button"
+            loading={sending}
+            loadingText="Sending..."
+            onClick={() => void handleSend()}
+            disabled={blocked}
+          >
             Send
           </LoadingButton>
+          </div>
         </div>
       )}
     </div>

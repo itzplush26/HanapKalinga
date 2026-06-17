@@ -1,5 +1,5 @@
 // Shared type definitions
-export type UserRole = "family" | "nurse" | "admin";
+export type UserRole = "family" | "nurse" | "caregiver" | "admin";
 
 export type VerificationStatus =
   | "pending"
@@ -8,9 +8,16 @@ export type VerificationStatus =
   | "rejected"
   | "resubmission_required";
 
-export type BookingStatus = "pending" | "accepted" | "declined" | "completed" | "cancelled";
+export type BookingStatus =
+  | "pending"
+  | "accepted"
+  | "declined"
+  | "cancelled"
+  | "pending_completion"
+  | "disputed"
+  | "completed";
 
-export type Shift = "morning" | "afternoon" | "evening" | "full_day";
+export type Shift = "morning" | "afternoon" | "evening" | "full_day" | "custom";
 
 export type ProviderType = "nurse" | "caregiver";
 
@@ -91,6 +98,8 @@ export interface Message {
 export interface Review {
   id: string;
   booking_id: string;
+  reviewer_id: string;
+  reviewee_id: string;
   rating: number;
   comment: string | null;
   created_at: string;

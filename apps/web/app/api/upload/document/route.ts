@@ -3,6 +3,7 @@ import { getUploadAuthContext } from "@/lib/storage/upload-auth";
 import { getDocsBucket, uploadToR2 } from "@/lib/storage/r2";
 import { getR2ConfigError } from "@/lib/storage/r2-config";
 import { MAX_DOCUMENT_SIZE_BYTES } from "@/lib/constants";
+import { isProviderRole } from "@/lib/provider-role";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
 const ALLOWED_DOCUMENT_TYPES = new Set(["prc", "tesda", "nbi"]);
@@ -35,6 +36,13 @@ export async function POST(request: Request) {
     const auth = await getUploadAuthContext();
     if (!auth) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+
+    if (!auth.isAdmin && !isProviderRole(auth.role)) {
+      return NextResponse.json(
+        { error: "Document upload is only available for nurse and caregiver accounts." },
+        { status: 403 }
+      );
     }
 
     const formData = await request.formData();
