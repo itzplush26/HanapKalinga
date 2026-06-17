@@ -75,8 +75,9 @@ jobs:
           avd-name: Pixel_6
           cores: 2
           ram-size: 2048M
-          emulator-options: -no-window -gpu host -noaudio -no-boot-anim -no-snapshot
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           disable-animations: true
+          emulator-boot-timeout: 600
           script: |
             adb wait-for-device
             adb shell settings put global window_animation_scale 0.0
