@@ -17,14 +17,17 @@ env:
     accessibilityLabel: "Verifications tab"
 
 # Wait for verification queue
-- assertVisible:
-    id: "verificationQueue_list_requests"
+- extendedWaitUntil:
+    visible:
+      id: "verificationQueue_list_requests"
     timeout: 15000
 
 # Verify filter tabs are present
-- assertVisible:
-    id: "verificationQueue_filter_all"
+- extendedWaitUntil:
+    visible:
+      id: "verificationQueue_filter_all"
     timeout: 5000
-- assertVisible:
-    id: "verificationQueue_filter_pending"
+- extendedWaitUntil:
+    visible:
+      id: "verificationQueue_filter_pending"
     timeout: 5000
