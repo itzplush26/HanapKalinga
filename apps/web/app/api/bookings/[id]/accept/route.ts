@@ -18,6 +18,13 @@ export async function POST(_request: Request, { params }: { params: { id: string
     return NextResponse.json({ error: "Forbidden." }, { status: 403 });
   }
 
+  if (booking.status !== "pending") {
+    return NextResponse.json(
+      { error: `This booking is currently ${booking.status} and cannot be accepted.` },
+      { status: 400 }
+    );
+  }
+
   const { data: nurse } = await supabase
     .from("nurses")
     .select("provider_type, prc_license_expiry, tesda_cert_expiry, nbi_expiry")

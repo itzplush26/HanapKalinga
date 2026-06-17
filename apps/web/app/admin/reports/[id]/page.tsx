@@ -1,58 +1,91 @@
-"use client";
+import { notFound } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { AdminBreadcrumbs } from "@/components/admin/admin-breadcrumbs";
+import { AdminPageHeader } from "@/components/admin/admin-shell";
+import { ReportDetailActions } from "@/components/admin/report-detail-actions";
 
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+interface AdminReportDetailPageProps {
+  params: { id: string };
+}
 
-export default function AdminReportDetailPage({ params }: { params: { id: string } }) {
+export default async function AdminReportDetailPage({ params }: AdminReportDetailPageProps) {
   const supabase = createClient();
-  const [report, setReport] = useState<Record<string, unknown> | null>(null);
-  const [notes, setNotes] = useState("");
+  const { data: report } = await supabase
+    .from("incident_reports")
+    .select("id, category, description, status, created_at, admin_notes, reporter_id, reported_user_id")
+    .eq("id", params.id)
+    .maybeSingle();
 
-  useEffect(() => {
-    async function load() {
-      const { data } = await supabase.from("incident_reports").select("*").eq("id", params.id).single();
-      setReport(data);
-    }
-    load();
-  }, [params.id, supabase]);
-
-  async function updateStatus(status: "reviewed" | "resolved") {
-    await supabase
-      .from("incident_reports")
-      .update({ status, admin_notes: notes || null, reviewed_at: new Date().toISOString() })
-      .eq("id", params.id);
-    setReport((prev) => (prev ? { ...prev, status } : prev));
+  if (!report) {
+    notFound();
   }
 
-  async function suspendUser() {
-    if (!report?.reported_user_id) return;
-    await supabase
-      .from("profiles")
-      .update({ suspended: true })
-      .eq("id", report.reported_user_id as string);
-  }
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name, suspended, suspension_reason")
+    .in("id", [report.reporter_id, report.reported_user_id]);
 
-  if (!report) return <p className="p-8 text-sm text-slate-600">Loading report...</p>;
+  const profileById = new Map((profiles ?? []).map((item) => [item.id, item]));
+  const reporter = profileById.get(report.reporter_id);
+  const reported = profileById.get(report.reported_user_id);
 
   return (
-    <main className="max-w-2xl space-y-4 p-6">
-      <h1 className="text-xl font-semibold text-navy-900">Incident report</h1>
-      <p className="text-sm text-slate-600">Category: {report.category as string}</p>
-      <p className="rounded-xl border border-slate-200 bg-white p-4 text-sm">{report.description as string}</p>
-      <Textarea placeholder="Admin notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
-      <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="outline" onClick={() => void updateStatus("reviewed")}>
-          Mark reviewed
-        </Button>
-        <Button type="button" onClick={() => void updateStatus("resolved")}>
-          Mark resolved
-        </Button>
-        <Button type="button" variant="destructive" onClick={() => void suspendUser()}>
-          Suspend user
-        </Button>
-      </div>
+    <main>
+      <AdminPageHeader
+        title="Incident report"
+        description="Review report details and moderation actions."
+        backHref="/admin/reports"
+        breadcrumbs={
+          <AdminBreadcrumbs
+            items={[
+              { label: "Dashboard", href: "/admin" },
+              { label: "Incident Reports", href: "/admin/reports" },
+              { label: report.id }
+            ]}
+          />
+        }
+      />
+
+      <section className="mb-4 rounded-2xl border border-slate-200 bg-white p-4">
+        <dl className="grid gap-2 text-sm sm:grid-cols-2">
+          <div>
+            <dt className="text-slate-500">Category</dt>
+            <dd className="font-medium text-slate-900">{report.category}</dd>
+          </div>
+          <div>
+            <dt className="text-slate-500">Status</dt>
+            <dd className="font-medium text-slate-900">{report.status}</dd>
+          </div>
+          <div>
+            <dt className="text-slate-500">Reporter</dt>
+            <dd className="font-medium text-slate-900">{reporter?.full_name ?? "Unknown User"}</dd>
+          </div>
+          <div>
+            <dt className="text-slate-500">Reported user</dt>
+            <dd className="font-medium text-slate-900">{reported?.full_name ?? "Unknown User"}</dd>
+          </div>
+          <div className="sm:col-span-2">
+            <dt className="text-slate-500">Description</dt>
+            <dd className="mt-1 rounded-lg border border-slate-200 bg-slate-50 p-3 text-slate-800">
+              {report.description}
+            </dd>
+          </div>
+          {report.admin_notes ? (
+            <div className="sm:col-span-2">
+              <dt className="text-slate-500">Current admin notes</dt>
+              <dd className="font-medium text-slate-900">{report.admin_notes}</dd>
+            </div>
+          ) : null}
+        </dl>
+      </section>
+
+      <ReportDetailActions
+        reportId={report.id}
+        reportedUserId={report.reported_user_id}
+        reportedUserName={reported?.full_name ?? "Reported user"}
+        reportedUserSuspended={Boolean(reported?.suspended)}
+        reportedUserSuspensionReason={reported?.suspension_reason ?? null}
+      />
     </main>
   );
 }

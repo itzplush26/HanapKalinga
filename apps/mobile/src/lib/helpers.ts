@@ -20,6 +20,7 @@ export function getShiftLabel(shift: Shift): string {
     afternoon: 'Afternoon (2PM-10PM)',
     evening: 'Evening (10PM-6AM)',
     full_day: 'Full Day (6AM-6PM)',
+    custom: 'Custom Shift',
   };
   return labels[shift] || shift;
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { SUPPORT_EMAIL } from "@/lib/constants";
 
 interface NurseMarkCompleteProps {
   bookingId: string;
@@ -53,8 +54,13 @@ export function FamilyCompletionActions({ bookingId, onUpdated }: FamilyCompleti
   async function confirm() {
     setLoading(true);
     const response = await fetch(`/api/bookings/${bookingId}/confirm-completion`, { method: "POST" });
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
     setLoading(false);
-    if (response.ok) onUpdated();
+    if (response.ok) {
+      onUpdated();
+      return;
+    }
+    setMessage(payload?.error ?? `Could not confirm completion. Contact ${SUPPORT_EMAIL}.`);
   }
 
   async function dispute() {
@@ -65,16 +71,22 @@ export function FamilyCompletionActions({ bookingId, onUpdated }: FamilyCompleti
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ description: description.trim() })
     });
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
     setLoading(false);
     if (response.ok) {
       setDisputeOpen(false);
       setMessage("Your dispute has been submitted. Admin will review within 24 hours.");
       onUpdated();
+      return;
     }
-  }
-
-  if (message) {
-    return <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{message}</p>;
+    const backendError = payload?.error ?? "";
+    if (backendError.toLowerCase().includes("already been marked as complete")) {
+      setMessage(
+        `The booking has already been marked as complete. Please contact ${SUPPORT_EMAIL} to raise a dispute after completion.`
+      );
+    } else {
+      setMessage(backendError || `Could not submit dispute. Contact ${SUPPORT_EMAIL}.`);
+    }
   }
 
   return (
@@ -101,6 +113,7 @@ export function FamilyCompletionActions({ bookingId, onUpdated }: FamilyCompleti
           </Button>
         </div>
       ) : null}
+      {message ? <p className="text-sm text-amber-900">{message}</p> : null}
     </div>
   );
 }

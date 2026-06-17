@@ -67,7 +67,7 @@ export default function PrivacyScreen() {
 
         <Text style={styles.heading}>6. Your Rights</Text>
         <Text style={styles.paragraph}>
-          You have the right to access, correct, or delete your personal information. You may also request a copy of your data or restrict processing. To exercise these rights, contact us at support@hanapkalinga.ph.
+          You have the right to access, correct, or delete your personal information. You may also request a copy of your data or restrict processing. To exercise these rights, contact us at support@hanapkalinga.com.
         </Text>
 
         <Text style={styles.heading}>7. Cookies and Tracking</Text>
@@ -82,7 +82,7 @@ export default function PrivacyScreen() {
 
         <Text style={styles.heading}>9. Contact Us</Text>
         <Text style={styles.paragraph}>
-          For questions about this Privacy Policy, please contact us at support@hanapkalinga.ph.
+          For questions about this Privacy Policy, please contact us at support@hanapkalinga.com.
         </Text>
       </ScrollView>
     </ScreenWrapper>

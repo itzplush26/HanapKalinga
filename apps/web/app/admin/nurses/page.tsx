@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { AdminBreadcrumbs } from "@/components/admin/admin-breadcrumbs";
 import { AdminPageHeader } from "@/components/admin/admin-shell";
+import { Badge } from "@/components/ui/badge";
 import { VerificationStatusBadge } from "@/components/verification-status-badge";
 import type { VerificationStatus } from "@/lib/verification";
 
@@ -9,7 +10,7 @@ export default async function AdminNursesPage() {
   const supabase = createClient();
   const { data: nurses } = await supabase
     .from("nurses")
-    .select("id, verification_status, profiles!nurses_id_fkey(full_name, city)")
+    .select("id, verification_status, profiles!nurses_id_fkey(full_name, city, suspended)")
     .order("verification_status", { ascending: true });
 
   return (
@@ -34,6 +35,9 @@ export default async function AdminNursesPage() {
               <div className="flex flex-wrap items-center gap-2">
                 <p className="font-semibold text-slate-900">{profile?.full_name ?? "Provider"}</p>
                 <VerificationStatusBadge status={nurse.verification_status as VerificationStatus} />
+                {profile?.suspended ? (
+                  <Badge className="bg-rose-100 text-rose-800">Suspended</Badge>
+                ) : null}
               </div>
               <p className="mt-1 text-sm text-slate-500">{profile?.city ?? ""}</p>
             </Link>

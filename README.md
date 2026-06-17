@@ -65,7 +65,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 ### Seeded Admin Credentials
 
-- Email: `admin@hanapkalinga.ph`
+- Email: `admin@hanapkalinga.com`
 - Password: `ChangeMe123!`
 
 ⚠️ **Change this password immediately after first login!**
@@ -196,4 +196,4 @@ Private project - All rights reserved
 
 ## Support
 
-For questions or issues, contact: support@hanapkalinga.ph
+For questions or issues, contact: support@hanapkalinga.com

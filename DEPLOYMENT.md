@@ -8,8 +8,8 @@ This repo is an npm workspaces monorepo. The Next.js app lives in `apps/web/`.
 |---------|--------|
 | **Root Directory** | `apps/web` |
 | **Framework Preset** | Next.js |
-| **Build Command** | `npm run build` (default) |
-| **Install Command** | `cd ../.. && npm ci` |
+| **Build Command** | *(from root `vercel.json`)* `cd ../.. && npm run build --workspace=@hanapkalinga/web` |
+| **Install Command** | *(from root `vercel.json`)* `cd ../.. && npm ci` |
 | **Output Directory** | leave empty (default `.next`) |
 
 When Root Directory is `apps/web`, the build writes to `apps/web/.next` and Vercel finds `routes-manifest.json` correctly.

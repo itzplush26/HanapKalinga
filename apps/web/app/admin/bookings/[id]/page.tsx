@@ -1,78 +1,47 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { notFound } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 import { BookingStatusBadge } from "@/components/booking-status-badge";
-
-type BookingStatus = "pending" | "accepted" | "declined" | "completed" | "cancelled";
 import { BookingDetailsCard } from "@/components/booking-details-card";
-import { Button } from "@/components/ui/button";
 import { MessageThread } from "@/components/message-thread";
+import { AdminBookingActions } from "@/components/admin/admin-booking-actions";
 
 interface AdminBookingDetailPageProps {
   params: { id: string };
 }
 
-export default function AdminBookingDetailPage({ params }: AdminBookingDetailPageProps) {
+type AdminBookingMessage = {
+  id: string;
+  sender_id: string;
+  content: string;
+  created_at: string;
+};
+
+export default async function AdminBookingDetailPage({ params }: AdminBookingDetailPageProps) {
   const supabase = createClient();
-  const [booking, setBooking] = useState<{
-    id: string;
-    status: BookingStatus;
-    requested_date: string;
-    shift: string;
-    notes: string | null;
-    family_id: string;
-    nurse_id: string;
-  } | null>(null);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [userId, setUserId] = useState<string>("");
-  const [senderNames, setSenderNames] = useState<Record<string, string>>({});
+  const [{ data: auth }, { data: booking }, { data: messages }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase
+      .from("bookings")
+      .select("id, status, requested_date, shift, notes, family_id, nurse_id")
+      .eq("id", params.id)
+      .maybeSingle(),
+    supabase
+      .from("messages")
+      .select("id, sender_id, content, created_at")
+      .eq("booking_id", params.id)
+      .order("created_at", { ascending: true })
+  ]);
 
-  useEffect(() => {
-    async function load() {
-      const { data: auth } = await supabase.auth.getUser();
-      setUserId(auth.user?.id ?? "");
-      const { data: bookingData } = await supabase
-        .from("bookings")
-        .select("id, status, requested_date, shift, notes, family_id, nurse_id")
-        .eq("id", params.id)
-        .single();
-      setBooking(bookingData);
-      const { data: messageData } = await supabase
-        .from("messages")
-        .select("id, sender_id, content, created_at")
-        .eq("booking_id", params.id)
-        .order("created_at", { ascending: true });
-      setMessages(messageData ?? []);
+  if (!booking) notFound();
 
-      if (bookingData) {
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, full_name")
-          .in("id", [bookingData.family_id, bookingData.nurse_id]);
-        setSenderNames(
-          Object.fromEntries(
-            (profiles ?? []).map((p) => [p.id as string, (p.full_name as string) ?? "User"])
-          )
-        );
-      }
-    }
-    load();
-  }, [params.id, supabase]);
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .in("id", [booking.family_id, booking.nurse_id]);
 
-  async function markCompleted() {
-    const response = await fetch(`/api/admin/bookings/${params.id}/complete`, { method: "POST" });
-    if (!response.ok) return;
-    setBooking((prev) => (prev ? { ...prev, status: "completed" } : prev));
-  }
-
-  if (!booking) {
-    return (
-      <main className="px-5 py-8">
-        <p className="text-sm text-slate-600">Loading booking...</p>
-      </main>
-    );
-  }
+  const senderNames = Object.fromEntries(
+    (profiles ?? []).map((p) => [p.id as string, (p.full_name as string) ?? "User"])
+  );
 
   return (
     <main className="px-5 py-8">
@@ -85,11 +54,7 @@ export default function AdminBookingDetailPage({ params }: AdminBookingDetailPag
           <BookingStatusBadge status={booking.status} />
         </div>
         <BookingDetailsCard notes={booking.notes} />
-        {booking.status !== "completed" && booking.status !== "cancelled" ? (
-          <Button type="button" variant="outline" onClick={() => void markCompleted()}>
-            Mark completed
-          </Button>
-        ) : null}
+        <AdminBookingActions bookingId={booking.id} status={booking.status} />
         {booking.status === "completed" ? (
           <p className="text-sm text-slate-500">
             Booking marked complete. Family will be prompted to leave a review.
@@ -97,8 +62,8 @@ export default function AdminBookingDetailPage({ params }: AdminBookingDetailPag
         ) : null}
         <MessageThread
           bookingId={booking.id}
-          currentUserId={userId}
-          initialMessages={messages}
+          currentUserId={auth.user?.id ?? ""}
+          initialMessages={(messages ?? []) as AdminBookingMessage[]}
           senderNames={senderNames}
           readOnly
         />

@@ -15,6 +15,7 @@ import { ScrollToHash } from "@/components/scroll-to-hash";
 import { formatShiftLabel } from "@/lib/booking-notes";
 import { PageHeader } from "@/components/page-header";
 import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
+import { SUPPORT_EMAIL } from "@/lib/constants";
 
 type BookingStatus =
   | "pending"
@@ -48,6 +49,7 @@ export default function NurseBookingDetailPage({ params }: BookingDetailPageProp
   const [patientName, setPatientName] = useState<string | null>(null);
   const [accepting, setAccepting] = useState(false);
   const [declining, setDeclining] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -101,8 +103,26 @@ export default function NurseBookingDetailPage({ params }: BookingDetailPageProp
 
   async function handleAccept() {
     setAccepting(true);
+    setActionError(null);
     try {
-      await fetch(`/api/bookings/${params.id}/accept`, { method: "POST" });
+      const response = await fetch(`/api/bookings/${params.id}/accept`, { method: "POST" });
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+        const backendError = payload?.error ?? "";
+        if (backendError.toLowerCase().includes("cannot be accepted")) {
+          setActionError(
+            `This booking is no longer available to accept. The family may have cancelled their request. If you need help, contact ${SUPPORT_EMAIL}.`
+          );
+        } else if (backendError.toLowerCase().includes("forbidden")) {
+          setActionError(
+            `This booking is no longer available to accept. The family may have cancelled their request. If you need help, contact ${SUPPORT_EMAIL}.`
+          );
+        } else {
+          setActionError(backendError || `Could not accept this booking. Contact ${SUPPORT_EMAIL}.`);
+        }
+        await reloadBooking();
+        return;
+      }
       await reloadBooking();
     } finally {
       setAccepting(false);
@@ -111,8 +131,23 @@ export default function NurseBookingDetailPage({ params }: BookingDetailPageProp
 
   async function handleDecline() {
     setDeclining(true);
+    setActionError(null);
     try {
-      await fetch(`/api/bookings/${params.id}/decline`, { method: "POST" });
+      const response = await fetch(`/api/bookings/${params.id}/decline`, { method: "POST" });
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+        const backendError = payload?.error ?? "";
+        if (backendError.toLowerCase().includes("cannot be declined")) {
+          setActionError(`${backendError} If you need help, contact ${SUPPORT_EMAIL}.`);
+        } else {
+          const status = booking?.status ?? "unknown";
+          setActionError(
+            `This booking is currently ${status} and can no longer be declined. If you need help, contact ${SUPPORT_EMAIL}.`
+          );
+        }
+        await reloadBooking();
+        return;
+      }
       await reloadBooking();
     } finally {
       setDeclining(false);
@@ -178,6 +213,7 @@ export default function NurseBookingDetailPage({ params }: BookingDetailPageProp
             </LoadingButton>
           </div>
         ) : null}
+        {actionError ? <p className="text-sm text-rose-600">{actionError}</p> : null}
         {canMarkComplete ? (
           <NurseMarkCompleteButton bookingId={booking.id} onUpdated={() => void reloadBooking()} />
         ) : null}
