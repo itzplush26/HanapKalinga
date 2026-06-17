@@ -90,6 +90,8 @@ async function createNurse(id, overrides = {}) {
     id,
     provider_type: "nurse",
     prc_license_no: `PRC-${TIMESTAMP}`,
+    prc_document_url: `https://example.com/prc-${TIMESTAMP}.pdf`,
+    nbi_document_url: `https://example.com/nbi-${TIMESTAMP}.pdf`,
     specializations: overrides.specializations || ["General Care"],
     years_experience: 5,
     bio: "Experienced nurse for E2E testing.",
