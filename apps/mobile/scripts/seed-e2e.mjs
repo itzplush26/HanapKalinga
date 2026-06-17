@@ -194,6 +194,8 @@ async function main() {
   console.log(`NURSE_EMAIL=${nurseEmail}`);
   console.log(`PENDING_NURSE_EMAIL=${pendingNurseEmail}`);
   console.log(`PASSWORD=${PASSWORD}`);
+  console.log(`NURSE_ID=${nurseId}`);
+  console.log(`VERIFICATION_ID=${pendingNurseId}`);
   console.log(`BOOKING_ID=${booking.id}`);
   console.log(`COMPLETED_BOOKING_ID=${completedBooking.id}`);
   console.log("--- End ---");
