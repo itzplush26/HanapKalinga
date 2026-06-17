@@ -162,19 +162,8 @@ jobs:
           script: |
             adb install ${{ runner.temp }}/app.apk
 
-            cd ${{ github.workspace }}
-            node apps/mobile/scripts/seed-e2e.mjs
-
-            maestro test apps/mobile/maestro/${{ matrix.shard }}/ \
-              --env APP_ID=com.hanapkalinga.mobile \
-              --env ENV=${{ inputs.environment || 'staging' }} \
-              --retry-on-failure=2
-
-            E2E_EXIT_CODE=$?
-
-            node apps/mobile/scripts/cleanup-e2e.mjs
-
-            exit $E2E_EXIT_CODE
+            cd ${{ github.workspace }} && node apps/mobile/scripts/seed-e2e.mjs
+            maestro test apps/mobile/maestro/${{ matrix.shard }}/ --env APP_ID=com.hanapkalinga.mobile --env ENV=${{ inputs.environment || 'staging' }} --retry-on-failure=2; E=$?; node apps/mobile/scripts/cleanup-e2e.mjs; exit $E
         env:
           SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
