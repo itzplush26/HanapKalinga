@@ -8,11 +8,11 @@ env:
     appId: ${APP_ID}
     stopApp: true
     clearState: true
-    timeout: 30000
 
 # Wait for landing screen
-- assertVisible:
-    id: "landing_button_login"
+- extendedWaitUntil:
+    visible:
+      id: "landing_button_login"
     timeout: 15000
 
 # Log in with valid credentials
@@ -28,8 +28,9 @@ env:
     id: "login_button_submit"
 
 # Verify login succeeded
-- assertNotVisible:
-    id: "login_button_submit"
+- extendedWaitUntil:
+    notVisible:
+      id: "login_button_submit"
     timeout: 15000
 
 # Stop app (simulate background kill)
@@ -40,15 +41,16 @@ env:
 - launchApp:
     appId: ${APP_ID}
     clearState: false
-    timeout: 30000
 
 # Wait for app to initialize and redirect to role dashboard
 # Login button should NOT be visible — session was restored
-- assertNotVisible:
-    id: "landing_button_login"
+- extendedWaitUntil:
+    notVisible:
+      id: "landing_button_login"
     timeout: 20000
 
 # Verify we landed on a role-specific screen
-- assertVisible:
-    id: "browse_button_filter"
+- extendedWaitUntil:
+    visible:
+      id: "browse_button_filter"
     timeout: 15000
