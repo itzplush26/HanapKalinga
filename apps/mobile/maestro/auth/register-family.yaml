@@ -24,8 +24,9 @@ env:
     id: "register_button_sendOtp"
 
 # Wait for OTP screen
-- assertVisible:
-    id: "verifyOtp_input_0"
+- extendedWaitUntil:
+    visible:
+      id: "verifyOtp_input_0"
     timeout: 15000
 
 # Enter 6-digit OTP
@@ -53,8 +54,9 @@ env:
     id: "verifyOtp_button_verify"
 
 # Wait for choose-role screen (family pre-selected via query param)
-- assertVisible:
-    id: "chooseRole_button_family"
+- extendedWaitUntil:
+    visible:
+      id: "chooseRole_button_family"
     timeout: 15000
 
 # Tap family option then Continue
@@ -64,8 +66,9 @@ env:
     text: "Continue"
 
 # Wait for profile screen
-- assertVisible:
-    id: "profileFamily_input_name"
+- extendedWaitUntil:
+    visible:
+      id: "profileFamily_input_name"
     timeout: 10000
 
 # Fill in name
@@ -84,8 +87,9 @@ env:
     text: "Next"
 
 # Wait for set-password screen
-- assertVisible:
-    id: "setPassword_input_password"
+- extendedWaitUntil:
+    visible:
+      id: "setPassword_input_password"
     timeout: 10000
 
 # Enter password
@@ -101,6 +105,7 @@ env:
     id: "setPassword_button_submit"
 
 # Verify redirect to family dashboard
-- assertVisible:
-    id: "browse_button_filter"
+- extendedWaitUntil:
+    visible:
+      id: "browse_button_filter"
     timeout: 15000

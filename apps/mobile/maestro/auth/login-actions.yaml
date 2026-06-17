@@ -17,6 +17,7 @@ appId: ${APP_ID}
     id: "login_button_submit"
 
 # Wait for redirect to dashboard
-- assertNotVisible:
-    id: "login_button_submit"
+- extendedWaitUntil:
+    notVisible:
+      id: "login_button_submit"
     timeout: 15000

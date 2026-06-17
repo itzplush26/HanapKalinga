@@ -20,6 +20,7 @@ appId: ${APP_ID}
     id: "login_button_submit"
 
 # Wait for error message to appear
-- assertVisible:
-    id: "login_text_error"
+- extendedWaitUntil:
+    visible:
+      id: "login_text_error"
     timeout: 15000

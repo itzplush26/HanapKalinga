@@ -23,11 +23,13 @@ env:
     id: "login_button_submit"
 
 # Wait for redirect away from login screen
-- assertNotVisible:
-    id: "login_button_submit"
+- extendedWaitUntil:
+    notVisible:
+      id: "login_button_submit"
     timeout: 15000
 
 # Verify login succeeded by checking app is no longer on auth screens
-- assertVisible:
-    id: "browse_button_filter"
+- extendedWaitUntil:
+    visible:
+      id: "browse_button_filter"
     timeout: 10000
