@@ -162,7 +162,7 @@ async function main() {
   // 4. Create pending nurse test account
   const pendingNurseEmail = `${EMAIL_PREFIX}-nurse-pending-${TIMESTAMP}@example.com`;
   const pendingNurseId = await createUser(pendingNurseEmail, "nurse", "E2E Pending Nurse");
-  await createNurse(pendingNurseId, { verification_status: "pending" });
+  await createNurse(pendingNurseId, { verification_status: "pending", profile_slug: `e2e-nurse-pending-${TIMESTAMP}` });
   console.log(`  Created pending nurse: ${pendingNurseEmail} (${pendingNurseId})`);
 
   // 5. Create sample data: a pending booking from family to verified nurse
