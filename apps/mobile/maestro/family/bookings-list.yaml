@@ -17,6 +17,7 @@ env:
     text: "Bookings"
 
 # Verify bookings list screen loaded
-- assertVisible:
-    id: "familyBookings_list_bookings"
+- extendedWaitUntil:
+    visible:
+      id: "familyBookings_list_bookings"
     timeout: 15000

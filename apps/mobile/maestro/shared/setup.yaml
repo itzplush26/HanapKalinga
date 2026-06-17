@@ -7,9 +7,9 @@ env:
     appId: ${APP_ID}
     stopApp: true
     clearState: true
-    timeout: 30000
 
 # Wait for the landing screen to render
-- assertVisible:
-    id: "landing_button_login"
+- extendedWaitUntil:
+    visible:
+      id: "landing_button_login"
     timeout: 15000

@@ -18,8 +18,9 @@ env:
     text: "Bookings"
 
 # Wait for bookings list
-- assertVisible:
-    id: "familyBookings_list_bookings"
+- extendedWaitUntil:
+    visible:
+      id: "familyBookings_list_bookings"
     timeout: 15000
 
 # Tap on a specific booking card
@@ -27,11 +28,13 @@ env:
     id: "familyBookings_card_${BOOKING_ID}"
 
 # Verify booking detail screen loaded
-- assertVisible:
-    id: "bookingDetail_text_status"
+- extendedWaitUntil:
+    visible:
+      id: "bookingDetail_text_status"
     timeout: 10000
 
 # Verify message and review buttons are present
-- assertVisible:
-    id: "bookingDetail_button_message"
+- extendedWaitUntil:
+    visible:
+      id: "bookingDetail_button_message"
     timeout: 5000
