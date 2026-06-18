@@ -205,6 +205,23 @@ jobs:
             # Clear any persisted auth state from SecureStore
             adb shell pm clear com.hanapkalinga.mobile
             
+            # === DIAGNOSTIC: Check if app survives launch ===
+            echo "=== DIAGNOSTIC: Launching app and checking if it stays alive ==="
+            adb shell am start -n com.hanapkalinga.mobile/.MainActivity
+            sleep 15
+            echo "--- Focused activity ---"
+            adb shell dumpsys window windows 2>/dev/null | grep -E 'mFocusedActivity|mCurrentFocus' || echo "NO ACTIVITY FOCUSED (app likely crashed)"
+            echo "--- Window dump (first 30 lines) ---"
+            adb shell uiautomator dump /sdcard/diagnostic-window.xml 2>/dev/null || true
+            adb shell uiautomator dump --compressed /sdcard/diagnostic-window-compressed.xml 2>/dev/null || true
+            adb pull /sdcard/diagnostic-window.xml "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}/diagnostic-window.xml" 2>/dev/null || echo "Failed to pull diagnostic XML"
+            adb exec-out screencap -p > "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}/diagnostic-screenshot.png" 2>/dev/null || true
+            echo "--- Package list (com.hanapkalinga) ---"
+            adb shell dumpsys package com.hanapkalinga.mobile 2>/dev/null | head -5 || echo "Package not found"
+            echo "=== DIAGNOSTIC END ==="
+            adb shell am force-stop com.hanapkalinga.mobile
+            sleep 2
+            
             bash apps/mobile/scripts/run-maestro-shard.sh "${{ matrix.shard }}" "${{ inputs.environment || 'staging' }}" "${{ needs.seed-e2e.outputs.FAMILY_EMAIL }}" "${{ needs.seed-e2e.outputs.NURSE_EMAIL }}" "${{ needs.seed-e2e.outputs.ADMIN_EMAIL }}" "${{ needs.seed-e2e.outputs.PASSWORD }}" "${{ needs.seed-e2e.outputs.BOOKING_ID }}" "${{ needs.seed-e2e.outputs.NURSE_ID }}" "${{ needs.seed-e2e.outputs.VERIFICATION_ID }}" "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}"
 
       - name: Sanitize screenshot filenames (remove emoji characters)
@@ -227,8 +244,8 @@ jobs:
           path: ~/.maestro/tests/**/*.png
           retention-days: 7
 
-      - name: Upload emulator debug artifacts (on failure)
-        if: failure()
+      - name: Upload emulator debug artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: maestro-debug-${{ matrix.shard }}
