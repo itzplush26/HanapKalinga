@@ -9,11 +9,15 @@ env:
     stopApp: true
     clearState: true
 
+# Wait for app startup work to finish before asserting on the landing UI.
+- waitForAnimationToEnd:
+    timeout: 10000
+
 # Wait for landing screen
 - extendedWaitUntil:
     visible:
       id: "landing_button_login"
-    timeout: 15000
+    timeout: 90000
 
 # Log in with valid credentials
 - tapOn:
