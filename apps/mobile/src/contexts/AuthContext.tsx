@@ -77,12 +77,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const initialize = async () => {
+      let hasSession = false;
       try {
         // Add timeout to prevent hanging on slow network
         const sessionPromise = client.auth.getSession();
         const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 5000));
         
         const result = await Promise.race([sessionPromise, timeoutPromise]) as any;
+        hasSession = !!result?.data?.session?.user;
         
         if (result?.data?.session?.user) {
           setUser(result.data.session.user);
@@ -92,6 +94,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // session restore failed silently
         console.log('Auth initialization error:', error);
       } finally {
+        // #region agent log
+        fetch('http://127.0.0.1:7569/ingest/0813a3b5-b99a-4900-8c59-034559631d26',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6779d2'},body:JSON.stringify({sessionId:'6779d2',location:'AuthContext.tsx:initDone',message:'Auth init finished',data:{hasSession},timestamp:Date.now(),hypothesisId:'B',runId:'pre-fix'})}).catch(()=>{});
+        // #endregion
         setIsLoading(false);
       }
     };

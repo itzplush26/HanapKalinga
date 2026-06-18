@@ -75,8 +75,12 @@ jobs:
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: |
           npx expo prebuild --platform android --clean
-          # Disable New Architecture (Fabric) — tracks incompatibility with native modules
+          # Legacy native lib packaging — required for SoLoader on x86_64 CI emulators (see RN #55637)
+          sed -i 's/expo.useLegacyPackaging=false/expo.useLegacyPackaging=true/' android/gradle.properties
+          # Belt-and-suspenders: ensure New Architecture stays off for E2E APK
           sed -i 's/newArchEnabled=true/newArchEnabled=false/' android/gradle.properties
+          echo "--- gradle.properties (packaging + arch) ---"
+          grep -E 'useLegacyPackaging|newArchEnabled' android/gradle.properties
           cd android
           ./gradlew assembleRelease
           cp app/build/outputs/apk/release/app-release.apk ${{ runner.temp }}/app.apk
@@ -218,6 +222,10 @@ jobs:
             adb shell pidof com.hanapkalinga.mobile 2>/dev/null || echo "App process not found"
             echo "--- Foreground activity ---"
             adb shell dumpsys activity activities 2>/dev/null | grep -E 'mResumedActivity|mFocusedActivity' || echo "NO FOREGROUND ACTIVITY (app crashed)"
+            echo "--- FATAL EXCEPTION stack (full) ---"
+            adb logcat -d 2>/dev/null | grep -A 40 "FATAL EXCEPTION" | tail -80 || echo "No FATAL EXCEPTION in logcat"
+            echo "--- SoLoader / DSO errors ---"
+            adb logcat -d 2>/dev/null | grep -iE 'SoLoader|DSONotFound|UnsatisfiedLinkError' | tail -30 || echo "No SoLoader errors in logcat"
             echo "--- Last 500 logcat lines (crash traces) ---"
             adb logcat -d -t 500 2>/dev/null | grep -iE 'crash|exception|fatal|error|androidRuntime|com\.hanapkalinga|NativeModule|SoLoader|FATAL' || echo "No crash traces in logcat"
             echo "--- Logcat for com.hanapkalinga ---"
