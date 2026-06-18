@@ -78,7 +78,8 @@ env:
 
 # Scroll to Next button
 - scrollUntilVisible:
-    id: "setPassword_input_password"
+    element:
+      id: "setPassword_input_password"
     direction: DOWN
     timeout: 10000
 

@@ -53,7 +53,8 @@ env:
 
 # Select a required skill (tap by text)
 - scrollUntilVisible:
-    text: "Wound Care"
+    element:
+      text: "Wound Care"
     direction: DOWN
     timeout: 5000
 - tapOn:
@@ -61,7 +62,8 @@ env:
 
 # Select budget
 - scrollUntilVisible:
-    id: "bookingNew_input_budget_under_1000"
+    element:
+      id: "bookingNew_input_budget_under_1000"
     direction: DOWN
     timeout: 5000
 - tapOn:
@@ -69,7 +71,8 @@ env:
 
 # Submit booking request
 - scrollUntilVisible:
-    id: "bookingNew_button_submit"
+    element:
+      id: "bookingNew_button_submit"
     direction: DOWN
     timeout: 5000
 - tapOn:

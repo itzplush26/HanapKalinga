@@ -80,7 +80,8 @@ env:
 
 # Fill hourly rate
 - scrollUntilVisible:
-    text: "Hourly Rate (PHP)"
+    element:
+      text: "Hourly Rate (PHP)"
     direction: DOWN
     timeout: 10000
 - tapOn:
@@ -94,7 +95,8 @@ env:
 
 # Scroll to Next button
 - scrollUntilVisible:
-    id: "setPassword_input_password"
+    element:
+      id: "setPassword_input_password"
     direction: DOWN
     timeout: 10000
 
