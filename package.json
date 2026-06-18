@@ -17,7 +17,7 @@
     "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules apps/*/.next"
   },
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=22.13.0",
     "npm": ">=9.0.0"
   },
   "devDependencies": {
