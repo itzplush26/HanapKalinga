@@ -12,12 +12,14 @@ interface ScreenWrapperProps {
   children: React.ReactNode;
   scroll?: boolean;
   style?: ViewStyle;
+  testID?: string;
 }
 
 export function ScreenWrapper({
   children,
   scroll = false,
   style,
+  testID,
 }: ScreenWrapperProps) {
   const { colors } = useTheme();
 
@@ -32,6 +34,7 @@ export function ScreenWrapper({
 
   return (
     <SafeAreaView
+      testID={testID}
       style={[
         styles.safeArea,
         { backgroundColor: colors.bg },
