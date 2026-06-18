@@ -17,7 +17,7 @@ export function buildPasswordResetOtpEmailHtml(params: { otp: string }): string 
     ${emailParagraph(
       "We received a request to reset the password for your HanapKalinga account. Enter this code on the reset password page:"
     )}
-    ${emailOtpCode(params.otp)}
+    ${emailOtpCode(params.otp, "Your reset code")}
     ${emailParagraph(
       `If you did not request this, you can ignore this email. Your password will stay the same. For your security, never share this code with anyone — HanapKalinga staff will never ask for it.`
     )}

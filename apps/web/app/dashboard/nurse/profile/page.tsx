@@ -18,6 +18,7 @@ import { RateRangeSelect } from "@/components/rate-range-select";
 import { PageHeader } from "@/components/page-header";
 import { resolveProfileDisplayName } from "@/lib/profile-display";
 import { SignOutDialog } from "@/components/sign-out-dialog";
+import { ChangeEmailSection } from "@/components/change-email-section";
 import { VerificationStatusBanner } from "@/components/verification-status-banner";
 import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
 import { YEARS_EXPERIENCE_OPTIONS } from "@/lib/years-experience";
@@ -574,6 +575,7 @@ export default function NurseProfilePage() {
             </Button>
           </form>
 
+          <ChangeEmailSection />
           <SignOutDialog className="mt-2" />
         </div>
       </main>

@@ -1,0 +1,53 @@
+<!--
+  Supabase Dashboard → Authentication → Email Templates → Change email address
+
+  1. Set Subject to: Your HanapKalinga email change code
+  2. Paste this entire HTML into the Message body.
+  3. Ensure the template uses {{ .Token }} (OTP), NOT {{ .ConfirmationURL }} (magic link).
+  4. Save the template.
+
+  Optional: Project Settings → Auth → SMTP → use Resend or Gmail so emails send from your domain.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body style="margin:0;padding:0;background-color:#f8fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f8fafb;padding:24px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background-color:#ffffff;border-radius:12px;overflow:hidden;">
+        <tr>
+          <td style="background-color:#0d9488;padding:28px 24px;text-align:center;">
+            <p style="margin:0;font-size:22px;font-weight:700;color:#ffffff;">HanapKalinga</p>
+            <p style="margin:6px 0 0;font-size:13px;color:#ccfbf1;">Trusted Healthcare Marketplace</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:28px 24px;color:#4a5568;font-size:15px;line-height:1.6;">
+            <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1e3a5f;line-height:1.3;">Confirm your new email</h1>
+            <p style="margin:0 0 14px;color:#4a5568;">We received a request to change the email address on your HanapKalinga account. Enter this code on your profile page to confirm:</p>
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:20px 0;">
+              <tr><td align="center" style="padding:24px 16px;background-color:#f1f5f9;border-radius:12px;border:2px dashed #0d9488;">
+                <p style="margin:0 0 10px;font-size:12px;font-weight:600;color:#718096;letter-spacing:0.08em;text-transform:uppercase;">Your verification code</p>
+                <p style="margin:0;font-size:36px;font-weight:700;letter-spacing:0.3em;color:#1e3a5f;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;">{{ .Token }}</p>
+                <p style="margin:12px 0 0;font-size:12px;color:#718096;">Expires in 1 hour</p>
+              </td></tr>
+            </table>
+            <p style="margin:0 0 14px;color:#4a5568;">If you did not request this change, you can ignore this email and your account email will stay the same. For your security, never share this code with anyone — HanapKalinga staff will never ask for it.</p>
+            <p style="margin:0;color:#4a5568;">Open your profile in HanapKalinga to enter this code.</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 24px;background-color:#f1f5f9;border-top:1px solid #e2e8f0;text-align:center;">
+            <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#1e3a5f;">HanapKalinga</p>
+            <p style="margin:0 0 8px;font-size:12px;color:#718096;">Connecting Filipino families with trusted healthcare professionals</p>
+            <p style="margin:0;font-size:11px;color:#718096;">This is an automated message. You received this because an email change was requested for {{ .Email }}.</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
