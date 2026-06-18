@@ -28,6 +28,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchProfile = useCallback(async (userId: string) => {
+    if (!supabase) return;
+
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -42,6 +44,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshProfile = useCallback(async () => {
+    if (!supabase) return;
+
     const { data: { user: currentUser } } = await supabase.auth.getUser();
     if (currentUser) {
       await fetchProfile(currentUser.id);
@@ -49,7 +53,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchProfile]);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
     setUser(null);
     setProfile(null);
   }, []);
@@ -64,10 +70,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    const client = supabase;
+    if (!client) {
+      setIsLoading(false);
+      return;
+    }
+
     const initialize = async () => {
       try {
         // Add timeout to prevent hanging on slow network
-        const sessionPromise = supabase.auth.getSession();
+        const sessionPromise = client.auth.getSession();
         const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 5000));
         
         const result = await Promise.race([sessionPromise, timeoutPromise]) as any;
@@ -86,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initialize();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: { subscription } } = client.auth.onAuthStateChange(
       async (_event, session) => {
         if (session?.user) {
           setUser(session.user);
