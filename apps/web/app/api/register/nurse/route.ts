@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "@/lib/supabase/service";
+import { createServiceClient, isSupabaseServiceRoleConfigured } from "@/lib/supabase/service";
 import { completeNurseRegistrationSchema } from "@/lib/validations/register-nurse";
 import { validateDocumentPathsForUser } from "@/lib/register/validate-document-paths";
 import {
@@ -12,15 +12,6 @@ import {
 import { isProviderRole, profileRoleForProviderType } from "@/lib/provider-role";
 import { hasRequiredDocuments } from "@/lib/admin/verification-documents";
 import { toTitleCase } from "@/lib/validation/format-name";
-
-const isServiceRoleConfigured = Boolean(
-  process.env.SUPABASE_URL?.trim() && process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
-);
-if (!isServiceRoleConfigured) {
-  console.error(
-    "CRITICAL: SUPABASE_SERVICE_ROLE_KEY is not configured. Nurse registration will fail until this is resolved. Check Vercel environment variables."
-  );
-}
 
 export async function POST(request: Request) {
   try {
@@ -40,13 +31,6 @@ export async function POST(request: Request) {
     const values = parsed.data;
     const userId = auth.user.id;
     const termsAcceptedAt = values.termsAcceptedAt ?? new Date().toISOString();
-
-    if (!isServiceRoleConfigured) {
-      return NextResponse.json(
-        { error: "Registration could not be completed. Please try again or contact support." },
-        { status: 503 }
-      );
-    }
 
     const pathError = validateDocumentPathsForUser(userId, {
       prc: values.prcDocumentPath,
@@ -86,12 +70,10 @@ export async function POST(request: Request) {
       (values.dailyRateRange || undefined) as DailyRateBandId | undefined
     );
 
-    const service = createServiceClient();
     const submittedAt = new Date().toISOString();
-
     const profileRole = profileRoleForProviderType(values.providerType);
 
-    const { error: profileError } = await service.from("profiles").upsert({
+    const { error: profileError } = await supabase.from("profiles").upsert({
       id: userId,
       role: profileRole,
       full_name: fullName,
@@ -111,7 +93,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: profileError.message }, { status: 500 });
     }
 
-    const { error: nurseError } = await service.from("nurses").upsert(
+    const { error: nurseError } = await supabase.from("nurses").upsert(
       {
         id: userId,
         provider_type: values.providerType,
@@ -140,12 +122,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: nurseError.message }, { status: 500 });
     }
 
-    try {
-      await service.auth.admin.updateUserById(userId, {
-        user_metadata: { role: profileRole, provider_type: values.providerType }
-      });
-    } catch (metadataError) {
-      console.error("register.nurse.auth_metadata.error", metadataError);
+    if (isSupabaseServiceRoleConfigured()) {
+      try {
+        const service = createServiceClient();
+        await service.auth.admin.updateUserById(userId, {
+          user_metadata: { role: profileRole, provider_type: values.providerType }
+        });
+      } catch (metadataError) {
+        console.error("register.nurse.auth_metadata.error", metadataError);
+      }
     }
 
     return NextResponse.json({ ok: true });
