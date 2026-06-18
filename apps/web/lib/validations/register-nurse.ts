@@ -2,6 +2,7 @@ import { z } from "zod";
 import { isCityInRegion } from "@/lib/data/ph-locations";
 import { nurseProfileFieldsSchema } from "@/lib/validations/profile";
 import { containsProfanity } from "@/lib/validation/sanitize";
+import { isValidPrcLicenseNo, PRC_LICENSE_ERROR } from "@/lib/validation/prc-license";
 
 export const completeNurseRegistrationSchema = nurseProfileFieldsSchema
   .extend({
@@ -30,10 +31,10 @@ export const completeNurseRegistrationSchema = nurseProfileFieldsSchema
           message: "PRC license number is required.",
           path: ["prcLicenseNo"]
         });
-      } else if (!/^\d{5,10}$/.test(prcNo)) {
+      } else if (!isValidPrcLicenseNo(prcNo)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "PRC license number must be 5–10 digits.",
+          message: PRC_LICENSE_ERROR,
           path: ["prcLicenseNo"]
         });
       }

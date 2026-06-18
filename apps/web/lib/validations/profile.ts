@@ -3,6 +3,7 @@ import { isCityInRegion } from "@/lib/data/ph-locations";
 import { DAILY_RATE_BAND_IDS, HOURLY_RATE_BAND_IDS } from "@/lib/data/rates";
 import { containsProfanity, sanitizeText } from "@/lib/validation/sanitize";
 import { philippineMobileSchema } from "@/lib/validation/phone";
+import { isValidPrcLicenseNo, PRC_LICENSE_ERROR } from "@/lib/validation/prc-license";
 
 const APPROPRIATE_MESSAGE = "Please keep your content appropriate.";
 
@@ -76,10 +77,10 @@ export const nurseProfileFormSchema = nurseProfileFieldsSchema
           message: "PRC license number is required.",
           path: ["prcLicenseNo"]
         });
-      } else if (!/^\d{5,10}$/.test(prcNo)) {
+      } else if (!isValidPrcLicenseNo(prcNo)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "PRC license number must be 5–10 digits.",
+          message: PRC_LICENSE_ERROR,
           path: ["prcLicenseNo"]
         });
       }
@@ -131,7 +132,8 @@ export const nurseProfileEditSchema = z
     address: optionalText(),
     prcLicenseNo: optionalText(),
     tesdaCertificateNo: optionalText(),
-    specializations: requiredText(1, "Enter at least one specialization."),
+    selectedSpecializations: z.array(z.string()).min(1, "Select at least one specialization."),
+    customSpecialization: optionalText(),
     yearsExperience: z.number().min(0, "Years of experience cannot be negative."),
     bio: optionalText(),
     hourlyRateRange: hourlyRateRangeField,
@@ -141,6 +143,16 @@ export const nurseProfileEditSchema = z
     tesda_document_url: z.string().optional(),
     nbi_document_url: z.string().optional()
   })
-  .superRefine(validateCityInRegion);
+  .superRefine((values, context) => {
+    validateCityInRegion(values, context);
+    const prcNo = values.prcLicenseNo?.trim() ?? "";
+    if (prcNo && !isValidPrcLicenseNo(prcNo)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: PRC_LICENSE_ERROR,
+        path: ["prcLicenseNo"]
+      });
+    }
+  });
 
 export type NurseProfileEditValues = z.infer<typeof nurseProfileEditSchema>;
