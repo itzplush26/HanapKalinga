@@ -196,6 +196,18 @@ jobs:
             adb install ${{ runner.temp }}/app.apk
             case ${{ matrix.shard }} in nurse) E="${{ needs.seed-e2e.outputs.NURSE_EMAIL }}" ;; family|auth) E="${{ needs.seed-e2e.outputs.FAMILY_EMAIL }}" ;; admin) E="${{ needs.seed-e2e.outputs.ADMIN_EMAIL }}" ;; esac; maestro test apps/mobile/maestro/${{ matrix.shard }}/ --env APP_ID=com.hanapkalinga.mobile --env ENV=${{ inputs.environment || 'staging' }} --env TEST_EMAIL="$E" --env TEST_PASSWORD="${{ needs.seed-e2e.outputs.PASSWORD }}" --env BOOKING_ID="${{ needs.seed-e2e.outputs.BOOKING_ID }}" --env NURSE_ID="${{ needs.seed-e2e.outputs.NURSE_ID }}" --env VERIFICATION_ID="${{ needs.seed-e2e.outputs.VERIFICATION_ID }}"
 
+      - name: Sanitize screenshot filenames (remove emoji characters)
+        if: always()
+        run: |
+          find ~/.maestro/tests/ -name "*.png" | while IFS= read -r f; do
+            dir=$(dirname "$f")
+            base=$(basename "$f")
+            newbase=$(echo "$base" | sed 's/[^a-zA-Z0-9_.()-]//g')
+            if [ "$base" != "$newbase" ]; then
+              mv "$f" "$dir/$newbase"
+            fi
+          done
+
       - name: Upload Maestro screenshots (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
