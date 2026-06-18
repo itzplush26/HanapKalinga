@@ -10,6 +10,9 @@ web-build/
 expo-env.d.ts
 .env.maestro
 
+# Artifacts
+artifacts/
+
 # Native
 .kotlin/
 *.orig.*

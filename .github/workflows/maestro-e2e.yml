@@ -75,6 +75,8 @@ jobs:
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: |
           npx expo prebuild --platform android --clean
+          # Disable New Architecture (Fabric) — tracks incompatibility with native modules
+          sed -i 's/newArchEnabled=true/newArchEnabled=false/' android/gradle.properties
           cd android
           ./gradlew assembleRelease
           cp app/build/outputs/apk/release/app-release.apk ${{ runner.temp }}/app.apk
@@ -216,8 +218,8 @@ jobs:
             adb shell pidof com.hanapkalinga.mobile 2>/dev/null || echo "App process not found"
             echo "--- Foreground activity ---"
             adb shell dumpsys activity activities 2>/dev/null | grep -E 'mResumedActivity|mFocusedActivity' || echo "NO FOREGROUND ACTIVITY (app crashed)"
-            echo "--- Last 50 logcat lines (crash traces) ---"
-            adb logcat -d -t 50 2>/dev/null | grep -iE 'crash|exception|fatal|error|androidRuntime|com\.hanapkalinga' || echo "No crash traces in logcat"
+            echo "--- Last 500 logcat lines (crash traces) ---"
+            adb logcat -d -t 500 2>/dev/null | grep -iE 'crash|exception|fatal|error|androidRuntime|com\.hanapkalinga|NativeModule|SoLoader|FATAL' || echo "No crash traces in logcat"
             echo "--- Logcat for com.hanapkalinga ---"
             adb logcat -d 2>/dev/null | grep -i 'com\.hanapkalinga' | tail -30 || echo "No hanapkalinga logs"
             echo "--- Screenshot ---"
