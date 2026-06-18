@@ -184,9 +184,6 @@ function UpdatePasswordForm() {
           >
             Resend code
           </LoadingButton>
-          <Link href="/login/forgot-password" className="underline">
-            Request a new code
-          </Link>
           <Link href="/login" className="underline">
             Back to log in
           </Link>
