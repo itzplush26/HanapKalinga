@@ -12,6 +12,7 @@ interface TermsAcceptanceModalProps {
   open: boolean;
   onAccept: () => void;
   onClose: () => void;
+  alreadyAccepted?: boolean;
 }
 
 function ConsentCheckbox({
@@ -39,7 +40,12 @@ function ConsentCheckbox({
   );
 }
 
-export function TermsAcceptanceModal({ open, onAccept, onClose }: TermsAcceptanceModalProps) {
+export function TermsAcceptanceModal({
+  open,
+  onAccept,
+  onClose,
+  alreadyAccepted = false
+}: TermsAcceptanceModalProps) {
   const [agreedPrivacy, setAgreedPrivacy] = useState(false);
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [accepting, setAccepting] = useState(false);
@@ -47,12 +53,17 @@ export function TermsAcceptanceModal({ open, onAccept, onClose }: TermsAcceptanc
   const canContinue = agreedPrivacy && agreedTerms;
 
   useEffect(() => {
-    if (!open) {
-      setAgreedPrivacy(false);
-      setAgreedTerms(false);
+    if (open) {
+      setAgreedPrivacy(alreadyAccepted);
+      setAgreedTerms(alreadyAccepted);
       setAccepting(false);
+      return;
     }
-  }, [open]);
+
+    setAgreedPrivacy(false);
+    setAgreedTerms(false);
+    setAccepting(false);
+  }, [open, alreadyAccepted]);
 
   if (!open) return null;
 

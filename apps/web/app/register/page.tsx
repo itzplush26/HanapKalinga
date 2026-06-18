@@ -17,7 +17,8 @@ import { TurnstileWidget } from "@/components/turnstile-widget";
 import {
   getTermsAcceptedAtForUser,
   hasAcceptedTermsForUser,
-  recordTermsAcceptanceForUser
+  recordTermsAcceptanceForUser,
+  syncTermsAcceptanceFromProfile
 } from "@/lib/terms-acceptance";
 import { mapUploadErrorMessage } from "@/lib/storage/parse-upload-response";
 import { Input } from "@/components/ui/input";
@@ -58,6 +59,7 @@ export default function RegisterPage() {
   const [termsPendingUserId, setTermsPendingUserId] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const supabase = createClient();
   const turnstileRequired = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
@@ -132,7 +134,11 @@ export default function RegisterPage() {
       saveSignupUserId(existingUserId);
       setEmail(values.email);
       credentialsForm.setValue("email", values.email);
-      if (!hasAcceptedTermsForUser(existingUserId)) {
+      const hasTerms =
+        hasAcceptedTermsForUser(existingUserId) ||
+        (await syncTermsAcceptanceFromProfile(supabase, existingUserId));
+      if (hasTerms) setTermsAccepted(true);
+      if (!hasTerms) {
         setTermsPendingUserId(existingUserId);
         setShowTermsModal(true);
         return;
@@ -242,7 +248,14 @@ export default function RegisterPage() {
       setStatus("Your session expired. Please sign up again from step 1.");
       return null;
     }
-    if (hasAcceptedTermsForUser(userId)) return userId;
+    if (hasAcceptedTermsForUser(userId)) {
+      setTermsAccepted(true);
+      return userId;
+    }
+    if (await syncTermsAcceptanceFromProfile(supabase, userId)) {
+      setTermsAccepted(true);
+      return userId;
+    }
     setTermsPendingUserId(userId);
     setShowTermsModal(true);
     return null;
@@ -270,6 +283,7 @@ export default function RegisterPage() {
       if (profileError.code === "23503") {
         clearSignupStageLocal();
         setSignupUserId(null);
+        setTermsAccepted(false);
         setStep(1);
         setStatus("Your session expired. Please sign up again from step 1.");
       } else {
@@ -278,6 +292,9 @@ export default function RegisterPage() {
       setIsSavingRole(false);
       return;
     }
+
+    recordTermsAcceptanceForUser(userId, acceptedAt);
+    setTermsAccepted(true);
 
     if (nextRole === "nurse") {
       const { error: nurseError } = await ensureNurseProfile(supabase, userId, "nurse");
@@ -460,6 +477,7 @@ export default function RegisterPage() {
       return;
     }
     recordTermsAcceptanceForUser(acceptedUserId);
+    setTermsAccepted(true);
     setSignupUserId(acceptedUserId);
     saveSignupUserId(acceptedUserId);
     setShowTermsModal(false);
@@ -484,6 +502,10 @@ export default function RegisterPage() {
       if (userId) {
         setSignupUserId(userId);
         saveSignupUserId(userId);
+        const hasTerms =
+          hasAcceptedTermsForUser(userId) ||
+          (await syncTermsAcceptanceFromProfile(supabase, userId));
+        setTermsAccepted(hasTerms);
       }
       setAuthChecked(true);
     }
@@ -1029,6 +1051,7 @@ export default function RegisterPage() {
 
       <TermsAcceptanceModal
         open={showTermsModal}
+        alreadyAccepted={termsAccepted}
         onAccept={handleTermsAccepted}
         onClose={() => {
           setShowTermsModal(false);
