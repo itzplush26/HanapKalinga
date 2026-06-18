@@ -14,6 +14,7 @@ import { RegionCitySelects } from "@/components/region-city-selects";
 import { PageHeader } from "@/components/page-header";
 import { ProfilePhotoUploader } from "@/components/profile-photo-uploader";
 import { SignOutDialog } from "@/components/sign-out-dialog";
+import { ChangeEmailSection } from "@/components/change-email-section";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { resolveProfileDisplayName } from "@/lib/profile-display";
 import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
@@ -227,6 +228,7 @@ export default function FamilyProfilePage() {
           ) : null}
           <Button type="submit" className="w-full">Save changes</Button>
         </form>
+        <ChangeEmailSection />
         <SignOutDialog className="mt-2" />
       </div>
     </main>

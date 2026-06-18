@@ -14,7 +14,7 @@ const AUTH_MESSAGES: Record<string, string> = {
 
 export function mapSupabaseError(
   error: { message?: string; code?: string } | string | null | undefined,
-  context?: "auth" | "profile" | "signup" | "password" | "generic"
+  context?: "auth" | "profile" | "signup" | "password" | "email_change" | "generic"
 ): string {
   const message = typeof error === "string" ? error : error?.message ?? "";
   const code = typeof error === "string" ? "" : error?.code ?? "";
@@ -56,6 +56,22 @@ export function mapSupabaseError(
       return "This code has expired. Request a new one and try again.";
     }
     return "We could not update your password. Please try again.";
+  }
+
+  if (context === "email_change") {
+    if (message === "User already registered" || combined.includes("already been registered")) {
+      return AUTH_MESSAGES["User already registered"];
+    }
+    if (message === "Token has expired or is invalid") {
+      return AUTH_MESSAGES["Token has expired or is invalid"];
+    }
+    if (message.toLowerCase().includes("otp") || code === "otp_expired") {
+      return "This code has expired. Request a new one and try again.";
+    }
+    if (message === "Email rate limit exceeded") {
+      return AUTH_MESSAGES["Email rate limit exceeded"];
+    }
+    return "We could not update your email. Please try again.";
   }
 
   if (!message) {

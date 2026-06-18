@@ -61,3 +61,16 @@ export const passwordResetCompleteSchema = z
 export const roleSchema = z.object({
   role: z.enum(["family", "nurse"])
 });
+
+export const emailChangeRequestSchema = z.object({
+  newEmail: z.string().email("Enter a valid email address.")
+});
+
+export const emailChangeVerifySchema = z.object({
+  newEmail: z.string().email("Enter a valid email address."),
+  otp: z
+    .string()
+    .min(6, "Enter the 6-digit code from your email.")
+    .max(6, "Enter the 6-digit code from your email.")
+    .regex(/^\d{6}$/, "Enter the 6-digit code from your email.")
+});

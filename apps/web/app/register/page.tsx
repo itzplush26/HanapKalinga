@@ -15,6 +15,7 @@ import { LoadingButton } from "@/components/ui/loading-button";
 import { TermsAcceptanceModal } from "@/components/terms-acceptance-modal";
 import { TurnstileWidget } from "@/components/turnstile-widget";
 import {
+  clearTermsAcceptanceSession,
   getTermsAcceptedAtForUser,
   hasAcceptedTermsForUser,
   recordTermsAcceptanceForUser,
@@ -123,6 +124,14 @@ export default function RegisterPage() {
     clearSignupStage();
   }
 
+  async function resetSignupAuthState() {
+    clearSignupStageLocal();
+    clearTermsAcceptanceSession();
+    setSignupUserId(null);
+    setTermsAccepted(false);
+    await supabase.auth.signOut({ scope: "local" });
+  }
+
   async function handleCredentialsSubmit(values: {
     email: string;
     password: string;
@@ -131,21 +140,28 @@ export default function RegisterPage() {
     setStatus(null);
     const existingUserId = await resolveAuthUserId(supabase, signupUserId);
     if (existingUserId) {
-      setSignupUserId(existingUserId);
-      saveSignupUserId(existingUserId);
-      setEmail(values.email);
-      credentialsForm.setValue("email", values.email);
-      const hasTerms =
-        hasAcceptedTermsForUser(existingUserId) ||
-        (await syncTermsAcceptanceFromProfile(supabase, existingUserId));
-      if (hasTerms) setTermsAccepted(true);
-      if (!hasTerms) {
-        setTermsPendingUserId(existingUserId);
-        setShowTermsModal(true);
+      const { data: authData } = await supabase.auth.getUser();
+      const sessionEmail = authData.user?.email?.trim().toLowerCase() ?? "";
+      const submittedEmail = values.email.trim().toLowerCase();
+      if (sessionEmail && sessionEmail === submittedEmail) {
+        setSignupUserId(existingUserId);
+        saveSignupUserId(existingUserId);
+        setEmail(values.email);
+        credentialsForm.setValue("email", values.email);
+        const hasTerms =
+          hasAcceptedTermsForUser(existingUserId) ||
+          (await syncTermsAcceptanceFromProfile(supabase, existingUserId));
+        if (hasTerms) setTermsAccepted(true);
+        if (!hasTerms) {
+          setTermsPendingUserId(existingUserId);
+          setShowTermsModal(true);
+          return;
+        }
+        setStep(2);
         return;
       }
-      setStep(2);
-      return;
+
+      await resetSignupAuthState();
     }
 
     await performSignUp(values);
@@ -189,7 +205,20 @@ export default function RegisterPage() {
         await supabase.auth.setSession(data.session);
       }
 
-      const userId = data.user?.id ?? data.session?.user?.id ?? null;
+      const { data: verifiedAuth } = await supabase.auth.getUser();
+      const verifiedUser = verifiedAuth.user;
+
+      if (
+        data.user &&
+        (!data.user.identities || data.user.identities.length === 0) &&
+        !verifiedUser
+      ) {
+        setStatus("An account with this email may already exist. Try logging in instead.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const userId = verifiedUser?.id ?? data.user?.id ?? data.session?.user?.id ?? null;
       if (!userId) {
         setStatus("Account could not be created. Please try again.");
         setIsSubmitting(false);
@@ -282,9 +311,7 @@ export default function RegisterPage() {
     if (profileError) {
       console.error("signup.profiles_role.error", profileError);
       if (profileError.code === "23503") {
-        clearSignupStageLocal();
-        setSignupUserId(null);
-        setTermsAccepted(false);
+        await resetSignupAuthState();
         setStep(1);
         setStatus("Your session expired. Please sign up again from step 1.");
       } else {
@@ -472,8 +499,7 @@ export default function RegisterPage() {
       setStatus("Your session expired. Please sign up again from step 1.");
       setShowTermsModal(false);
       setTermsPendingUserId(null);
-      clearSignupStageLocal();
-      setSignupUserId(null);
+      await resetSignupAuthState();
       setStep(1);
       return;
     }
