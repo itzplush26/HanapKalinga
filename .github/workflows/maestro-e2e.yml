@@ -207,17 +207,29 @@ jobs:
             
             # === DIAGNOSTIC: Check if app survives launch ===
             echo "=== DIAGNOSTIC: Launching app and checking if it stays alive ==="
+            mkdir -p "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}"
             adb shell am start -n com.hanapkalinga.mobile/.MainActivity
             sleep 15
-            echo "--- Focused activity ---"
-            adb shell dumpsys window windows 2>/dev/null | grep -E 'mFocusedActivity|mCurrentFocus' || echo "NO ACTIVITY FOCUSED (app likely crashed)"
-            echo "--- Window dump (first 30 lines) ---"
+            echo "--- Processes ---"
+            adb shell ps | grep -E 'com\.hanapkalinga|PID' || echo "NO PROCESS FOUND (app process died)"
+            echo "--- PID check ---"
+            APP_PID=$(adb shell pidof com.hanapkalinga.mobile 2>/dev/null || echo "")
+            if [ -n "$APP_PID" ]; then
+              echo "App is running with PID: $APP_PID"
+            else
+              echo "APP PROCESS NOT FOUND (app crashed)"
+            fi
+            echo "--- Foreground activity ---"
+            adb shell dumpsys activity activities 2>/dev/null | grep -E 'mResumedActivity|mFocusedActivity' || echo "NO FOREGROUND ACTIVITY"
+            echo "--- Last 50 lines of logcat (crash traces) ---"
+            adb logcat -d -t 50 2>/dev/null | grep -iE 'crash|exception|fatal|error|androidRuntime|com\.hanapkalinga' || echo "No crash traces found in logcat buffer"
+            echo "--- Full logcat for com.hanapkalinga ---"
+            adb logcat -d 2>/dev/null | grep -i 'com\.hanapkalinga' | tail -30 || echo "No hanapkalinga logs"
+            echo "--- Screenshot ---"
+            adb exec-out screencap -p > "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}/diagnostic-screenshot.png" 2>/dev/null || echo "Screenshot failed"
+            echo "--- UI hierarchy ---"
             adb shell uiautomator dump /sdcard/diagnostic-window.xml 2>/dev/null || true
-            adb shell uiautomator dump --compressed /sdcard/diagnostic-window-compressed.xml 2>/dev/null || true
-            adb pull /sdcard/diagnostic-window.xml "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}/diagnostic-window.xml" 2>/dev/null || echo "Failed to pull diagnostic XML"
-            adb exec-out screencap -p > "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}/diagnostic-screenshot.png" 2>/dev/null || true
-            echo "--- Package list (com.hanapkalinga) ---"
-            adb shell dumpsys package com.hanapkalinga.mobile 2>/dev/null | head -5 || echo "Package not found"
+            adb pull /sdcard/diagnostic-window.xml "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}/diagnostic-window.xml" 2>/dev/null || echo "UI dump pull failed"
             echo "=== DIAGNOSTIC END ==="
             adb shell am force-stop com.hanapkalinga.mobile
             sleep 2
