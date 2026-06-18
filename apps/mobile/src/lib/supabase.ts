@@ -26,5 +26,16 @@ export const supabase = createClient<Database>(url, anonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+    // Reduce network timeout for faster failures in test environments
+    flowType: 'pkce',
+  },
+  global: {
+    headers: {
+      'x-client-info': 'hanapkalinga-mobile',
+    },
+  },
+  // Set reasonable timeout for network requests to prevent hanging
+  realtime: {
+    timeout: 5000,
   },
 });
