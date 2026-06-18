@@ -37,6 +37,12 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { ensureNurseProfile } from "@/lib/nurse/ensure-profile";
 import { mapSupabaseError } from "@/lib/user-errors";
 import { toTitleCase } from "@/lib/validation/format-name";
+import { normalizePrcLicenseInput } from "@/lib/validation/prc-license";
+import {
+  mergeSpecializations,
+  SpecializationsPicker,
+  splitStoredSpecializations
+} from "@/components/specializations-picker";
 
 export default function NurseProfilePage() {
   const supabase = createClient();
@@ -64,7 +70,8 @@ export default function NurseProfilePage() {
       address: "",
       prcLicenseNo: "",
       tesdaCertificateNo: "",
-      specializations: "",
+      selectedSpecializations: [] as string[],
+      customSpecialization: "",
       yearsExperience: 0,
       bio: "",
       hourlyRateRange: "",
@@ -120,6 +127,7 @@ export default function NurseProfilePage() {
         setProfilePhotoUrl(
           resolveProfilePhotoUrl(profile?.profile_photo_url ?? nurse?.profile_photo_url ?? null)
         );
+        const { selected, custom } = splitStoredSpecializations(nurse?.specializations ?? []);
         form.reset({
           firstName: profile?.first_name ?? nameParts[0] ?? "",
           middleName: profile?.middle_name ?? "",
@@ -131,7 +139,8 @@ export default function NurseProfilePage() {
           address: profile?.address ?? "",
           prcLicenseNo: nurse?.prc_license_no ?? "",
           tesdaCertificateNo: nurse?.tesda_certificate_no ?? "",
-          specializations: (nurse?.specializations ?? []).join(", "),
+          selectedSpecializations: selected,
+          customSpecialization: custom,
           yearsExperience: nurse?.years_experience ?? 0,
           bio: nurse?.bio ?? "",
           hourlyRateRange: inferHourlyRateBandId(
@@ -220,13 +229,18 @@ export default function NurseProfilePage() {
         verificationStatus === "rejected" ||
         verificationStatus === "resubmission_required");
 
+    const specializations = mergeSpecializations(
+      values.selectedSpecializations,
+      values.customSpecialization ?? ""
+    );
+
     const { error: nurseError } = await supabase.from("nurses").upsert(
       {
         id: user.id,
         provider_type: providerType,
         prc_license_no: providerType === "nurse" ? values.prcLicenseNo || null : null,
         tesda_certificate_no: providerType === "caregiver" ? values.tesdaCertificateNo || null : null,
-        specializations: values.specializations.split(",").map((item: string) => item.trim()),
+        specializations,
         years_experience: values.yearsExperience,
         bio: values.bio || null,
         hourly_rate: hourlyRates.min,
@@ -339,15 +353,39 @@ export default function NurseProfilePage() {
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4" id="documents">
             <div className="space-y-1">
               <Label htmlFor="firstName">First name</Label>
-              <Input id="firstName" placeholder="First name" {...form.register("firstName")} />
+              <Input
+                id="firstName"
+                placeholder="First name"
+                className={form.formState.errors.firstName ? "border-rose-500 focus:ring-rose-500" : undefined}
+                {...form.register("firstName")}
+              />
+              {form.formState.errors.firstName ? (
+                <p className="text-xs text-rose-600">{form.formState.errors.firstName.message}</p>
+              ) : null}
             </div>
             <div className="space-y-1">
               <Label htmlFor="middleName">Middle name</Label>
-              <Input id="middleName" placeholder="Middle name (optional)" {...form.register("middleName")} />
+              <Input
+                id="middleName"
+                placeholder="Middle name (optional)"
+                className={form.formState.errors.middleName ? "border-rose-500 focus:ring-rose-500" : undefined}
+                {...form.register("middleName")}
+              />
+              {form.formState.errors.middleName ? (
+                <p className="text-xs text-rose-600">{form.formState.errors.middleName.message}</p>
+              ) : null}
             </div>
             <div className="space-y-1">
               <Label htmlFor="lastName">Last name</Label>
-              <Input id="lastName" placeholder="Last name" {...form.register("lastName")} />
+              <Input
+                id="lastName"
+                placeholder="Last name"
+                className={form.formState.errors.lastName ? "border-rose-500 focus:ring-rose-500" : undefined}
+                {...form.register("lastName")}
+              />
+              {form.formState.errors.lastName ? (
+                <p className="text-xs text-rose-600">{form.formState.errors.lastName.message}</p>
+              ) : null}
             </div>
             <div className="space-y-1">
               <Label htmlFor="phone">Phone</Label>
@@ -377,17 +415,48 @@ export default function NurseProfilePage() {
             ) : null}
             <div className="space-y-1">
               <Label htmlFor="barangay">Barangay</Label>
-              <Input id="barangay" placeholder="Barangay" {...form.register("barangay")} />
+              <Input
+                id="barangay"
+                placeholder="Barangay"
+                className={form.formState.errors.barangay ? "border-rose-500 focus:ring-rose-500" : undefined}
+                {...form.register("barangay")}
+              />
+              {form.formState.errors.barangay ? (
+                <p className="text-xs text-rose-600">{form.formState.errors.barangay.message}</p>
+              ) : null}
             </div>
             <div className="space-y-1">
               <Label htmlFor="address">Home address</Label>
-              <Textarea id="address" placeholder="Home address (optional)" {...form.register("address")} />
+              <Textarea
+                id="address"
+                placeholder="Home address (optional)"
+                className={form.formState.errors.address ? "border-rose-500 focus:ring-rose-500" : undefined}
+                {...form.register("address")}
+              />
+              {form.formState.errors.address ? (
+                <p className="text-xs text-rose-600">{form.formState.errors.address.message}</p>
+              ) : null}
             </div>
             <div className="space-y-1">
               {providerType === "nurse" ? (
                 <>
                   <Label htmlFor="prcLicenseNo">PRC license number</Label>
-                  <Input id="prcLicenseNo" placeholder="PRC license number" {...form.register("prcLicenseNo")} />
+                  <Input
+                    id="prcLicenseNo"
+                    placeholder="7-digit number"
+                    inputMode="numeric"
+                    maxLength={7}
+                    className={form.formState.errors.prcLicenseNo ? "border-rose-500 focus:ring-rose-500" : undefined}
+                    {...form.register("prcLicenseNo")}
+                    onInput={(event) => {
+                      event.currentTarget.value = normalizePrcLicenseInput(event.currentTarget.value);
+                    }}
+                  />
+                  {form.formState.errors.prcLicenseNo ? (
+                    <p className="text-xs text-rose-600">{form.formState.errors.prcLicenseNo.message}</p>
+                  ) : (
+                    <p className="text-xs text-slate-500">Enter the 7-digit number from your PRC ID.</p>
+                  )}
                 </>
               ) : (
                 <>
@@ -400,14 +469,20 @@ export default function NurseProfilePage() {
                 </>
               )}
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="specializations">Specializations</Label>
-              <Input
-                id="specializations"
-                placeholder="Specializations (comma separated)"
-                {...form.register("specializations")}
-              />
-            </div>
+            <SpecializationsPicker
+              selected={form.watch("selectedSpecializations")}
+              customValue={form.watch("customSpecialization") ?? ""}
+              onSelectedChange={(value) =>
+                form.setValue("selectedSpecializations", value, { shouldValidate: true })
+              }
+              onCustomChange={(value) =>
+                form.setValue("customSpecialization", value, { shouldValidate: true })
+              }
+              error={
+                form.formState.errors.selectedSpecializations?.message ??
+                form.formState.errors.customSpecialization?.message
+              }
+            />
             <div className="space-y-1">
               <Label htmlFor="yearsExperience">Years of experience</Label>
               <Select
@@ -426,7 +501,15 @@ export default function NurseProfilePage() {
             </div>
             <div className="space-y-1">
               <Label htmlFor="bio">Bio</Label>
-              <Textarea id="bio" placeholder="Bio" {...form.register("bio")} />
+              <Textarea
+                id="bio"
+                placeholder="Bio"
+                className={form.formState.errors.bio ? "border-rose-500 focus:ring-rose-500" : undefined}
+                {...form.register("bio")}
+              />
+              {form.formState.errors.bio ? (
+                <p className="text-xs text-rose-600">{form.formState.errors.bio.message}</p>
+              ) : null}
             </div>
             <div className="space-y-1">
               <Label htmlFor="hourlyRateRange">Expected hourly rate range</Label>

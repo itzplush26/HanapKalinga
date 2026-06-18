@@ -70,6 +70,27 @@ export async function POST(request: Request) {
       if (!reporterIsParty || !reportedIsParty) {
         return NextResponse.json({ error: "You can only report users from your own bookings." }, { status: 403 });
       }
+    } else {
+      const { data: sharedBooking, error: sharedBookingError } = await supabase
+        .from("bookings")
+        .select("id")
+        .or(
+          `and(family_id.eq.${auth.user.id},nurse_id.eq.${reportedUserId}),and(family_id.eq.${reportedUserId},nurse_id.eq.${auth.user.id})`
+        )
+        .limit(1)
+        .maybeSingle();
+
+      if (sharedBookingError) {
+        console.error("[incident-reports] booking lookup failed:", sharedBookingError.message);
+        return NextResponse.json({ error: "Could not verify booking history." }, { status: 500 });
+      }
+
+      if (!sharedBooking) {
+        return NextResponse.json(
+          { error: "You can only report users you have a booking with." },
+          { status: 403 }
+        );
+      }
     }
 
     const { data: report, error } = await service

@@ -162,6 +162,9 @@ export default function FamilyProfilePage() {
             <div className="space-y-1">
               <Label htmlFor="middleName">Middle name (optional)</Label>
               <Input id="middleName" {...form.register("middleName")} />
+              {form.formState.errors.middleName ? (
+                <p className="text-xs text-rose-600">{form.formState.errors.middleName.message}</p>
+              ) : null}
             </div>
           </div>
           <div className="space-y-1">
@@ -199,11 +202,25 @@ export default function FamilyProfilePage() {
           ) : null}
           <div className="space-y-1">
             <Label htmlFor="barangay">Barangay</Label>
-            <Input id="barangay" {...form.register("barangay")} />
+            <Input
+              id="barangay"
+              className={form.formState.errors.barangay ? "border-rose-500 focus:ring-rose-500" : undefined}
+              {...form.register("barangay")}
+            />
+            {form.formState.errors.barangay ? (
+              <p className="text-xs text-rose-600">{form.formState.errors.barangay.message}</p>
+            ) : null}
           </div>
           <div className="space-y-1">
             <Label htmlFor="address">Home address</Label>
-            <Textarea id="address" {...form.register("address")} />
+            <Textarea
+              id="address"
+              className={form.formState.errors.address ? "border-rose-500 focus:ring-rose-500" : undefined}
+              {...form.register("address")}
+            />
+            {form.formState.errors.address ? (
+              <p className="text-xs text-rose-600">{form.formState.errors.address.message}</p>
+            ) : null}
           </div>
           {saved ? (
             <p className="text-sm text-emerald-700">Profile saved successfully.</p>

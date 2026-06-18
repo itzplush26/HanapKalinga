@@ -6,7 +6,6 @@ import { createClient } from "@/lib/supabase/server";
 import { resolveNurseId } from "@/lib/nurse/resolve";
 import { ShareProfileButton } from "@/components/share-profile-button";
 import { ReviewBreakdown } from "@/components/review-breakdown";
-import { ReportUserMenu } from "@/components/report-user-menu";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { PublicWeeklyAvailabilityGrid } from "@/components/public-weekly-availability-grid";
 import { NurseProfileBookSection } from "@/components/nurse-profile-book-section";
@@ -224,9 +223,6 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
                     profileUrl={appUrl(profilePath)}
                     nurseName={displayName}
                   />
-                  {auth.user ? (
-                    <ReportUserMenu reportedUserId={nurseId} reportedUserName={displayName} />
-                  ) : null}
                 </div>
               </div>
               {locationParts.length > 0 ? (

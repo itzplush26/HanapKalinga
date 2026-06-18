@@ -41,6 +41,7 @@ import {
   SIGNUP_TOTAL_STEPS
 } from "@/lib/signup-stage";
 import { toTitleCase } from "@/lib/validation/format-name";
+import { normalizePrcLicenseInput } from "@/lib/validation/prc-license";
 
 const SIGNUP_STAGE_KEYS = getSignupStageKeys();
 
@@ -799,6 +800,9 @@ export default function RegisterPage() {
                 {...familyForm.register("barangay")}
                 className={familyForm.formState.errors.barangay ? "border-rose-500 focus:ring-rose-500" : undefined}
               />
+              {familyForm.formState.errors.barangay ? (
+                <p className="text-xs text-rose-600">{familyForm.formState.errors.barangay.message}</p>
+              ) : null}
             </div>
             <div className="space-y-1">
               {requiredLabel("Home address", !!familyForm.formState.errors.address)}
@@ -807,6 +811,9 @@ export default function RegisterPage() {
                 {...familyForm.register("address")}
                 className={familyForm.formState.errors.address ? "border-rose-500 focus:ring-rose-500" : undefined}
               />
+              {familyForm.formState.errors.address ? (
+                <p className="text-xs text-rose-600">{familyForm.formState.errors.address.message}</p>
+              ) : null}
             </div>
             <LoadingButton
               type="submit"
@@ -829,10 +836,16 @@ export default function RegisterPage() {
                   {...nurseForm.register("firstName")}
                   className={nurseForm.formState.errors.firstName ? "border-rose-500 focus:ring-rose-500" : undefined}
                 />
+                {nurseForm.formState.errors.firstName ? (
+                  <p className="text-xs text-rose-600">{nurseForm.formState.errors.firstName.message}</p>
+                ) : null}
               </div>
               <div className="space-y-1">
                 {optionalLabel("Middle name (optional)")}
                 <Input placeholder="Middle name" {...nurseForm.register("middleName")} />
+                {nurseForm.formState.errors.middleName ? (
+                  <p className="text-xs text-rose-600">{nurseForm.formState.errors.middleName.message}</p>
+                ) : null}
               </div>
             </div>
             <div className="space-y-1">
@@ -842,6 +855,9 @@ export default function RegisterPage() {
                 {...nurseForm.register("lastName")}
                 className={nurseForm.formState.errors.lastName ? "border-rose-500 focus:ring-rose-500" : undefined}
               />
+              {nurseForm.formState.errors.lastName ? (
+                <p className="text-xs text-rose-600">{nurseForm.formState.errors.lastName.message}</p>
+              ) : null}
             </div>
             {requiredLabel("Provider type", !!nurseForm.formState.errors.providerType)}
             <Select
@@ -880,6 +896,9 @@ export default function RegisterPage() {
               {...nurseForm.register("barangay")}
               className={nurseForm.formState.errors.barangay ? "border-rose-500 focus:ring-rose-500" : undefined}
             />
+            {nurseForm.formState.errors.barangay ? (
+              <p className="text-xs text-rose-600">{nurseForm.formState.errors.barangay.message}</p>
+            ) : null}
             <div className="space-y-2">
               {requiredLabel("Specializations", !!nurseForm.formState.errors.specializations)}
               <div className="flex flex-wrap gap-2">
@@ -912,7 +931,14 @@ export default function RegisterPage() {
               ) : null}
             </div>
             {optionalLabel("Bio (optional)")}
-            <Textarea placeholder="Bio" {...nurseForm.register("bio")} />
+            <Textarea
+              placeholder="Bio"
+              className={nurseForm.formState.errors.bio ? "border-rose-500 focus:ring-rose-500" : undefined}
+              {...nurseForm.register("bio")}
+            />
+            {nurseForm.formState.errors.bio ? (
+              <p className="text-xs text-rose-600">{nurseForm.formState.errors.bio.message}</p>
+            ) : null}
             <div className="space-y-1">
               {optionalLabel("Expected hourly rate range (optional)")}
               <RateRangeSelect
@@ -946,11 +972,15 @@ export default function RegisterPage() {
                 <Input
                   placeholder="7-digit number"
                   inputMode="numeric"
+                  maxLength={7}
                   autoComplete="off"
                   {...nurseForm.register("prcLicenseNo")}
                   className={
                     nurseForm.formState.errors.prcLicenseNo ? "border-rose-500 focus:ring-rose-500" : undefined
                   }
+                  onInput={(event) => {
+                    event.currentTarget.value = normalizePrcLicenseInput(event.currentTarget.value);
+                  }}
                 />
                 <p className="text-xs text-slate-500">
                   You can find this on your PRC ID card, usually a 7-digit number.

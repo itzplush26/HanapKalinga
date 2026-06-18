@@ -25,6 +25,7 @@ export default function NurseAvailabilityPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [showExceptions, setShowExceptions] = useState(false);
   const [exceptionDate, setExceptionDate] = useState("");
   const [exceptionOpen, setExceptionOpen] = useState(false);
@@ -91,11 +92,13 @@ export default function NurseAvailabilityPage() {
   async function handleSave() {
     setSaving(true);
     setSaved(false);
+    setSaveError(null);
 
     const { data: auth } = await supabase.auth.getUser();
     const user = auth.user;
     if (!user) {
       setSaving(false);
+      setSaveError("Your session expired. Please sign in again.");
       return;
     }
 
@@ -111,8 +114,16 @@ export default function NurseAvailabilityPage() {
       }
     }
 
-    await supabase.from("provider_weekly_availability").delete().eq("nurse_id", user.id);
-    await supabase.from("provider_weekly_availability").insert(weeklyRows);
+    const { error: weeklyError } = await supabase
+      .from("provider_weekly_availability")
+      .upsert(weeklyRows, { onConflict: "nurse_id,day_of_week,shift" });
+
+    if (weeklyError) {
+      console.error("availability.weekly.error", weeklyError);
+      setSaving(false);
+      setSaveError("Could not save your weekly schedule. Please try again.");
+      return;
+    }
 
     const exceptionRows = [...exceptions.entries()].map(([date, is_open]) => ({
       nurse_id: user.id,
@@ -120,17 +131,44 @@ export default function NurseAvailabilityPage() {
       is_open
     }));
 
-    await supabase.from("availability_date_exceptions").delete().eq("nurse_id", user.id);
-    if (exceptionRows.length) {
-      await supabase.from("availability_date_exceptions").insert(exceptionRows);
+    const { error: deleteExceptionsError } = await supabase
+      .from("availability_date_exceptions")
+      .delete()
+      .eq("nurse_id", user.id);
+
+    if (deleteExceptionsError) {
+      console.error("availability.exceptions.delete.error", deleteExceptionsError);
+      setSaving(false);
+      setSaveError("Could not save date overrides. Please try again.");
+      return;
     }
 
-    await supabase
+    if (exceptionRows.length) {
+      const { error: exceptionsError } = await supabase
+        .from("availability_date_exceptions")
+        .insert(exceptionRows);
+
+      if (exceptionsError) {
+        console.error("availability.exceptions.insert.error", exceptionsError);
+        setSaving(false);
+        setSaveError("Could not save date overrides. Please try again.");
+        return;
+      }
+    }
+
+    const { error: deleteAvailabilityError } = await supabase
       .from("availability")
       .delete()
       .eq("nurse_id", user.id)
       .gte("date", todayManila)
       .lte("date", endDate);
+
+    if (deleteAvailabilityError) {
+      console.error("availability.generated.delete.error", deleteAvailabilityError);
+      setSaving(false);
+      setSaveError("Could not update generated availability. Please try again.");
+      return;
+    }
 
     const generated = generateAvailabilityRows(weeklyPattern, exceptions, todayManila);
     const availabilityPayload = generated.map((row) => ({
@@ -141,7 +179,16 @@ export default function NurseAvailabilityPage() {
     }));
 
     for (let i = 0; i < availabilityPayload.length; i += 100) {
-      await supabase.from("availability").upsert(availabilityPayload.slice(i, i + 100));
+      const { error: availabilityError } = await supabase
+        .from("availability")
+        .upsert(availabilityPayload.slice(i, i + 100), { onConflict: "nurse_id,date,shift" });
+
+      if (availabilityError) {
+        console.error("availability.generated.upsert.error", availabilityError);
+        setSaving(false);
+        setSaveError("Could not save generated availability. Please try again.");
+        return;
+      }
     }
 
     setSaving(false);
@@ -281,6 +328,7 @@ export default function NurseAvailabilityPage() {
               {saving ? "Saving..." : "Save weekly schedule"}
             </Button>
             {saved ? <span className="text-sm text-emerald-600">Schedule saved</span> : null}
+            {saveError ? <span className="text-sm text-rose-600">{saveError}</span> : null}
           </div>
         </div>
       </main>
