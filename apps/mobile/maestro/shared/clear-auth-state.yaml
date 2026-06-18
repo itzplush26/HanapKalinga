@@ -1,0 +1,36 @@
+appId: ${APP_ID}
+---
+# Helper flow to aggressively clear auth state when tests get stuck
+# This can be called before setup.yaml if needed
+
+- launchApp:
+    appId: ${APP_ID}
+    stopApp: true
+    clearState: true
+    clearKeychain: true
+
+# Give app time to fully initialize
+- waitForAnimationToEnd:
+    timeout: 10000
+
+# Try to logout if already logged in
+- runFlow:
+    when:
+      visible: 
+        id: "tab_profile"
+    commands:
+      - tapOn:
+          id: "tab_profile"
+      - scroll
+      - tapOn:
+          id: "profile_button_logout"
+          optional: true
+      - tapOn:
+          id: "logout_button_confirm"
+          optional: true
+      - waitForAnimationToEnd:
+          timeout: 5000
+
+# Verify we're on the landing page
+- assertVisible:
+    id: "landing_button_login"
