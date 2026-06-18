@@ -1,6 +1,6 @@
 export const APP_NAME = "HanapKalinga";
 
-export const SUPPORT_EMAIL = "support@hanapkalinga.ph";
+export const SUPPORT_EMAIL = "support@hanapkalinga.com";
 
 export const PROVIDER_SPECIALIZATIONS = [
   "Elderly Care",

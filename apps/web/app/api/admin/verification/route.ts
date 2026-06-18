@@ -2,10 +2,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { sendMail } from "@/lib/email/send-mail";
+import { sendEmailSafe } from "@/lib/email/send-safe";
 import {
   buildVerificationApprovedEmailHtml,
-  buildVerificationApprovedEmailText,
   VERIFICATION_APPROVED_SUBJECT
 } from "@/lib/email/verification-approved-email";
 import { hasRequiredDocuments } from "@/lib/admin/verification-documents";
@@ -14,17 +13,14 @@ import { revalidatePublicNursePages } from "@/lib/nurses/revalidate-public";
 import { ensureNurseProfileSlug } from "@/lib/nurse/ensure-profile-slug";
 import {
   buildVerificationRejectedEmailHtml,
-  buildVerificationRejectedEmailText,
   VERIFICATION_REJECTED_SUBJECT
 } from "@/lib/email/templates/verification-rejected";
 import {
   buildVerificationResubmissionEmailHtml,
-  buildVerificationResubmissionEmailText,
   VERIFICATION_RESUBMISSION_SUBJECT
 } from "@/lib/email/templates/verification-resubmission-required";
 import {
   buildVerificationUnderReviewEmailHtml,
-  buildVerificationUnderReviewEmailText,
   VERIFICATION_UNDER_REVIEW_SUBJECT
 } from "@/lib/email/templates/verification-under-review";
 import {
@@ -206,58 +202,47 @@ export async function POST(request: Request) {
     if (recipientEmail) {
       const firstName = profile?.full_name?.trim().split(/\s+/)[0] ?? "there";
 
-      const mailResult =
-        newStatus === "verified"
-          ? await sendMail({
-              to: recipientEmail,
-              subject: VERIFICATION_APPROVED_SUBJECT,
-              text: buildVerificationApprovedEmailText(firstName),
-              html: buildVerificationApprovedEmailHtml(firstName)
-            })
-          : newStatus === "under_review"
-            ? await sendMail({
-                to: recipientEmail,
-                subject: VERIFICATION_UNDER_REVIEW_SUBJECT,
-                text: buildVerificationUnderReviewEmailText(firstName),
-                html: buildVerificationUnderReviewEmailHtml(firstName)
-              })
-            : newStatus === "resubmission_required" && trimmedReason
-              ? await sendMail({
-                  to: recipientEmail,
-                  subject: VERIFICATION_RESUBMISSION_SUBJECT,
-                  text: buildVerificationResubmissionEmailText({
-                    firstName,
-                    reason: trimmedReason,
-                    details: trimmedNotes
-                  }),
-                  html: buildVerificationResubmissionEmailHtml({
-                    firstName,
-                    reason: trimmedReason,
-                    details: trimmedNotes
-                  })
-                })
-              : action === "reject" && trimmedReason
-                ? await sendMail({
-                    to: recipientEmail,
-                    subject: VERIFICATION_REJECTED_SUBJECT,
-                    text: buildVerificationRejectedEmailText({
-                      firstName,
-                      reason: trimmedReason,
-                      details: trimmedNotes
-                    }),
-                    html: buildVerificationRejectedEmailHtml({
-                      firstName,
-                      reason: trimmedReason,
-                      details: trimmedNotes
-                    })
-                  })
-                : await sendMail({
-                    to: recipientEmail,
-                    subject: `[HanapKalinga] ${notification.title}`,
-                    text: `${notification.body}\n\nSign in to view your dashboard: ${process.env.NEXT_PUBLIC_APP_URL ?? "https://hanapkalinga.com"}`
-                  });
-      emailSent = mailResult.sent;
-      emailError = mailResult.error;
+      if (newStatus === "verified") {
+        sendEmailSafe({
+          to: recipientEmail,
+          subject: VERIFICATION_APPROVED_SUBJECT,
+          html: buildVerificationApprovedEmailHtml(firstName)
+        });
+      } else if (newStatus === "under_review") {
+        sendEmailSafe({
+          to: recipientEmail,
+          subject: VERIFICATION_UNDER_REVIEW_SUBJECT,
+          html: buildVerificationUnderReviewEmailHtml(firstName)
+        });
+      } else if (newStatus === "resubmission_required" && trimmedReason) {
+        sendEmailSafe({
+          to: recipientEmail,
+          subject: VERIFICATION_RESUBMISSION_SUBJECT,
+          html: buildVerificationResubmissionEmailHtml({
+            firstName,
+            reason: trimmedReason,
+            details: trimmedNotes
+          })
+        });
+      } else if (action === "reject" && trimmedReason) {
+        sendEmailSafe({
+          to: recipientEmail,
+          subject: VERIFICATION_REJECTED_SUBJECT,
+          html: buildVerificationRejectedEmailHtml({
+            firstName,
+            reason: trimmedReason,
+            details: trimmedNotes
+          })
+        });
+      } else {
+        sendEmailSafe({
+          to: recipientEmail,
+          subject: `[HanapKalinga] ${notification.title}`,
+          html: `<p>${notification.body}</p>`
+        });
+      }
+      emailSent = true;
+      emailError = undefined;
     }
 
     return NextResponse.json({

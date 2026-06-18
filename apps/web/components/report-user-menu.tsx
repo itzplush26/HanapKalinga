@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
+import { containsProfanity } from "@/lib/validation/sanitize";
 
 const CATEGORIES = [
   "Inappropriate behavior",
@@ -32,7 +33,12 @@ export function ReportUserMenu({ reportedUserId, reportedUserName, bookingId }: 
 
   async function submitReport() {
     if (description.trim().length < 50) return;
+    if (containsProfanity(category) || containsProfanity(description)) {
+      setMessage("Please keep your content appropriate.");
+      return;
+    }
     setLoading(true);
+    setMessage(null);
     const response = await fetch("/api/incident-reports", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -46,8 +52,13 @@ export function ReportUserMenu({ reportedUserId, reportedUserName, bookingId }: 
     setLoading(false);
     if (response.ok) {
       setMessage("Your report has been submitted. Our team will review it within 48 hours.");
+      setDescription("");
       setOpen(null);
+      return;
     }
+
+    const data = (await response.json().catch(() => null)) as { error?: string } | null;
+    setMessage(data?.error ?? "Could not submit report. Please try again.");
   }
 
   async function blockUser() {
@@ -148,7 +159,9 @@ export function ReportUserMenu({ reportedUserId, reportedUserName, bookingId }: 
         </div>
       ) : null}
       {message ? (
-        <p className="mt-2 text-xs text-emerald-700">{message}</p>
+        <p className={`mt-2 text-xs ${message.includes("submitted") ? "text-emerald-700" : "text-rose-600"}`}>
+          {message}
+        </p>
       ) : null}
     </div>
   );

@@ -14,7 +14,7 @@ function getResendClient(): Resend | null {
 }
 
 export function getFromEmail(): string {
-  return process.env.RESEND_FROM_EMAIL ?? "no-reply@hanapkalinga.ph";
+  return process.env.RESEND_FROM_EMAIL ?? "no-reply@hanapkalinga.com";
 }
 
 export function isResendConfigured(): boolean {

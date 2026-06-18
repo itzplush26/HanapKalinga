@@ -38,7 +38,10 @@ export async function POST(request: Request, { params }: { params: { id: string 
   }
 
   if (!CANCELLABLE.has(booking.status)) {
-    return NextResponse.json({ error: "This booking cannot be cancelled." }, { status: 400 });
+    return NextResponse.json(
+      { error: `This booking cannot be cancelled because it is currently ${booking.status}.` },
+      { status: 400 }
+    );
   }
 
   const { error } = await supabase

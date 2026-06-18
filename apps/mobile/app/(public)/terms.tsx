@@ -82,7 +82,7 @@ export default function TermsScreen() {
 
         <Text style={styles.heading}>9. Contact</Text>
         <Text style={styles.paragraph}>
-          For questions about these terms, please contact us at support@hanapkalinga.ph.
+          For questions about these terms, please contact us at support@hanapkalinga.com.
         </Text>
       </ScrollView>
     </ScreenWrapper>

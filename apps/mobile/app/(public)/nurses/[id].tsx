@@ -32,6 +32,7 @@ const SHIFT_LABELS: Record<Shift, string> = {
   afternoon: 'PM',
   evening: 'Eve',
   full_day: 'Full',
+  custom: 'Custom',
 };
 
 function formatAvailDate(dateStr: string): string {

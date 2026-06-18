@@ -25,6 +25,20 @@ export async function POST(request: Request, { params }: { params: { id: string 
     return NextResponse.json({ error: "Forbidden." }, { status: 403 });
   }
 
+  if (booking.status === "completed") {
+    return NextResponse.json(
+      { error: "The booking has already been marked as complete." },
+      { status: 400 }
+    );
+  }
+
+  if (booking.status !== "pending_completion") {
+    return NextResponse.json(
+      { error: `Disputes are only allowed while booking is pending completion. Current status: ${booking.status}.` },
+      { status: 400 }
+    );
+  }
+
   const { error } = await supabase.from("bookings").update({ status: "disputed" }).eq("id", params.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

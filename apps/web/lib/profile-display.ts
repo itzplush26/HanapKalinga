@@ -1,3 +1,5 @@
+import { toTitleCase } from "@/lib/validation/format-name";
+
 export type ProfileNameFields = {
   full_name?: string | null;
   first_name?: string | null;
@@ -9,13 +11,13 @@ export function resolveProfileDisplayName(
   fallback = "Care provider"
 ): string {
   const fullName = profile?.full_name?.trim();
-  if (fullName) return fullName;
+  if (fullName) return toTitleCase(fullName);
 
   const parts = [profile?.first_name, profile?.last_name]
     .map((part) => part?.trim())
     .filter((part): part is string => !!part);
 
-  if (parts.length > 0) return parts.join(" ");
+  if (parts.length > 0) return toTitleCase(parts.join(" "));
   return fallback;
 }
 

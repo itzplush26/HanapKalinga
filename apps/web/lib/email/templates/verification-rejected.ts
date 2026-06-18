@@ -1,6 +1,7 @@
 import { appUrl, emailButton, escapeHtml, wrapEmailHtml } from "@/lib/email/templates/layout";
 
-export const VERIFICATION_REJECTED_SUBJECT = "Your HanapKalinga verification was not approved";
+export const VERIFICATION_REJECTED_SUBJECT =
+  "Action required — your HanapKalinga verification needs attention.";
 
 export function buildVerificationRejectedEmailHtml(params: {
   firstName: string;

@@ -5,6 +5,8 @@ import { SESSION_TOKEN_COOKIE } from "@/lib/session-lock";
 import { isProviderRole } from "@/lib/provider-role";
 
 const protectedPrefixes = ["/dashboard", "/admin"];
+const SUSPENSION_CACHE_COOKIE = "hk_suspended_cache";
+const SUSPENSION_CACHE_SECONDS = 60;
 
 async function getProfileRole(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -84,6 +86,60 @@ export async function middleware(request: NextRequest) {
       const redirectResponse = NextResponse.redirect(conflictUrl);
       redirectResponse.cookies.set(SESSION_TOKEN_COOKIE, "", { path: "/", maxAge: 0 });
       return redirectResponse;
+    }
+  }
+
+  const cachedSuspended = request.cookies.get(SUSPENSION_CACHE_COOKIE)?.value;
+  if (cachedSuspended === "1") {
+    await supabase.auth.signOut();
+    const suspendedUrl = new URL("/login", request.url);
+    suspendedUrl.searchParams.set("suspended", "true");
+    const redirectResponse = NextResponse.redirect(suspendedUrl);
+    redirectResponse.cookies.set(SESSION_TOKEN_COOKIE, "", { path: "/", maxAge: 0 });
+    redirectResponse.cookies.set(SUSPENSION_CACHE_COOKIE, "1", {
+      path: "/",
+      maxAge: SUSPENSION_CACHE_SECONDS,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax"
+    });
+    return redirectResponse;
+  }
+
+  if (cachedSuspended !== "0") {
+    const { data: suspensionRow, error: suspensionError } = await supabase
+      .from("profiles")
+      .select("suspended")
+      .eq("id", data.user.id)
+      .maybeSingle();
+
+    if (suspensionError) {
+      console.error("middleware.getSuspension", suspensionError);
+    } else {
+      const isSuspended = Boolean(suspensionRow?.suspended);
+      response.cookies.set(SUSPENSION_CACHE_COOKIE, isSuspended ? "1" : "0", {
+        path: "/",
+        maxAge: SUSPENSION_CACHE_SECONDS,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax"
+      });
+
+      if (isSuspended) {
+        await supabase.auth.signOut();
+        const suspendedUrl = new URL("/login", request.url);
+        suspendedUrl.searchParams.set("suspended", "true");
+        const redirectResponse = NextResponse.redirect(suspendedUrl);
+        redirectResponse.cookies.set(SESSION_TOKEN_COOKIE, "", { path: "/", maxAge: 0 });
+        redirectResponse.cookies.set(SUSPENSION_CACHE_COOKIE, "1", {
+          path: "/",
+          maxAge: SUSPENSION_CACHE_SECONDS,
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax"
+        });
+        return redirectResponse;
+      }
     }
   }
 

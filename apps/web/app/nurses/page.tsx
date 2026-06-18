@@ -80,10 +80,16 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
       ).data ?? []
     : await getCachedVerifiedNurses();
 
-  const { data: blockedRows } = auth.user
-    ? await supabase.from("user_blocks").select("blocked_id").eq("blocker_id", auth.user.id)
-    : { data: [] };
-  const blockedIds = new Set((blockedRows ?? []).map((row) => row.blocked_id as string));
+  const [{ data: blockedByViewerRows }, { data: blockedViewerRows }] = auth.user && viewerRole === "family"
+    ? await Promise.all([
+        supabase.from("user_blocks").select("blocked_id").eq("blocker_id", auth.user.id),
+        supabase.from("user_blocks").select("blocker_id").eq("blocked_id", auth.user.id)
+      ])
+    : [{ data: [] }, { data: [] }];
+  const blockedIds = new Set<string>([
+    ...((blockedByViewerRows ?? []).map((row) => row.blocked_id as string) ?? []),
+    ...((blockedViewerRows ?? []).map((row) => row.blocker_id as string) ?? [])
+  ]);
   const nurseIds = (nurses ?? []).map((nurse) => nurse.id);
 
   const { data: ratingRows } =

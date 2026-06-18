@@ -8,8 +8,9 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
 import { loginSchema } from "@/lib/validations/auth";
 import { parseSafeRedirect } from "@/lib/auth-redirect";
-import { fetchProfileRole, resolvePostLoginDestination } from "@/lib/post-auth";
-import { APP_NAME } from "@/lib/constants";
+import { resolvePostLoginDestination } from "@/lib/post-auth";
+import type { ProfileRole } from "@/lib/post-auth";
+import { APP_NAME, SUPPORT_EMAIL } from "@/lib/constants";
 import { mapSupabaseError } from "@/lib/user-errors";
 import { establishUserSession } from "@/lib/session-lock";
 import { LoadingButton } from "@/components/ui/loading-button";
@@ -73,6 +74,9 @@ export default function LoginPage() {
     if (params.get("reason") === "session_conflict") {
       setSessionConflict(true);
       setSessionConflictDismissed(false);
+    }
+    if (params.get("suspended") === "true") {
+      setMessage(`Your account has been suspended. Please contact support at ${SUPPORT_EMAIL}.`);
     }
   }, [emailForm]);
 
@@ -161,10 +165,23 @@ export default function LoginPage() {
         return;
       }
 
-      const { role, error: profileError } = await fetchProfileRole(supabase, userId);
+      const profileAccessResponse = await fetch("/api/auth/profile-access");
+      const profileAccessPayload = (await profileAccessResponse.json().catch(() => null)) as
+        | { role?: ProfileRole | null; suspended?: boolean; error?: string }
+        | null;
 
-      if (profileError) {
-        setMessage(profileError);
+      if (!profileAccessResponse.ok) {
+        setMessage(profileAccessPayload?.error ?? mapSupabaseError(null, "profile"));
+        setIsSubmitting(false);
+        return;
+      }
+
+      const role = profileAccessPayload?.role ?? null;
+      const suspended = Boolean(profileAccessPayload?.suspended);
+
+      if (suspended) {
+        await supabase.auth.signOut();
+        setMessage(`Your account has been suspended. Please contact support at ${SUPPORT_EMAIL}.`);
         setIsSubmitting(false);
         return;
       }

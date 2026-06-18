@@ -4,6 +4,7 @@ import { resolveDocumentViewUrl } from "@/lib/storage-docs";
 import { AdminBreadcrumbs } from "@/components/admin/admin-breadcrumbs";
 import { AdminPageHeader } from "@/components/admin/admin-shell";
 import { VerificationReviewPanel } from "@/components/admin/verification-review-panel";
+import { SuspensionControls } from "@/components/admin/suspension-controls";
 import type { VerificationStatus } from "@/lib/verification";
 
 interface AdminVerificationDetailPageProps {
@@ -16,7 +17,7 @@ export default async function AdminVerificationDetailPage({ params }: AdminVerif
   const { data: nurse } = await supabase
     .from("nurses")
     .select(
-      "id, provider_type, verification_status, submitted_at, prc_license_no, tesda_certificate_no, prc_document_url, tesda_document_url, nbi_document_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry, bio, specializations, daily_rate_range, hourly_rate_range, profile_photo_url, profiles!nurses_id_fkey(full_name, city, region, barangay, phone, profile_photo_url)"
+        "id, provider_type, verification_status, submitted_at, prc_license_no, tesda_certificate_no, prc_document_url, tesda_document_url, nbi_document_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry, bio, specializations, daily_rate_range, hourly_rate_range, profile_photo_url, profiles!nurses_id_fkey(full_name, city, region, barangay, phone, profile_photo_url, suspended, suspension_reason)"
     )
     .eq("id", params.id)
     .maybeSingle();
@@ -94,6 +95,13 @@ export default async function AdminVerificationDetailPage({ params }: AdminVerif
         tesdaCertExpiry={nurse.tesda_cert_expiry}
         nbiExpiry={nurse.nbi_expiry}
         auditLogs={auditLogs}
+      />
+
+      <SuspensionControls
+        userId={nurse.id}
+        fullName={profile?.full_name ?? "Applicant"}
+        suspended={Boolean(profile?.suspended)}
+        suspensionReason={profile?.suspension_reason ?? null}
       />
     </main>
   );

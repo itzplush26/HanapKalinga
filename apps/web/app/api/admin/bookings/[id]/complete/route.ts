@@ -59,7 +59,7 @@ export async function POST(_request: Request, { params }: RouteContext) {
     const nurseProfile = Array.isArray(nurse?.profiles) ? nurse?.profiles[0] : nurse?.profiles;
     const nurseName = nurseProfile?.full_name?.trim() || "your nurse";
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://hanapkalinga.com";
+    const appUrl = process.env.APP_URL ?? "https://hanapkalinga.com";
     const bookingUrl = `${appUrl}/dashboard/family/bookings/${booking.id}`;
 
     await service.from("notifications").insert({
