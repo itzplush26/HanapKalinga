@@ -17,6 +17,9 @@ export default function LandingScreen() {
   const hasRedirected = useRef(false);
 
   useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7569/ingest/0813a3b5-b99a-4900-8c59-034559631d26',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6779d2'},body:JSON.stringify({sessionId:'6779d2',location:'index.tsx:authState',message:'Landing screen auth state',data:{isLoading,hasUser:!!user,hasProfile:!!profile,role:profile?.role??null},timestamp:Date.now(),hypothesisId:'B',runId:'pre-fix'})}).catch(()=>{});
+    // #endregion
     if (isLoading) return;
     if (user && profile && !hasRedirected.current) {
       hasRedirected.current = true;
