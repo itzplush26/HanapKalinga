@@ -34,7 +34,7 @@ export default function LandingScreen() {
   if (user && profile) return null;
 
   return (
-    <ScreenWrapper style={styles.wrapper}>
+    <ScreenWrapper style={styles.wrapper} testID="landing_screen">
       <View style={styles.container}>
         <View style={styles.hero}>
           <Text style={[styles.appName, { color: colors.primary }]}>

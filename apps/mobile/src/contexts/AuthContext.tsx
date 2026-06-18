@@ -66,13 +66,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const initialize = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          setUser(session.user);
-          await fetchProfile(session.user.id);
+        // Add timeout to prevent hanging on slow network
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 5000));
+        
+        const result = await Promise.race([sessionPromise, timeoutPromise]) as any;
+        
+        if (result?.data?.session?.user) {
+          setUser(result.data.session.user);
+          await fetchProfile(result.data.session.user.id);
         }
-      } catch {
+      } catch (error) {
         // session restore failed silently
+        console.log('Auth initialization error:', error);
       } finally {
         setIsLoading(false);
       }

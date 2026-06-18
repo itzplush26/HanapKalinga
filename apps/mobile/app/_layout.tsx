@@ -32,12 +32,14 @@ export default function RootLayout() {
   }, [fontsLoaded]);
 
   useEffect(() => {
+    // Reduce timeout to 3 seconds for faster cold starts (especially in test environments)
     const timer = setTimeout(() => {
       if (!appIsReady) {
+        console.log('Font loading timeout - proceeding without custom fonts');
         setAppIsReady(true);
         SplashScreen.hideAsync();
       }
-    }, 5000);
+    }, 3000);
     return () => clearTimeout(timer);
   }, [appIsReady]);
 
