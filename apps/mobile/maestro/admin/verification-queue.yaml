@@ -1,7 +1,4 @@
 appId: ${APP_ID}
-env:
-  TEST_EMAIL: ${TEST_EMAIL}
-  TEST_PASSWORD: ${TEST_PASSWORD}
 ---
 # Login as admin user
 - runFlow:

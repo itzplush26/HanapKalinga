@@ -1,13 +1,5 @@
 appId: ${APP_ID}
 env:
-  # Auth credentials (from seed data or ENV)
-  TEST_EMAIL: ${TEST_EMAIL}
-  TEST_PASSWORD: ${TEST_PASSWORD}
-  FORGOT_EMAIL: ${TEST_EMAIL}
-  # Entity IDs (from seed data)
-  NURSE_ID: ${NURSE_ID}
-  BOOKING_ID: ${BOOKING_ID}
-  VERIFICATION_ID: ${VERIFICATION_ID}
   # OTP for registration flows
   OTP_DIGIT_0: "0"
   OTP_DIGIT_1: "0"
@@ -27,8 +19,6 @@ env:
 # 11b. Forgot password flow
 - runFlow:
     file: auth/forgot-password.yaml
-    env:
-      FORGOT_EMAIL: ${FORGOT_EMAIL}
 
 # 11c. Register new family user
 - runFlow:
