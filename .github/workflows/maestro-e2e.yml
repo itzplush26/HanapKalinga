@@ -205,31 +205,7 @@ jobs:
             # Clear any persisted auth state from SecureStore
             adb shell pm clear com.hanapkalinga.mobile
             
-            # Run flows sequentially. A directory run batches the flows and each flow
-            # relaunches/clears the same emulator, which makes setup race itself.
-            case ${{ matrix.shard }} in
-              nurse) E="${{ needs.seed-e2e.outputs.NURSE_EMAIL }}" ;;
-              family|auth) E="${{ needs.seed-e2e.outputs.FAMILY_EMAIL }}" ;;
-              admin) E="${{ needs.seed-e2e.outputs.ADMIN_EMAIL }}" ;;
-            esac
-
-            failures=0
-            mkdir -p "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}"
-
-            for flow in apps/mobile/maestro/${{ matrix.shard }}/*.yaml; do
-              name="$(basename "$flow" .yaml)"
-              echo "::group::Maestro ${{ matrix.shard }}/$name"
-              if ! maestro test "$flow" --env APP_ID=com.hanapkalinga.mobile --env ENV=${{ inputs.environment || 'staging' }} --env TEST_EMAIL="$E" --env TEST_PASSWORD="${{ needs.seed-e2e.outputs.PASSWORD }}" --env BOOKING_ID="${{ needs.seed-e2e.outputs.BOOKING_ID }}" --env NURSE_ID="${{ needs.seed-e2e.outputs.NURSE_ID }}" --env VERIFICATION_ID="${{ needs.seed-e2e.outputs.VERIFICATION_ID }}"; then
-                failures=$((failures + 1))
-                adb exec-out screencap -p > "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}/$name.png" || true
-                adb shell uiautomator dump /sdcard/window.xml || true
-                adb pull /sdcard/window.xml "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}/$name-window.xml" || true
-                adb logcat -d -t 500 > "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}/$name-logcat.txt" || true
-              fi
-              echo "::endgroup::"
-            done
-
-            exit "$failures"
+            bash apps/mobile/scripts/run-maestro-shard.sh "${{ matrix.shard }}" "${{ inputs.environment || 'staging' }}" "${{ needs.seed-e2e.outputs.FAMILY_EMAIL }}" "${{ needs.seed-e2e.outputs.NURSE_EMAIL }}" "${{ needs.seed-e2e.outputs.ADMIN_EMAIL }}" "${{ needs.seed-e2e.outputs.PASSWORD }}" "${{ needs.seed-e2e.outputs.BOOKING_ID }}" "${{ needs.seed-e2e.outputs.NURSE_ID }}" "${{ needs.seed-e2e.outputs.VERIFICATION_ID }}" "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}"
 
       - name: Sanitize screenshot filenames (remove emoji characters)
         if: always()
