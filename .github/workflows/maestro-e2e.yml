@@ -70,6 +70,9 @@ jobs:
 
       - name: Prebuild & assemble debug APK
         working-directory: apps/mobile
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: |
           npx expo prebuild --platform android --clean
           cd android

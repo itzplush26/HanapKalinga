@@ -2,11 +2,35 @@ appId: ${APP_ID}
 env:
   APP_ID: ${APP_ID}
 ---
-# Launch the app and wait for the landing screen
+# Launch the app with a clean state
 - launchApp:
     appId: ${APP_ID}
     stopApp: true
     clearState: true
+
+# If session persisted in SecureStore (auto-logged-in), sign out first
+- runFlow:
+    when:
+      visible: "tab_profile"
+    commands:
+      - tapOn:
+          id: "tab_profile"
+      - tapOn:
+          id: "profile_button_logout"
+          optional: true
+      - tapOn:
+          id: "logout_button_confirm"
+          optional: true
+
+# Stop and relaunch to reach the landing screen after sign-out
+- runFlow:
+    when:
+      notVisible: "landing_button_login"
+    commands:
+      - stopApp:
+          appId: ${APP_ID}
+      - launchApp:
+          appId: ${APP_ID}
 
 # Wait for the landing screen to render
 - extendedWaitUntil:
