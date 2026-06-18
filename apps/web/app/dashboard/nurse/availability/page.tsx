@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { WeeklyAvailabilityGrid } from "@/components/weekly-availability-grid";
 import { AvailabilityPreviewCalendar } from "@/components/availability-preview-calendar";
@@ -20,6 +21,7 @@ import { getManilaDateString } from "@/lib/date-format";
 
 export default function NurseAvailabilityPage() {
   const supabase = createClient();
+  const router = useRouter();
   const [weeklyPattern, setWeeklyPattern] = useState<Map<string, boolean>>(new Map());
   const [exceptions, setExceptions] = useState<Map<string, boolean>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -193,6 +195,7 @@ export default function NurseAvailabilityPage() {
 
     setSaving(false);
     setSaved(true);
+    router.refresh();
   }
 
   function handleAddException() {
