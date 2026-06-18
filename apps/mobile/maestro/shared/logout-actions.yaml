@@ -4,7 +4,7 @@ appId: ${APP_ID}
 - runFlow:
     when:
       visible: "tab_profile"
-    file: "../shared/helpers.yaml"
+    file: "../shared/navigate-to-tab.yaml"
     env:
       TAB_NAME: "profile"
 

@@ -17,9 +17,3 @@ appId: ${APP_ID}
       true: ${LOGOUT == "true"}
     file: "../shared/logout-actions.yaml"
 
-# Reusable subflow: navigateToTab
-# Required env: TAB_NAME
-- tapOn:
-    when:
-      true: ${TAB_NAME != null}
-    id: "tab_${TAB_NAME}"
