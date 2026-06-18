@@ -7,11 +7,9 @@ env:
     stopApp: true
     clearState: true
 
-- extendedWaitUntil:
-    visible:
-      id: "landing_button_login"
-    timeout: 60000
-
+# If a previous session was restored from SecureStore (clearState doesn't clear it),
+# log out first so the landing screen becomes visible.
+# If already on the landing screen, this block is skipped.
 - runFlow:
     when:
       visible: "tab_profile"
