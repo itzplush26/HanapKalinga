@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { sendEmailSafe } from "@/lib/email/send-safe";
+import { sendEmail } from "@/lib/email/send";
 import {
   buildVerificationApprovedEmailHtml,
+  buildVerificationApprovedEmailText,
   VERIFICATION_APPROVED_SUBJECT
 } from "@/lib/email/verification-approved-email";
 import { hasRequiredDocuments } from "@/lib/admin/verification-documents";
@@ -13,14 +14,17 @@ import { revalidatePublicNursePages } from "@/lib/nurses/revalidate-public";
 import { ensureNurseProfileSlug } from "@/lib/nurse/ensure-profile-slug";
 import {
   buildVerificationRejectedEmailHtml,
+  buildVerificationRejectedEmailText,
   VERIFICATION_REJECTED_SUBJECT
 } from "@/lib/email/templates/verification-rejected";
 import {
   buildVerificationResubmissionEmailHtml,
+  buildVerificationResubmissionEmailText,
   VERIFICATION_RESUBMISSION_SUBJECT
 } from "@/lib/email/templates/verification-resubmission-required";
 import {
   buildVerificationUnderReviewEmailHtml,
+  buildVerificationUnderReviewEmailText,
   VERIFICATION_UNDER_REVIEW_SUBJECT
 } from "@/lib/email/templates/verification-under-review";
 import {
@@ -194,55 +198,81 @@ export async function POST(request: Request) {
     }
 
     const { data: authUser } = await service.auth.admin.getUserById(nurseId);
-    const recipientEmail = authUser.user?.email;
+    const recipientEmail = authUser.user?.email ?? null;
 
     let emailSent = false;
     let emailError: string | undefined;
 
-    if (recipientEmail) {
+    if (!recipientEmail) {
+      emailError = "No email address found for this applicant.";
+    } else {
       const firstName = profile?.full_name?.trim().split(/\s+/)[0] ?? "there";
+      let emailPayload: { subject: string; html: string; text?: string };
 
       if (newStatus === "verified") {
-        sendEmailSafe({
-          to: recipientEmail,
+        emailPayload = {
           subject: VERIFICATION_APPROVED_SUBJECT,
-          html: buildVerificationApprovedEmailHtml(firstName)
-        });
+          html: buildVerificationApprovedEmailHtml(firstName),
+          text: buildVerificationApprovedEmailText(firstName)
+        };
       } else if (newStatus === "under_review") {
-        sendEmailSafe({
-          to: recipientEmail,
+        emailPayload = {
           subject: VERIFICATION_UNDER_REVIEW_SUBJECT,
-          html: buildVerificationUnderReviewEmailHtml(firstName)
-        });
+          html: buildVerificationUnderReviewEmailHtml(firstName),
+          text: buildVerificationUnderReviewEmailText(firstName)
+        };
       } else if (newStatus === "resubmission_required" && trimmedReason) {
-        sendEmailSafe({
-          to: recipientEmail,
+        emailPayload = {
           subject: VERIFICATION_RESUBMISSION_SUBJECT,
           html: buildVerificationResubmissionEmailHtml({
             firstName,
             reason: trimmedReason,
             details: trimmedNotes
+          }),
+          text: buildVerificationResubmissionEmailText({
+            firstName,
+            reason: trimmedReason,
+            details: trimmedNotes
           })
-        });
+        };
       } else if (action === "reject" && trimmedReason) {
-        sendEmailSafe({
-          to: recipientEmail,
+        emailPayload = {
           subject: VERIFICATION_REJECTED_SUBJECT,
           html: buildVerificationRejectedEmailHtml({
             firstName,
             reason: trimmedReason,
             details: trimmedNotes
+          }),
+          text: buildVerificationRejectedEmailText({
+            firstName,
+            reason: trimmedReason,
+            details: trimmedNotes
           })
-        });
+        };
       } else {
-        sendEmailSafe({
-          to: recipientEmail,
+        emailPayload = {
           subject: `[HanapKalinga] ${notification.title}`,
-          html: `<p>${notification.body}</p>`
+          html: `<p>${notification.body}</p>`,
+          text: notification.body
+        };
+      }
+
+      const emailResult = await sendEmail({
+        to: recipientEmail,
+        ...emailPayload
+      });
+
+      emailSent = emailResult.sent;
+      emailError = emailResult.error;
+
+      if (!emailResult.sent) {
+        console.error("admin.verification.email_failed", {
+          nurseId,
+          action,
+          recipientEmail,
+          error: emailResult.error
         });
       }
-      emailSent = true;
-      emailError = undefined;
     }
 
     return NextResponse.json({

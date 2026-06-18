@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { sendMail } from "@/lib/email/send-mail";
 
 export interface SendEmailInput {
   to: string;
@@ -23,26 +24,31 @@ export function isResendConfigured(): boolean {
 
 export async function sendEmail(input: SendEmailInput): Promise<{ sent: boolean; error?: string }> {
   const resend = getResendClient();
-  if (!resend) {
-    return { sent: false, error: "Resend is not configured." };
-  }
+  if (resend) {
+    try {
+      const { error } = await resend.emails.send({
+        from: getFromEmail(),
+        to: input.to,
+        subject: input.subject,
+        html: input.html,
+        text: input.text
+      });
 
-  try {
-    const { error } = await resend.emails.send({
-      from: getFromEmail(),
-      to: input.to,
-      subject: input.subject,
-      html: input.html,
-      text: input.text
-    });
+      if (error) {
+        return { sent: false, error: error.message };
+      }
 
-    if (error) {
-      return { sent: false, error: error.message };
+      return { sent: true };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to send email.";
+      return { sent: false, error: message };
     }
-
-    return { sent: true };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to send email.";
-    return { sent: false, error: message };
   }
+
+  return sendMail({
+    to: input.to,
+    subject: input.subject,
+    html: input.html,
+    text: input.text ?? input.subject
+  });
 }
