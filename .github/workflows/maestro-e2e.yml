@@ -210,24 +210,19 @@ jobs:
             mkdir -p "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}"
             adb shell am start -n com.hanapkalinga.mobile/.MainActivity
             sleep 15
-            echo "--- Processes ---"
-            adb shell ps | grep -E 'com\.hanapkalinga|PID' || echo "NO PROCESS FOUND (app process died)"
-            echo "--- PID check ---"
-            APP_PID=$(adb shell pidof com.hanapkalinga.mobile 2>/dev/null || echo "")
-            if [ -n "$APP_PID" ]; then
-              echo "App is running with PID: $APP_PID"
-            else
-              echo "APP PROCESS NOT FOUND (app crashed)"
-            fi
+            echo "--- Process list for com.hanapkalinga ---"
+            adb shell ps | grep com.hanapkalinga || echo "NO PROCESS FOUND (app process died)"
+            echo "--- PID check via pidof ---"
+            adb shell pidof com.hanapkalinga.mobile 2>/dev/null || echo "App process not found"
             echo "--- Foreground activity ---"
-            adb shell dumpsys activity activities 2>/dev/null | grep -E 'mResumedActivity|mFocusedActivity' || echo "NO FOREGROUND ACTIVITY"
-            echo "--- Last 50 lines of logcat (crash traces) ---"
-            adb logcat -d -t 50 2>/dev/null | grep -iE 'crash|exception|fatal|error|androidRuntime|com\.hanapkalinga' || echo "No crash traces found in logcat buffer"
-            echo "--- Full logcat for com.hanapkalinga ---"
+            adb shell dumpsys activity activities 2>/dev/null | grep -E 'mResumedActivity|mFocusedActivity' || echo "NO FOREGROUND ACTIVITY (app crashed)"
+            echo "--- Last 50 logcat lines (crash traces) ---"
+            adb logcat -d -t 50 2>/dev/null | grep -iE 'crash|exception|fatal|error|androidRuntime|com\.hanapkalinga' || echo "No crash traces in logcat"
+            echo "--- Logcat for com.hanapkalinga ---"
             adb logcat -d 2>/dev/null | grep -i 'com\.hanapkalinga' | tail -30 || echo "No hanapkalinga logs"
             echo "--- Screenshot ---"
             adb exec-out screencap -p > "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}/diagnostic-screenshot.png" 2>/dev/null || echo "Screenshot failed"
-            echo "--- UI hierarchy ---"
+            echo "--- UI hierarchy dump ---"
             adb shell uiautomator dump /sdcard/diagnostic-window.xml 2>/dev/null || true
             adb pull /sdcard/diagnostic-window.xml "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}/diagnostic-window.xml" 2>/dev/null || echo "UI dump pull failed"
             echo "=== DIAGNOSTIC END ==="

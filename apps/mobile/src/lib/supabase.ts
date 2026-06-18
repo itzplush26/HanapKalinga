@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { getSupabaseConfig } from '@hanapkalinga/shared/api';
 import 'react-native-url-polyfill/auto';
 import * as SecureStore from 'expo-secure-store';
@@ -52,4 +52,4 @@ function createSupabaseClient() {
   }
 }
 
-export const supabase = createSupabaseClient();
+export const supabase = createSupabaseClient() as SupabaseClient<Database>;
