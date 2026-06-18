@@ -267,7 +267,14 @@ export default function RegisterPage() {
 
     if (profileError) {
       console.error("signup.profiles_role.error", profileError);
-      setStatus(mapSupabaseError(profileError, "generic"));
+      if (profileError.code === "23503") {
+        clearSignupStageLocal();
+        setSignupUserId(null);
+        setStep(1);
+        setStatus("Your session expired. Please sign up again from step 1.");
+      } else {
+        setStatus(mapSupabaseError(profileError, "generic"));
+      }
       setIsSavingRole(false);
       return;
     }
@@ -441,14 +448,20 @@ export default function RegisterPage() {
     window.location.href = "/dashboard/nurse";
   }
 
-  function handleTermsAccepted() {
-    const acceptedUserId = termsPendingUserId ?? signupUserId;
+  async function handleTermsAccepted() {
+    const acceptedUserId = await resolveAuthUserId(supabase, null);
     if (!acceptedUserId) {
-      setStatus("Please finish account setup before accepting terms.");
+      setStatus("Your session expired. Please sign up again from step 1.");
       setShowTermsModal(false);
+      setTermsPendingUserId(null);
+      clearSignupStageLocal();
+      setSignupUserId(null);
+      setStep(1);
       return;
     }
     recordTermsAcceptanceForUser(acceptedUserId);
+    setSignupUserId(acceptedUserId);
+    saveSignupUserId(acceptedUserId);
     setShowTermsModal(false);
     setTermsPendingUserId(null);
     if (step === 1) {
