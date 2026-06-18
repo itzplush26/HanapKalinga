@@ -193,21 +193,23 @@ export function VerificationReviewPanel({
 
       if (action === "approve") {
         showToast(
-          payload.emailSent === false && payload.emailError
-            ? `Nurse verified successfully. Email failed: ${payload.emailError}`
-            : "Nurse verified successfully. Email notification sent.",
-          payload.emailSent === false ? "error" : "success"
+          payload.emailSent
+            ? "Nurse verified successfully. Email notification sent."
+            : `Nurse verified successfully. Email failed: ${payload.emailError ?? "delivery failed."}`,
+          payload.emailSent ? "success" : "error"
         );
       } else if (action === "reject") {
-        showToast("Verification rejected. Nurse has been notified.", "success");
+        showToast(
+          payload.emailSent
+            ? "Verification rejected. Nurse has been notified."
+            : `Verification rejected. In-app notification saved, but email failed: ${payload.emailError ?? "delivery failed."}`,
+          payload.emailSent ? "success" : "error"
+        );
       } else {
-        const emailNote =
-          payload.emailSent === false && payload.emailError
-            ? ` In-app notification saved, but email failed: ${payload.emailError}`
-            : payload.emailSent
-              ? " Email notification sent."
-              : "";
-        showToast(`Verification updated successfully.${emailNote}`, "success");
+        const emailNote = payload.emailSent
+          ? " Email notification sent."
+          : ` In-app notification saved, but email failed: ${payload.emailError ?? "delivery failed."}`;
+        showToast(`Verification updated successfully.${emailNote}`, payload.emailSent ? "success" : "error");
       }
 
       setConfirmAction(null);
