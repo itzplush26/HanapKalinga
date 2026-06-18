@@ -1,7 +1,4 @@
 appId: ${APP_ID}
-env:
-  TEST_EMAIL: ${TEST_EMAIL}
-  TEST_PASSWORD: ${TEST_PASSWORD}
 ---
 - runFlow:
     file: ../shared/setup.yaml

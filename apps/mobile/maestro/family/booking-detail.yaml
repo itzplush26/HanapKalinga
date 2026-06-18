@@ -1,8 +1,4 @@
 appId: ${APP_ID}
-env:
-  TEST_EMAIL: ${TEST_EMAIL}
-  TEST_PASSWORD: ${TEST_PASSWORD}
-  BOOKING_ID: ${BOOKING_ID}
 ---
 # Login as family user
 - runFlow:
