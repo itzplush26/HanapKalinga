@@ -5,10 +5,20 @@ export const PRIVACY_LAST_UPDATED = "June 18, 2026";
 export const PRIVACY_SUMMARY =
   "We collect account and professional information to operate the marketplace, verify credentials, and connect families with providers. We use essential cookies only for core functionality, do not sell your data, and handle information in line with the Philippine Data Privacy Act.";
 
-export function PrivacyContent() {
+interface PrivacyContentProps {
+  showLastUpdated?: boolean;
+  showContact?: boolean;
+}
+
+export function PrivacyContent({
+  showLastUpdated = true,
+  showContact = true
+}: PrivacyContentProps = {}) {
   return (
     <div className="flex flex-col gap-4 text-sm text-text-secondary">
-      <p className="text-xs text-text-muted">Last Updated: {PRIVACY_LAST_UPDATED}</p>
+      {showLastUpdated ? (
+        <p className="text-xs text-text-muted">Last Updated: {PRIVACY_LAST_UPDATED}</p>
+      ) : null}
       <h2 className="text-base font-semibold text-text-primary">1. Information We Collect</h2>
       <p>To provide our services, we may collect the following information:</p>
       <h3 className="text-sm font-semibold text-text-primary">Account Information</h3>
@@ -123,9 +133,13 @@ export function PrivacyContent() {
         We may update this Privacy Policy periodically. Continued use of the platform after updates
         constitutes acceptance of the revised policy.
       </p>
-      <h2 className="text-base font-semibold text-text-primary">12. Contact Information</h2>
-      <p>For privacy-related concerns or requests, please contact:</p>
-      <p>Email: {SUPPORT_EMAIL}</p>
+      {showContact ? (
+        <>
+          <h2 className="text-base font-semibold text-text-primary">12. Contact Information</h2>
+          <p>For privacy-related concerns or requests, please contact:</p>
+          <p>Email: {SUPPORT_EMAIL}</p>
+        </>
+      ) : null}
     </div>
   );
 }

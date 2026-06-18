@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import Link from "next/link";
 import { X } from "lucide-react";
 import { TermsContent, TERMS_LAST_UPDATED, TERMS_SUMMARY } from "@/lib/legal/terms-content";
-import { PrivacyContent, PRIVACY_LAST_UPDATED, PRIVACY_SUMMARY } from "@/lib/legal/privacy-content";
+import { PrivacyContent, PRIVACY_SUMMARY } from "@/lib/legal/privacy-content";
+import { SUPPORT_EMAIL } from "@/lib/constants";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { cn } from "@/lib/utils";
 
@@ -143,22 +144,36 @@ export function TermsAcceptanceModal({
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4"
           onScroll={updateScrollState}
         >
+          <p className="mb-6 text-xs text-text-muted">Last updated: {TERMS_LAST_UPDATED}</p>
+
           <section className="mb-8">
             <h3 className="text-sm font-semibold text-text-primary">Privacy Policy</h3>
-            <p className="mt-1 text-xs text-text-muted">Last updated: {PRIVACY_LAST_UPDATED}</p>
             <p className="mt-3 text-sm leading-relaxed text-text-secondary">{PRIVACY_SUMMARY}</p>
             <div className="mt-4">
-              <PrivacyContent />
+              <PrivacyContent showLastUpdated={false} showContact={false} />
             </div>
           </section>
 
           <section className="border-t border-border pt-8">
             <h3 className="text-sm font-semibold text-text-primary">Terms of Service</h3>
-            <p className="mt-1 text-xs text-text-muted">Last updated: {TERMS_LAST_UPDATED}</p>
             <p className="mt-3 text-sm leading-relaxed text-text-secondary">{TERMS_SUMMARY}</p>
             <div className="mt-4">
-              <TermsContent />
+              <TermsContent showLastUpdated={false} showContact={false} />
             </div>
+          </section>
+
+          <section className="mt-8 border-t border-border pt-6">
+            <h3 className="text-sm font-semibold text-text-primary">Contact</h3>
+            <p className="mt-2 text-sm text-text-secondary">
+              For questions about these policies or your account, contact us at{" "}
+              <a
+                href={`mailto:${SUPPORT_EMAIL}`}
+                className="text-primary underline underline-offset-2"
+              >
+                {SUPPORT_EMAIL}
+              </a>
+              .
+            </p>
           </section>
         </div>
 

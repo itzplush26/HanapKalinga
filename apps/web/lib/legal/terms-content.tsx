@@ -5,10 +5,20 @@ export const TERMS_LAST_UPDATED = "June 18, 2026";
 export const TERMS_SUMMARY =
   "By using HanapKalinga you agree that we are a technology marketplace connecting families with nurses and caregivers — not a healthcare provider, employer, or agency. You must be at least 18, provide accurate information, use the platform lawfully, and understand that care arrangements are solely between users.";
 
-export function TermsContent() {
+interface TermsContentProps {
+  showLastUpdated?: boolean;
+  showContact?: boolean;
+}
+
+export function TermsContent({
+  showLastUpdated = true,
+  showContact = true
+}: TermsContentProps = {}) {
   return (
     <div className="flex flex-col gap-4 text-sm text-text-secondary">
-      <p className="text-xs text-text-muted">Last Updated: {TERMS_LAST_UPDATED}</p>
+      {showLastUpdated ? (
+        <p className="text-xs text-text-muted">Last Updated: {TERMS_LAST_UPDATED}</p>
+      ) : null}
       <h2 className="text-base font-semibold text-text-primary">1. About HanapKalinga</h2>
       <p>
         HanapKalinga is an online marketplace designed to connect families, patients, healthcare
@@ -187,9 +197,13 @@ export function TermsContent() {
         verify document authenticity and professional standing with relevant licensing authorities,
         institutions, and government agencies, where legally permitted.
       </p>
-      <h2 className="text-base font-semibold text-text-primary">17. Contact Information</h2>
-      <p>For questions regarding these Terms:</p>
-      <p>Email: {SUPPORT_EMAIL}</p>
+      {showContact ? (
+        <>
+          <h2 className="text-base font-semibold text-text-primary">17. Contact Information</h2>
+          <p>For questions regarding these Terms:</p>
+          <p>Email: {SUPPORT_EMAIL}</p>
+        </>
+      ) : null}
     </div>
   );
 }

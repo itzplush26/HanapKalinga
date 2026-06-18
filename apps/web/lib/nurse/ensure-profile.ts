@@ -4,21 +4,32 @@ export type NurseProviderType = "nurse" | "caregiver";
 
 /**
  * Ensures a `nurses` row exists for the given user.
- * Safe to call multiple times (upsert with onConflict id).
+ * Inserts a pending stub only when missing — never resets verification on update.
  */
 export async function ensureNurseProfile(
   supabase: SupabaseClient,
   userId: string,
   providerType: NurseProviderType = "nurse"
 ) {
-  return supabase.from("nurses").upsert(
-    {
-      id: userId,
-      provider_type: providerType,
-      verification_status: "pending"
-    },
-    { onConflict: "id" }
-  );
+  const { data: existing, error: readError } = await supabase
+    .from("nurses")
+    .select("id")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (readError) {
+    return { data: null, error: readError };
+  }
+
+  if (existing) {
+    return { data: existing, error: null };
+  }
+
+  return supabase.from("nurses").insert({
+    id: userId,
+    provider_type: providerType,
+    verification_status: "pending"
+  });
 }
 
 /**
