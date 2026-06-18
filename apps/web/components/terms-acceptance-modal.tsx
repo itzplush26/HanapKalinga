@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 import { TermsContent, TERMS_LAST_UPDATED, TERMS_SUMMARY } from "@/lib/legal/terms-content";
@@ -15,25 +15,36 @@ interface TermsAcceptanceModalProps {
   alreadyAccepted?: boolean;
 }
 
+const SCROLL_BOTTOM_THRESHOLD_PX = 24;
+
 function ConsentCheckbox({
   id,
   checked,
+  disabled,
   onChange,
   children
 }: {
   id: string;
   checked: boolean;
+  disabled?: boolean;
   onChange: (checked: boolean) => void;
   children: ReactNode;
 }) {
   return (
-    <label htmlFor={id} className="flex cursor-pointer items-start gap-3 text-sm text-text-secondary">
+    <label
+      htmlFor={id}
+      className={cn(
+        "flex items-start gap-3 text-sm text-text-secondary",
+        disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+      )}
+    >
       <input
         id={id}
         type="checkbox"
         checked={checked}
+        disabled={disabled}
         onChange={(event) => onChange(event.target.checked)}
-        className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary"
+        className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary disabled:cursor-not-allowed"
       />
       <span>{children}</span>
     </label>
@@ -46,24 +57,46 @@ export function TermsAcceptanceModal({
   onClose,
   alreadyAccepted = false
 }: TermsAcceptanceModalProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [agreedPrivacy, setAgreedPrivacy] = useState(false);
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [accepting, setAccepting] = useState(false);
+  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
 
+  const canAcceptCheckboxes = alreadyAccepted || hasScrolledToBottom;
   const canContinue = agreedPrivacy && agreedTerms;
 
+  const updateScrollState = useCallback(() => {
+    const element = scrollRef.current;
+    if (!element) return;
+
+    const atBottom =
+      element.scrollHeight - element.scrollTop - element.clientHeight <= SCROLL_BOTTOM_THRESHOLD_PX;
+    if (atBottom) {
+      setHasScrolledToBottom(true);
+    }
+  }, []);
+
   useEffect(() => {
-    if (open) {
-      setAgreedPrivacy(alreadyAccepted);
-      setAgreedTerms(alreadyAccepted);
+    if (!open) {
+      setAgreedPrivacy(false);
+      setAgreedTerms(false);
       setAccepting(false);
+      setHasScrolledToBottom(false);
       return;
     }
 
-    setAgreedPrivacy(false);
-    setAgreedTerms(false);
+    setAgreedPrivacy(alreadyAccepted);
+    setAgreedTerms(alreadyAccepted);
     setAccepting(false);
-  }, [open, alreadyAccepted]);
+    setHasScrolledToBottom(alreadyAccepted);
+
+    const frame = window.requestAnimationFrame(() => {
+      updateScrollState();
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [open, alreadyAccepted, updateScrollState]);
 
   if (!open) return null;
 
@@ -105,7 +138,11 @@ export function TermsAcceptanceModal({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+        <div
+          ref={scrollRef}
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4"
+          onScroll={updateScrollState}
+        >
           <section className="mb-8">
             <h3 className="text-sm font-semibold text-text-primary">Privacy Policy</h3>
             <p className="mt-1 text-xs text-text-muted">Last updated: {PRIVACY_LAST_UPDATED}</p>
@@ -126,7 +163,18 @@ export function TermsAcceptanceModal({
         </div>
 
         <div className="shrink-0 space-y-3 border-t border-border px-5 py-4">
-          <ConsentCheckbox id="consent-privacy" checked={agreedPrivacy} onChange={setAgreedPrivacy}>
+          {!canAcceptCheckboxes ? (
+            <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              Please scroll to the bottom and read through both documents before you can accept.
+            </p>
+          ) : null}
+
+          <ConsentCheckbox
+            id="consent-privacy"
+            checked={agreedPrivacy}
+            disabled={!canAcceptCheckboxes}
+            onChange={setAgreedPrivacy}
+          >
             I have read and agree to the{" "}
             <Link
               href="/privacy"
@@ -139,7 +187,12 @@ export function TermsAcceptanceModal({
             </Link>
           </ConsentCheckbox>
 
-          <ConsentCheckbox id="consent-terms" checked={agreedTerms} onChange={setAgreedTerms}>
+          <ConsentCheckbox
+            id="consent-terms"
+            checked={agreedTerms}
+            disabled={!canAcceptCheckboxes}
+            onChange={setAgreedTerms}
+          >
             I have read and agree to the{" "}
             <Link
               href="/terms"

@@ -27,7 +27,7 @@ export default async function NurseDashboardPage() {
     supabase.from("profiles").select("profile_photo_url, full_name").eq("id", userId).single(),
     supabase
       .from("provider_weekly_availability")
-      .select("id")
+      .select("nurse_id")
       .eq("nurse_id", userId)
       .eq("is_open", true)
       .limit(1)
