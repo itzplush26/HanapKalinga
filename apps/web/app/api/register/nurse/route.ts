@@ -11,6 +11,16 @@ import {
 } from "@/lib/rate-ranges";
 import { isProviderRole, profileRoleForProviderType } from "@/lib/provider-role";
 import { hasRequiredDocuments } from "@/lib/admin/verification-documents";
+import { toTitleCase } from "@/lib/validation/format-name";
+
+const isServiceRoleConfigured = Boolean(
+  process.env.SUPABASE_URL?.trim() && process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
+);
+if (!isServiceRoleConfigured) {
+  console.error(
+    "CRITICAL: SUPABASE_SERVICE_ROLE_KEY is not configured. Nurse registration will fail until this is resolved. Check Vercel environment variables."
+  );
+}
 
 export async function POST(request: Request) {
   try {
@@ -29,6 +39,14 @@ export async function POST(request: Request) {
 
     const values = parsed.data;
     const userId = auth.user.id;
+    const termsAcceptedAt = values.termsAcceptedAt ?? new Date().toISOString();
+
+    if (!isServiceRoleConfigured) {
+      return NextResponse.json(
+        { error: "Registration could not be completed. Please try again or contact support." },
+        { status: 503 }
+      );
+    }
 
     const pathError = validateDocumentPathsForUser(userId, {
       prc: values.prcDocumentPath,
@@ -54,7 +72,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const fullName = [values.firstName, values.middleName, values.lastName]
+    const normalizedFirstName = toTitleCase(values.firstName);
+    const normalizedMiddleName = toTitleCase(values.middleName);
+    const normalizedLastName = toTitleCase(values.lastName);
+    const fullName = [normalizedFirstName, normalizedMiddleName, normalizedLastName]
       .filter((part) => part?.trim())
       .join(" ");
 
@@ -74,14 +95,15 @@ export async function POST(request: Request) {
       id: userId,
       role: profileRole,
       full_name: fullName,
-      first_name: values.firstName,
-      middle_name: values.middleName?.trim() || null,
-      last_name: values.lastName,
+      first_name: normalizedFirstName,
+      middle_name: normalizedMiddleName || null,
+      last_name: normalizedLastName,
       phone: null,
       region: values.region,
       city: values.city,
       barangay: values.barangay,
-      address: null
+      address: null,
+      terms_accepted_at: termsAcceptedAt
     });
 
     if (profileError) {
@@ -129,7 +151,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("register.nurse.exception", error);
-    const message = error instanceof Error ? error.message : "Unexpected server error.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Registration could not be completed. Please try again or contact support." },
+      { status: 500 }
+    );
   }
 }

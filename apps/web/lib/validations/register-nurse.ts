@@ -1,12 +1,14 @@
 import { z } from "zod";
 import { isCityInRegion } from "@/lib/data/ph-locations";
 import { nurseProfileFieldsSchema } from "@/lib/validations/profile";
+import { containsProfanity } from "@/lib/validation/sanitize";
 
 export const completeNurseRegistrationSchema = nurseProfileFieldsSchema
   .extend({
     prcDocumentPath: z.string().optional(),
     tesdaDocumentPath: z.string().optional(),
-    nbiDocumentPath: z.string().min(1, "NBI clearance is required.")
+    nbiDocumentPath: z.string().min(1, "NBI clearance is required."),
+    termsAcceptedAt: z.string().datetime().optional()
   })
   .superRefine((values, ctx) => {
     if (values.region && values.city && !isCityInRegion(values.city, values.region)) {
@@ -73,6 +75,42 @@ export const completeNurseRegistrationSchema = nurseProfileFieldsSchema
           path: ["prcDocumentPath"]
         });
       }
+    }
+
+    if (containsProfanity(values.firstName)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please keep your content appropriate.",
+        path: ["firstName"]
+      });
+    }
+    if (values.middleName && containsProfanity(values.middleName)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please keep your content appropriate.",
+        path: ["middleName"]
+      });
+    }
+    if (containsProfanity(values.lastName)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please keep your content appropriate.",
+        path: ["lastName"]
+      });
+    }
+    if (containsProfanity(values.barangay)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please keep your content appropriate.",
+        path: ["barangay"]
+      });
+    }
+    if (values.bio && containsProfanity(values.bio)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please keep your content appropriate.",
+        path: ["bio"]
+      });
     }
   });
 

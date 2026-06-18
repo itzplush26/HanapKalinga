@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { containsProfanity } from "@/lib/validation/sanitize";
 
 const bodySchema = z.object({
   bookingId: z.string().uuid(),
@@ -75,6 +76,10 @@ export async function POST(request: Request) {
 
   if (context.blocked) {
     return NextResponse.json({ error: "Messaging is unavailable for this conversation." }, { status: 403 });
+  }
+
+  if (containsProfanity(content)) {
+    return NextResponse.json({ error: "Please keep messages respectful." }, { status: 400 });
   }
 
   const { data: message, error } = await supabase

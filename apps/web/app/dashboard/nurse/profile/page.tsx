@@ -36,6 +36,7 @@ import { getDocumentExpiryItems, hasExpiredDocuments, type DocumentExpiryItem } 
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ensureNurseProfile } from "@/lib/nurse/ensure-profile";
 import { mapSupabaseError } from "@/lib/user-errors";
+import { toTitleCase } from "@/lib/validation/format-name";
 
 export default function NurseProfilePage() {
   const supabase = createClient();
@@ -161,7 +162,10 @@ export default function NurseProfilePage() {
     const user = data.user;
     if (!user) return;
 
-    const fullName = [values.firstName, values.middleName, values.lastName]
+    const normalizedFirstName = toTitleCase(values.firstName);
+    const normalizedMiddleName = toTitleCase(values.middleName);
+    const normalizedLastName = toTitleCase(values.lastName);
+    const fullName = [normalizedFirstName, normalizedMiddleName, normalizedLastName]
       .filter((item) => item && item.trim().length > 0)
       .join(" ");
 
@@ -175,9 +179,9 @@ export default function NurseProfilePage() {
     const { error: profileError } = await supabase.from("profiles").upsert({
       id: user.id,
       full_name: fullName,
-      first_name: values.firstName,
-      middle_name: values.middleName || null,
-      last_name: values.lastName,
+      first_name: normalizedFirstName,
+      middle_name: normalizedMiddleName || null,
+      last_name: normalizedLastName,
       phone: values.phone || null,
       region: values.region,
       city: values.city,
@@ -347,7 +351,16 @@ export default function NurseProfilePage() {
             </div>
             <div className="space-y-1">
               <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" placeholder="Phone" {...form.register("phone")} />
+              <Input
+                id="phone"
+                placeholder="09XXXXXXXXX"
+                inputMode="numeric"
+                maxLength={11}
+                {...form.register("phone")}
+                onInput={(event) => {
+                  event.currentTarget.value = event.currentTarget.value.replace(/\D/g, "").slice(0, 11);
+                }}
+              />
             </div>
             <RegionCitySelects
               region={form.watch("region")}

@@ -14,7 +14,11 @@ import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { TermsAcceptanceModal } from "@/components/terms-acceptance-modal";
 import { TurnstileWidget } from "@/components/turnstile-widget";
-import { recordTermsAcceptance } from "@/lib/terms-acceptance";
+import {
+  getTermsAcceptedAtForUser,
+  hasAcceptedTermsForUser,
+  recordTermsAcceptanceForUser
+} from "@/lib/terms-acceptance";
 import { mapUploadErrorMessage } from "@/lib/storage/parse-upload-response";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -35,6 +39,7 @@ import {
   saveSignupUserId,
   SIGNUP_TOTAL_STEPS
 } from "@/lib/signup-stage";
+import { toTitleCase } from "@/lib/validation/format-name";
 
 const SIGNUP_STAGE_KEYS = getSignupStageKeys();
 
@@ -50,12 +55,7 @@ export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSavingRole, setIsSavingRole] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
-  const [termsAcceptedThisSignup, setTermsAcceptedThisSignup] = useState(false);
-  const [pendingCredentials, setPendingCredentials] = useState<{
-    email: string;
-    password: string;
-    confirmPassword: string;
-  } | null>(null);
+  const [termsPendingUserId, setTermsPendingUserId] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
@@ -126,10 +126,18 @@ export default function RegisterPage() {
     confirmPassword: string;
   }) {
     setStatus(null);
-
-    if (!termsAcceptedThisSignup) {
-      setPendingCredentials(values);
-      setShowTermsModal(true);
+    const existingUserId = await resolveAuthUserId(supabase, signupUserId);
+    if (existingUserId) {
+      setSignupUserId(existingUserId);
+      saveSignupUserId(existingUserId);
+      setEmail(values.email);
+      credentialsForm.setValue("email", values.email);
+      if (!hasAcceptedTermsForUser(existingUserId)) {
+        setTermsPendingUserId(existingUserId);
+        setShowTermsModal(true);
+        return;
+      }
+      setStep(2);
       return;
     }
 
@@ -204,6 +212,13 @@ export default function RegisterPage() {
         }
       }
 
+      if (!hasAcceptedTermsForUser(userId)) {
+        setTermsPendingUserId(userId);
+        setShowTermsModal(true);
+        setIsSubmitting(false);
+        return;
+      }
+
       setEmail(values.email);
       credentialsForm.setValue("email", values.email);
       setStep(2);
@@ -221,10 +236,21 @@ export default function RegisterPage() {
     setIsSubmitting(false);
   }
 
-  async function handleRoleSubmit(values: { role: string }) {
+  async function resolveTermsAcceptedUserId(): Promise<string | null> {
     const userId = await resolveAuthUserId(supabase, signupUserId);
     if (!userId) {
       setStatus("Your session expired. Please sign up again from step 1.");
+      return null;
+    }
+    if (hasAcceptedTermsForUser(userId)) return userId;
+    setTermsPendingUserId(userId);
+    setShowTermsModal(true);
+    return null;
+  }
+
+  async function handleRoleSubmit(values: { role: string }) {
+    const userId = await resolveTermsAcceptedUserId();
+    if (!userId) {
       return;
     }
 
@@ -232,9 +258,11 @@ export default function RegisterPage() {
     setStatus(null);
 
     const nextRole = values.role as "family" | "nurse";
+    const acceptedAt = getTermsAcceptedAtForUser(userId) ?? new Date().toISOString();
     const { error: profileError } = await supabase.from("profiles").upsert({
       id: userId,
-      role: nextRole
+      role: nextRole,
+      terms_accepted_at: acceptedAt
     });
 
     if (profileError) {
@@ -260,10 +288,8 @@ export default function RegisterPage() {
   }
 
   async function handleProfileSubmit(values: NurseProfileFormValues | Record<string, unknown>) {
-    const userId = await resolveAuthUserId(supabase, signupUserId);
-
+    const userId = await resolveTermsAcceptedUserId();
     if (!userId || !role) {
-      setStatus("Your session expired. Please sign up again from step 1.");
       return;
     }
 
@@ -281,21 +307,26 @@ export default function RegisterPage() {
         barangay: string;
         address: string;
       };
+      const acceptedAt = getTermsAcceptedAtForUser(userId) ?? new Date().toISOString();
+      const normalizedFirstName = toTitleCase(familyValues.firstName);
+      const normalizedMiddleName = toTitleCase(familyValues.middleName);
+      const normalizedLastName = toTitleCase(familyValues.lastName);
 
       const { error: profileError } = await supabase.from("profiles").upsert({
         id: userId,
         role: "family",
-        full_name: [familyValues.firstName, familyValues.middleName, familyValues.lastName]
+        full_name: [normalizedFirstName, normalizedMiddleName, normalizedLastName]
           .filter((part) => part?.trim())
           .join(" "),
-        first_name: familyValues.firstName,
-        middle_name: familyValues.middleName?.trim() || null,
-        last_name: familyValues.lastName,
+        first_name: normalizedFirstName,
+        middle_name: normalizedMiddleName || null,
+        last_name: normalizedLastName,
         phone: familyValues.phone?.trim() || null,
         region: familyValues.region,
         city: familyValues.city,
         barangay: familyValues.barangay,
-        address: familyValues.address
+        address: familyValues.address,
+        terms_accepted_at: acceptedAt
       });
 
       if (profileError) {
@@ -389,7 +420,8 @@ export default function RegisterPage() {
         ...nurseValues,
         prcDocumentPath: nurseValues.providerType === "nurse" ? credentialUpload.path : undefined,
         tesdaDocumentPath: nurseValues.providerType === "caregiver" ? credentialUpload.path : undefined,
-        nbiDocumentPath: nbiUpload.path
+        nbiDocumentPath: nbiUpload.path,
+        termsAcceptedAt: getTermsAcceptedAtForUser(userId) ?? undefined
       })
     });
 
@@ -410,13 +442,18 @@ export default function RegisterPage() {
   }
 
   function handleTermsAccepted() {
-    recordTermsAcceptance();
-    setTermsAcceptedThisSignup(true);
-    setShowTermsModal(false);
-    if (pendingCredentials && step === 1) {
-      void performSignUp(pendingCredentials);
+    const acceptedUserId = termsPendingUserId ?? signupUserId;
+    if (!acceptedUserId) {
+      setStatus("Please finish account setup before accepting terms.");
+      setShowTermsModal(false);
+      return;
     }
-    setPendingCredentials(null);
+    recordTermsAcceptanceForUser(acceptedUserId);
+    setShowTermsModal(false);
+    setTermsPendingUserId(null);
+    if (step === 1) {
+      setStep(2);
+    }
   }
 
   useEffect(() => {
@@ -693,7 +730,15 @@ export default function RegisterPage() {
             </div>
             <div className="space-y-1">
               {optionalLabel("Phone (optional)")}
-              <Input placeholder="09XX XXX XXXX" {...familyForm.register("phone")} />
+              <Input
+                placeholder="09XXXXXXXXX"
+                inputMode="numeric"
+                maxLength={11}
+                {...familyForm.register("phone")}
+                onInput={(event) => {
+                  event.currentTarget.value = event.currentTarget.value.replace(/\D/g, "").slice(0, 11);
+                }}
+              />
             </div>
             <div className="space-y-3">
               <RegionCitySelects
@@ -974,7 +1019,7 @@ export default function RegisterPage() {
         onAccept={handleTermsAccepted}
         onClose={() => {
           setShowTermsModal(false);
-          setPendingCredentials(null);
+          setTermsPendingUserId(null);
         }}
       />
     </main>

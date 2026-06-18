@@ -1,28 +1,29 @@
-const SESSION_KEY = "terms_accepted";
-const STORAGE_KEY = "terms_accepted_at";
-const TWELVE_MONTHS_MS = 365 * 24 * 60 * 60 * 1000;
+export const TERMS_ACCEPTED_USER_ID_KEY = "terms_accepted_user_id";
+export const TERMS_ACCEPTED_AT_KEY = "terms_accepted_at";
 
-export function hasAcceptedTermsInSession(): boolean {
-  if (typeof window === "undefined") return false;
-  return Boolean(window.sessionStorage.getItem(SESSION_KEY));
+export function hasAcceptedTermsForUser(userId: string | null | undefined): boolean {
+  if (typeof window === "undefined" || !userId) return false;
+  const acceptedUserId = window.sessionStorage.getItem(TERMS_ACCEPTED_USER_ID_KEY);
+  return acceptedUserId === userId;
 }
 
-export function hasValidTermsAcceptance(): boolean {
-  if (typeof window === "undefined") return false;
-  if (window.sessionStorage.getItem(SESSION_KEY)) return true;
-
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  if (!stored) return false;
-
-  const acceptedAt = Number(stored);
-  if (!Number.isFinite(acceptedAt)) return false;
-
-  return Date.now() - acceptedAt < TWELVE_MONTHS_MS;
+export function getTermsAcceptedAtForUser(userId: string | null | undefined): string | null {
+  if (typeof window === "undefined" || !userId) return null;
+  if (!hasAcceptedTermsForUser(userId)) return null;
+  return window.sessionStorage.getItem(TERMS_ACCEPTED_AT_KEY);
 }
 
-export function recordTermsAcceptance(): void {
+export function recordTermsAcceptanceForUser(userId: string): string {
+  const acceptedAt = new Date().toISOString();
+  if (typeof window !== "undefined") {
+    window.sessionStorage.setItem(TERMS_ACCEPTED_USER_ID_KEY, userId);
+    window.sessionStorage.setItem(TERMS_ACCEPTED_AT_KEY, acceptedAt);
+  }
+  return acceptedAt;
+}
+
+export function clearTermsAcceptanceSession(): void {
   if (typeof window === "undefined") return;
-  const now = String(Date.now());
-  window.sessionStorage.setItem(SESSION_KEY, now);
-  window.localStorage.setItem(STORAGE_KEY, now);
+  window.sessionStorage.removeItem(TERMS_ACCEPTED_USER_ID_KEY);
+  window.sessionStorage.removeItem(TERMS_ACCEPTED_AT_KEY);
 }

@@ -5,6 +5,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { sendEmailSafe } from "@/lib/email/send-safe";
 import { getAdminEmails } from "@/lib/email/user-email";
 import { incidentReportReceivedEmail } from "@/lib/email/templates/incident-report-received";
+import { containsProfanity, sanitizeText } from "@/lib/validation/sanitize";
 
 const bodySchema = z.object({
   reportedUserId: z.string().uuid(),
@@ -28,6 +29,12 @@ export async function POST(request: Request) {
     }
 
     const { reportedUserId, bookingId, category, description, evidenceUrl } = parsed.data;
+    const normalizedCategory = sanitizeText(category);
+    const normalizedDescription = sanitizeText(description);
+
+    if (containsProfanity(normalizedCategory) || containsProfanity(normalizedDescription)) {
+      return NextResponse.json({ error: "Please keep your content appropriate." }, { status: 400 });
+    }
 
     if (reportedUserId === auth.user.id) {
       return NextResponse.json({ error: "You cannot report yourself." }, { status: 400 });
@@ -71,8 +78,8 @@ export async function POST(request: Request) {
         reporter_id: auth.user.id,
         reported_user_id: reportedUserId,
         booking_id: bookingId ?? null,
-        category,
-        description,
+        category: normalizedCategory,
+        description: normalizedDescription,
         evidence_url: evidenceUrl?.trim() ? evidenceUrl : null
       })
       .select("id")
@@ -97,8 +104,8 @@ export async function POST(request: Request) {
       const emailContent = incidentReportReceivedEmail({
         reporterName: reporter?.full_name?.trim() || "User",
         reportedUserName: reported?.full_name?.trim() || "User",
-        category,
-        description,
+        category: normalizedCategory,
+        description: normalizedDescription,
         reportId: report.id
       });
 

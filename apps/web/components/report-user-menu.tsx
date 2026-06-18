@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
+import { containsProfanity } from "@/lib/validation/sanitize";
 
 const CATEGORIES = [
   "Inappropriate behavior",
@@ -32,6 +33,10 @@ export function ReportUserMenu({ reportedUserId, reportedUserName, bookingId }: 
 
   async function submitReport() {
     if (description.trim().length < 50) return;
+    if (containsProfanity(category) || containsProfanity(description)) {
+      setMessage("Please keep your content appropriate.");
+      return;
+    }
     setLoading(true);
     setMessage(null);
     const response = await fetch("/api/incident-reports", {
