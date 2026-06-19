@@ -264,7 +264,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: maestro-debug-${{ matrix.shard }}
-          path: ${{ runner.temp }}/maestro-debug/${{ matrix.shard }}/
+          path: |
+            ${{ runner.temp }}/maestro-debug/${{ matrix.shard }}/
+            ${{ runner.temp }}/maestro-debug/${{ matrix.shard }}/**/*
           retention-days: 7
 
       - name: Upload Maestro report
@@ -275,9 +277,56 @@ jobs:
           path: ~/.maestro/reports/
           retention-days: 7
 
+  maestro-summary:
+    name: Generate E2E summary report
+    needs: [maestro-android]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download all shard debug artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: maestro-debug-*
+          path: ${{ runner.temp }}/maestro-summary/
+          merge-multiple: true
+
+      - name: List downloaded result files
+        run: |
+          echo "Downloaded artifacts to ${{ runner.temp }}/maestro-summary/"
+          find "${{ runner.temp }}/maestro-summary/" -name "results.txt" -type f || echo "No results.txt files found"
+          echo "---"
+          find "${{ runner.temp }}/maestro-summary/" -type f | head -30 || echo "No files found at all"
+
+      - name: Generate consolidated summary
+        id: summary
+        run: |
+          chmod +x apps/mobile/scripts/consolidate-maestro-summary.sh
+          apps/mobile/scripts/consolidate-maestro-summary.sh "${{ runner.temp }}/maestro-summary/" /tmp/maestro-final-report.md
+          echo "--- Full summary report ---"
+          cat /tmp/maestro-final-report.md
+
+      - name: Post summary to GITHUB_STEP_SUMMARY
+        run: |
+          if [ -f /tmp/maestro-final-report.md ]; then
+            cat /tmp/maestro-final-report.md >> $GITHUB_STEP_SUMMARY
+            echo "Summary posted to step summary."
+          else
+            echo "::warning::No summary report generated."
+          fi
+
+      - name: Upload consolidated summary as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-consolidated-summary
+          path: /tmp/maestro-final-report.md
+          retention-days: 30
+
   cleanup-e2e:
     name: Cleanup E2E test data
-    needs: [maestro-android]
+    needs: [maestro-summary]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
