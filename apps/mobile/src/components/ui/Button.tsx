@@ -12,7 +12,7 @@ import { spacing } from '../../theme/spacing';
 import { rounded } from '../../theme/rounded';
 import { typography } from '../../theme/typography';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'link';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'link' | 'default' | 'outline';
 
 interface ButtonProps {
   variant?: ButtonVariant;
@@ -21,6 +21,7 @@ interface ButtonProps {
   loading?: boolean;
   children: string;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 }
 
 export function Button({
@@ -30,23 +31,25 @@ export function Button({
   loading = false,
   children,
   style,
+  testID,
 }: ButtonProps) {
   const isDisabled = disabled || loading;
 
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      disabled={isDisabled}
-      activeOpacity={0.7}
-      style={[
-        styles.base,
-        variantStyles[variant],
-        isDisabled && styles.disabled,
-        style,
-      ]}
-      accessibilityRole="button"
-      accessibilityState={{ disabled: isDisabled }}
-    >
+      <TouchableOpacity
+        onPress={onPress}
+        disabled={isDisabled}
+        activeOpacity={0.7}
+        style={[
+          styles.base,
+          variantStyles[variant],
+          isDisabled && styles.disabled,
+          style,
+        ]}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: isDisabled }}
+        testID={testID}
+      >
       {loading ? (
         <ActivityIndicator
           color={variant === 'primary' ? colors.canvas : colors.brand[600]}
@@ -102,6 +105,14 @@ const variantStyles: Record<ButtonVariant, ViewStyle> = {
     paddingVertical: 0,
     paddingHorizontal: 0,
   },
+  default: {
+    backgroundColor: colors.brand[600],
+  },
+  outline: {
+    backgroundColor: colors.canvas,
+    borderWidth: 1,
+    borderColor: colors.brand[200],
+  },
 };
 
 const variantTextStyles: Record<ButtonVariant, TextStyle> = {
@@ -119,5 +130,11 @@ const variantTextStyles: Record<ButtonVariant, TextStyle> = {
     fontFamily: typography.fontFamily.body,
     fontSize: typography.size.body,
     textDecorationLine: 'underline',
+  },
+  default: {
+    color: colors.canvas,
+  },
+  outline: {
+    color: colors.brand[600],
   },
 };

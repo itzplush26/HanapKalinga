@@ -10,7 +10,7 @@ export type VerificationStatus =
 
 export type BookingStatus = "pending" | "accepted" | "declined" | "completed" | "cancelled" | "pending_completion" | "disputed";
 
-export type Shift = "morning" | "afternoon" | "evening" | "full_day";
+export type Shift = "morning" | "afternoon" | "evening" | "full_day" | "custom";
 
 export type ProviderType = "nurse" | "caregiver";
 

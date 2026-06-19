@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { themeColors, type ColorTokens } from '../theme/colors';
 
 type Theme = 'light' | 'dark';
 
@@ -8,6 +9,7 @@ interface ThemeContextValue {
   setTheme: (theme: Theme) => Promise<void>;
   toggleTheme: () => Promise<void>;
   isDark: boolean;
+  colors: ColorTokens;
 }
 
 const THEME_KEY = '@hanapkalinga/theme';
@@ -17,6 +19,7 @@ const ThemeContext = createContext<ThemeContextValue>({
   setTheme: async () => {},
   toggleTheme: async () => {},
   isDark: false,
+  colors: themeColors.light,
 });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -47,7 +50,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme, isDark: theme === 'dark' }}>
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme, isDark: theme === 'dark', colors: themeColors[theme] }}>
       {children}
     </ThemeContext.Provider>
   );
