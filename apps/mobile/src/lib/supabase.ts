@@ -22,6 +22,8 @@ function createSupabaseClient() {
   try {
     const { url, anonKey } = getSupabaseConfig();
 
+    console.log('[Supabase] Config:', { hasUrl: !!url, hasAnonKey: !!anonKey, urlPrefix: url?.substring(0, 20) });
+
     if (!url || !anonKey) {
       console.warn('Supabase URL or Anon Key is missing. Auth will be unavailable.');
       return null;

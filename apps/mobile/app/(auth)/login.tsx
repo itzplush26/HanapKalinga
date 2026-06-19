@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { loginSchema } from '@hanapkalinga/shared/validations';
 import type { UserRole } from '@hanapkalinga/shared/types';
@@ -72,10 +72,7 @@ export default function LoginScreen() {
 
   return (
     <ScreenWrapper scroll>
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <View style={styles.container}>
         <View style={styles.header}>
           <Text style={[styles.title, { color: colors['text-primary'] }]}>
             Welcome back
@@ -136,7 +133,7 @@ export default function LoginScreen() {
             Create an account
           </TextLink>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </ScreenWrapper>
   );
 }
