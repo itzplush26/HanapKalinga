@@ -12,8 +12,7 @@ import { spacing } from '../../theme/spacing';
 import { rounded } from '../../theme/rounded';
 import { typography } from '../../theme/typography';
 
-type ButtonVariant = 'default' | 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'link';
-type ButtonSize = 'default' | 'sm' | 'lg';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'link' | 'default' | 'outline';
 
 interface ButtonProps {
   variant?: ButtonVariant;
@@ -22,7 +21,7 @@ interface ButtonProps {
   disabled?: boolean;
   loading?: boolean;
   children: string;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   testID?: string;
 }
 
@@ -35,6 +34,7 @@ export function Button({
   children,
   style,
   testID,
+  testID,
 }: ButtonProps) {
   const { colors } = useTheme();
   const isDisabled = disabled || loading;
@@ -46,21 +46,20 @@ export function Button({
   const variantTextStyle = getVariantTextStyle(variant, colors);
 
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      disabled={isDisabled}
-      activeOpacity={0.7}
-      style={[
-        styles.base,
-        { height, paddingHorizontal },
-        variantStyle,
-        isDisabled && styles.disabled,
-        style,
-      ]}
-      accessibilityRole="button"
-      accessibilityState={{ disabled: isDisabled }}
-      testID={testID}
-    >
+      <TouchableOpacity
+        onPress={onPress}
+        disabled={isDisabled}
+        activeOpacity={0.7}
+        style={[
+          styles.base,
+          variantStyles[variant],
+          isDisabled && styles.disabled,
+          style,
+        ]}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: isDisabled }}
+        testID={testID}
+      >
       {loading ? (
         <ActivityIndicator
           color={variant === 'default' || variant === 'destructive' ? '#ffffff' : colors.primary}
@@ -130,3 +129,55 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.bodyMedium,
   },
 });
+
+const variantStyles: Record<ButtonVariant, ViewStyle> = {
+  primary: {
+    backgroundColor: colors.brand[600],
+  },
+  secondary: {
+    backgroundColor: colors.canvas,
+    borderWidth: 1,
+    borderColor: colors.brand[200],
+  },
+  ghost: {
+    backgroundColor: 'transparent',
+  },
+  link: {
+    backgroundColor: 'transparent',
+    minHeight: undefined,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+  },
+  default: {
+    backgroundColor: colors.brand[600],
+  },
+  outline: {
+    backgroundColor: colors.canvas,
+    borderWidth: 1,
+    borderColor: colors.brand[200],
+  },
+};
+
+const variantTextStyles: Record<ButtonVariant, TextStyle> = {
+  primary: {
+    color: colors.canvas,
+  },
+  secondary: {
+    color: colors.brand[600],
+  },
+  ghost: {
+    color: colors.brand[600],
+  },
+  link: {
+    color: colors.semantic.link,
+    fontFamily: typography.fontFamily.body,
+    fontSize: typography.size.body,
+    textDecorationLine: 'underline',
+  },
+  default: {
+    color: colors.canvas,
+  },
+  outline: {
+    color: colors.brand[600],
+  },
+};

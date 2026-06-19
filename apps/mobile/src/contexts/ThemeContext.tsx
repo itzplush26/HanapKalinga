@@ -1,20 +1,23 @@
-import { createContext, useContext, useMemo } from 'react';
-import { useColorScheme } from 'react-native';
-import { themeColors, type ColorMode, type ColorTokens } from '../theme/colors';
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { themeColors, type ColorTokens } from '../theme/colors';
+
+type Theme = 'light' | 'dark';
 
 interface ThemeContextValue {
   isDark: boolean;
-  mode: ColorMode;
   colors: ColorTokens;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const systemScheme = useColorScheme();
-  const isDark = systemScheme === 'dark';
-  const mode: ColorMode = isDark ? 'dark' : 'light';
-  const currentColors = themeColors[mode];
+const ThemeContext = createContext<ThemeContextValue>({
+  theme: 'light',
+  setTheme: async () => {},
+  toggleTheme: async () => {},
+  isDark: false,
+  colors: themeColors.light,
+});
 
   const value = useMemo(
     () => ({ isDark, mode, colors: currentColors }),
@@ -22,7 +25,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <ThemeContext.Provider value={value}>
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme, isDark: theme === 'dark', colors: themeColors[theme] }}>
       {children}
     </ThemeContext.Provider>
   );

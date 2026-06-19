@@ -78,7 +78,7 @@ export default function FamilyCareRequestsScreen() {
 const styles = StyleSheet.create({
   list: {
     paddingVertical: spacing.sm,
-    paddingBottom: spacing.section,
+    paddingBottom: spacing.xxl,
   },
   skeletonRow: {
     padding: spacing.md,
