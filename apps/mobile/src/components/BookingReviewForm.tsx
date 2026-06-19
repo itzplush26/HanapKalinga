@@ -61,7 +61,7 @@ export function BookingReviewForm({ bookingId, nurseId, onSubmit }: BookingRevie
   return (
     <View style={styles.card}>
       <Text style={styles.title}>How was your experience?</Text>
-      <StarRating rating={rating} onRate={setRating} size={28} />
+      <StarRating value={rating} onChange={setRating} />
       <TextInput
         style={styles.textarea}
         placeholder="Tell others about your experience (optional)"
@@ -74,9 +74,10 @@ export function BookingReviewForm({ bookingId, nurseId, onSubmit }: BookingRevie
       />
       {error && <Text style={styles.errorText}>{error}</Text>}
       <Button
-        variant="primary"
+        variant="default"
         loading={submitting}
         onPress={handleSubmit}
+        testID="bookingDetail_button_review"
       >
         Submit review
       </Button>

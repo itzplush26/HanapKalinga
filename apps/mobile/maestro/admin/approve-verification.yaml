@@ -1,0 +1,40 @@
+appId: ${APP_ID}
+---
+# Login as admin user
+- runFlow:
+    file: ../shared/setup.yaml
+- runFlow:
+    file: ../shared/helpers.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# Navigate to Verifications tab
+- tapOn:
+    text: "Verifications tab"
+
+# Wait for queue
+- extendedWaitUntil:
+    visible:
+      id: "verificationQueue_list_requests"
+    timeout: 15000
+
+# Tap on verification request
+- tapOn:
+    id: "verificationQueue_card_${VERIFICATION_ID}"
+
+# Wait for detail screen
+- extendedWaitUntil:
+    visible:
+      id: "verificationDetail_text_name"
+    timeout: 10000
+
+# Tap approve
+- tapOn:
+    id: "verificationDetail_button_approve"
+
+# Wait for action to complete and return to queue
+- extendedWaitUntil:
+    visible:
+      id: "verificationQueue_list_requests"
+    timeout: 15000

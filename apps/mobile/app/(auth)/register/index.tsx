@@ -67,11 +67,12 @@ export default function RegisterStep1Screen() {
           keyboardType="email-address"
           autoCapitalize="none"
           autoComplete="email"
+          testID="register_input_email"
         />
 
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        {error ? <Text style={styles.errorText} testID="register_text_error">{error}</Text> : null}
 
-        <Button onPress={handleNext} loading={loading} style={styles.button}>
+        <Button onPress={handleNext} loading={loading} style={styles.button} testID="register_button_sendOtp">
           Next
         </Button>
 

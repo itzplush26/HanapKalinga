@@ -1,11 +1,16 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useRef, useState } from "react";
 import { Camera, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProfileAvatar } from "@/components/profile-avatar";
-import { PhotoCropModal } from "@/components/photo-crop-modal";
 import { uploadPhotoViaApi } from "@/lib/storage/upload-client";
+
+const PhotoCropModal = dynamic(
+  () => import("@/components/photo-crop-modal").then((mod) => mod.PhotoCropModal),
+  { ssr: false }
+);
 
 interface ProfilePhotoUploaderProps {
   photoUrl: string | null;

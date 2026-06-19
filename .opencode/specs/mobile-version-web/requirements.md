@@ -1,148 +1,142 @@
-# Requirements Document: Mobile Version of HanapKalinga Web App
+# Requirements Document: Mobile Design Alignment with Web
 
 ## Introduction
 
-The HanapKalinga mobile app (Expo/React Native) currently has only a landing screen and root layout. This spec defines the full mobile version that mirrors the web app's functionality — a marketplace connecting Filipino families with verified private-duty nurses and caregivers. The mobile app uses the Airtable-inspired design patterns (near-black primary CTA, signature cards, generous whitespace, editorial section rhythm) from `apps/mobile/designs/DESIGN-airtable.md` but adapted to the web app's blue brand color palette (`brand-50` through `brand-900`) and its Space Grotesk/Manrope typography.
+Align the NurseLink mobile app (React Native / Expo) design system and component library to visually match the production web app (Next.js / Tailwind / shadcn/ui). The mobile app currently uses a blue brand palette and incomplete design tokens that diverge from the web's teal/navy system. This spec covers updating the theme tokens, UI components, screen layouts, and navigation to achieve visual parity while maintaining mobile-native UX patterns.
 
 ## Glossary
 
-- **Family**: A user role representing a patient's family member seeking a nurse or caregiver
-- **Nurse/Provider**: A user role representing a nurse (RN) or caregiver (TESDA NC II) offering services
-- **Admin**: A user role managing verification, bookings, and platform oversight
-- **Booking**: A request from a family to hire a nurse for a specific date and shift
-- **Shift**: Time slot (Morning 6am-2pm, Afternoon 2pm-10pm, Evening 10pm-6am, Full Day)
-- **Verification**: The process of validating a nurse's credentials (PRC license, TESDA cert, NBI clearance)
-- **OTP**: One-time password sent via email for registration verification
-- **PRC**: Philippine Regulatory Commission (nurse licensing body)
-- **TESDA**: Technical Education and Skills Development Authority (caregiver certification)
-- **NBI**: National Bureau of Investigation (clearance document)
-- **Signature Card**: A full-bleed colored section card (from Airtable design) carrying brand voltage — adapted to brand blue tones
-- **Canvas**: White page surface (from Airtable design token)
-- **Section Rhythm**: The editorial pacing of alternating white canvas sections with signature color cards
+- **Design Token**: A named CSS/in-code variable representing a design decision (color, spacing, typography, radius).
+- **Design System**: The complete set of reusable components, tokens, and patterns.
+- **shadcn/ui**: The web UI component library used in the web app (New York style, Tailwind-based).
+- **Expo Router 6**: File-based routing for React Native, similar to Next.js App Router.
+- **Tab Bar**: Mobile bottom navigation bar (equivalent to web's `BottomNav`).
+- **Dark Mode**: CSS class-based theme switching (`html.dark`) on web; to be mirrored on mobile.
 
 ## Requirements
 
-### Requirement 1: Authentication & Onboarding
+### Requirement 1: Align Color Palette
 
-**User Story:** As a new user, I want to register or log in from my mobile device, so that I can access the platform.
-
-#### Acceptance Criteria
-
-1. WHEN a user opens the app, THE system SHALL display a landing screen with "HanapKalinga" branding, tagline, and two CTA buttons: "I need a nurse or caregiver" (family path) and "I am a nurse or caregiver" (provider path), plus a "Log in" text link
-2. WHEN a user taps "Log in", THE system SHALL present an email + password login form with links to "Forgot password?" and "Create an account"
-3. WHEN a user taps "Create an account" or either registration CTA, THE system SHALL present a multi-step registration wizard: Step 1 email input → Step 2 verify OTP → Step 3 choose role (family/nurse) → Step 4 fill profile → Step 5 set password
-4. WHEN a user completes registration, THE system SHALL auto-authenticate and redirect to the appropriate role-based dashboard
-5. WHEN a user taps "Forgot password?", THE system SHALL present an email input to send a password reset link
-6. WHEN a user accesses a password reset link, THE system SHALL allow them to enter a new password
-7. THE mobile auth SHALL use the same Supabase backend as the web app
-
-### Requirement 2: Nurse Browsing & Profiles
-
-**User Story:** As a family user or visitor, I want to browse and search for verified nurses and caregivers on my mobile device.
+**User Story:** As a user, I want the mobile app to use the same brand colors as the web app, so that the experience feels consistent across platforms.
 
 #### Acceptance Criteria
 
-1. WHEN any user visits the Browse Nurses screen, THE system SHALL display a scrollable list of nurse cards showing: name, city, specializations (tags), daily rate, availability status badge, and provider type badge
-2. WHEN a user taps a filter button, THE system SHALL present a filter sheet with: city dropdown, specialization multi-select, daily rate range, availability status, and provider type
-3. WHEN a user taps a nurse card, THE system SHALL navigate to a nurse detail screen showing: full name, location with map, availability badge, specialization tags, bio text, hourly/daily rate cards, availability slots for the next 7 days, reviews list, and a "Request Booking" CTA button
-4. WHEN the nurse detail screen loads, THE system SHALL fetch server-side rendered data from the Supabase backend
+1. WHEN the app renders in light mode, THEN the primary brand color SHALL be teal (#0d9488) with hover variant (#0f766e) and light variant (#ccfbf1).
+2. WHEN the app renders in light mode, THEN the secondary color SHALL be navy (#1e3a5f) with soft variant (#2d5282).
+3. WHEN the app renders in light mode, THEN the background colors SHALL be: bg (#f8fafb), surface (#ffffff), surface-alt (#f1f5f9).
+4. WHEN the app renders in light mode, THEN the text colors SHALL be: primary (#1a202c), secondary (#4a5568), muted (#718096).
+5. WHEN the app renders in light mode, THEN the status colors SHALL be: success (#059669), success-bg (#ecfdf5), success-border (#a7f3d0); warning (#d97706), warning-bg (#fffbeb), warning-border (#fde68a); error (#dc2626), error-bg (#fef2f2), error-border (#fecaca); info (#0d9488), info-bg (#ccfbf1), info-border (#99f6e4).
+6. WHEN the app renders in light mode, THEN the border colors SHALL be: default (#e2e8f0), focus (#0d9488).
+7. WHEN the app renders in light mode, THEN the nav colors SHALL be: bg (#ffffff), active (#0d9488), inactive (#94a3b8), border (#e2e8f0).
+8. WHEN dark mode is active, THEN all colors SHALL switch to the dark variants defined in the web `tokens.css`.
+9. THE color system SHALL use a `ThemeProvider` or React context to expose `isDark` throughout the app.
+10. THE color tokens SHALL be exported as a single `colors` object with nested `light` and `dark` keys, keyed identical to the web's CSS custom properties.
 
-### Requirement 3: Family Dashboard
+### Requirement 2: Align Typography
 
-**User Story:** As a family user, I want to manage my bookings and profile from my mobile device.
-
-#### Acceptance Criteria
-
-1. WHEN a family user logs in, THE system SHALL display a dashboard home with: welcome banner (first visit only), "Find a nurse or caregiver" promo card linking to Browse Nurses, recent bookings list (3 max), and "Request a booking" CTA
-2. WHEN a family user navigates to their profile, THE system SHALL display editable fields: full name, phone, region/city/barangay, address with save functionality
-3. WHEN a family user navigates to My Bookings, THE system SHALL display a list of all bookings with: requested date, shift label, status badge, and unread message count badge
-4. WHEN a family user taps a booking, THE system SHALL navigate to a booking detail screen showing: booking info, status badge, parsed booking notes card, optional review form (star rating + comment for completed bookings without reviews), and a message thread for chat with the nurse
-5. WHEN a family user taps "Request a booking" from a nurse profile, THE system SHALL present a booking form with: requested date picker, patient condition selector (bedridden/mobile/assisted), shift selector, required skills chips, budget band dropdown, and additional notes textarea
-6. THE family dashboard SHALL use bottom tab navigation with tabs: Home, Browse, Bookings, Messages, Profile
-
-### Requirement 4: Nurse Dashboard
-
-**User Story:** As a nurse/provider user, I want to manage my profile, availability, and bookings from my mobile device.
+**User Story:** As a user, I want the mobile app to use the same typeface and text sizing as the web app.
 
 #### Acceptance Criteria
 
-1. WHEN a nurse user logs in, THE system SHALL display a dashboard home with: verification status banner (showing current verification state), notifications panel, recent booking requests list (3 max), and CTA buttons for "Edit profile" and "Set availability"
-2. WHEN a nurse user navigates to their profile editor, THE system SHALL display fields for: full name, phone, region/city/barangay, address, PRC license number, specializations multi-select, years experience, bio, hourly/daily rate ranges, profile photo upload, credential document uploads (PRC or TESDA), and NBI clearance upload — with change detection triggering re-verification
-3. WHEN a nurse user navigates to Set Availability, THE system SHALL display a weekly calendar view with Previous/Next week navigation, allowing toggling of shifts (morning/afternoon/evening) as open/closed per day
-4. WHEN a nurse user navigates to My Bookings, THE system SHALL display a list of booking requests with: date, shift, status badge, and unread message count badge
-5. WHEN a nurse user taps a booking request, THE system SHALL navigate to a booking detail screen with: booking info, Accept/Decline buttons for pending bookings, booking details card, and message thread for chat with the family
-6. WHEN a nurse user navigates to Messages, THE system SHALL display an inbox of conversations grouped by booking
-7. THE nurse dashboard SHALL use bottom tab navigation with tabs: Home, Bookings, Messages, Availability, Profile
+1. THE primary font SHALL be Plus Jakarta Sans (weights: 400, 500, 600, 700) — matching the web app's `--font-body`.
+2. THE typography sizing SHALL match the web app: base text 16px, small 14px, extra-small 12px.
+3. WHEN displaying headings (h1-h4), THEY SHALL use font-weight 600 (semibold) with the body font family.
+4. The display font SHALL be removed (Space Grotesk) or replaced with Plus Jakarta Sans, since the web uses one font for all text.
 
-### Requirement 5: Admin Dashboard (Mobile)
+### Requirement 3: Align Border Radii
 
-**User Story:** As an admin, I want to manage the platform from my mobile device.
+**User Story:** As a user, I want consistent rounded corners across web and mobile.
 
 #### Acceptance Criteria
 
-1. WHEN an admin user logs in, THE system SHALL display a dashboard with: 4 metric cards (pending verifications, under review, total bookings, total signups), quick actions links, and a verification status legend
-2. WHEN an admin navigates to the verification queue, THE system SHALL display tabbed filter: All Active, Pending, Under Review, Approved, Rejected, Resubmission Required — with applicant cards showing name, city, provider type, submission date, status badge
-3. WHEN an admin taps a verification item, THE system SHALL display a verification review screen with: document viewer (PRC/TESDA/NBI), applicant info, audit log, and action buttons (Approve/Reject/Request Resubmission/Mark Under Review) with optional rejection reason and review notes
-4. WHEN an admin navigates to manage nurses, families, or bookings, THE system SHALL display lists with search/filter and detail screens
-5. THE admin dashboard SHALL use a sidebar navigation or top-tab navigation with sections: Dashboard, Verifications, Nurses, Families, Bookings
+1. THE default card/component border radius SHALL be `rounded-2xl` (1rem / 16px) — matching the web's Card component.
+2. THE input/button border radius SHALL be `rounded-xl` (0.9rem / ~14px) — matching the web's Button and Input.
+3. THE badge/pill border radius SHALL be `rounded-full` (9999px) — matching the web's Badge.
+4. THE small element (skeleton, icon container) border radius SHALL be `rounded-xl` (0.9rem / ~14px) — matching the web's Skeleton.
 
-### Requirement 6: Shared Components & Navigation
+### Requirement 4: Redesign UI Components
 
-**User Story:** As any user, I want a consistent mobile experience with proper navigation and shared UI patterns.
-
-#### Acceptance Criteria
-
-1. THE system SHALL use expo-router for file-based navigation mirroring the web app's route structure
-2. THE system SHALL implement bottom tab navigation for dashboard screens (nurse/family) and stack navigation for auth flows and detail screens
-3. THE system SHALL implement the Airtable-inspired design patterns (section rhythm, signature cards, whitespace philosophy) adapted to the web's blue brand color palette
-4. THE system SHALL implement a responsive design that works on both phone and tablet screen sizes
-5. THE system SHALL handle loading, error, and empty states for all data-fetching screens
-6. THE system SHALL implement pull-to-refresh on list screens
-
-### Requirement 7: Messaging System
-
-**User Story:** As a family or nurse user, I want to communicate in real-time about bookings.
+**User Story:** As a user, I want mobile UI components to visually match their web counterparts.
 
 #### Acceptance Criteria
 
-1. WHEN a user is on a booking detail screen, THE system SHALL display a message thread showing all messages for that booking
-2. WHEN a user sends a message, THE system SHALL persist it to Supabase and display it in real-time
-3. WHEN a user navigates to Messages (inbox), THE system SHALL aggregate conversations grouped by booking showing: the other party's name, last message preview, timestamp, and unread count
-4. THE message system SHALL support the same real-time behavior as the web version
+1. **Button**: WHEN rendered as `default` variant, IT SHALL have teal background (#0d9488), white text, rounded-xl (~14px), h-11 (44px) height. WHEN rendered as `outline` variant, IT SHALL have transparent bg, teal border, teal text. WHEN rendered as `ghost` variant, IT SHALL have transparent bg, teal text, teal hover bg. WHEN rendered as `destructive` variant, IT SHALL have error bg (#dc2626), white text.
+2. **Card**: SHALL have rounded-2xl (16px) radius, border (1px solid #e2e8f0), bg-surface (#ffffff), p-4 (16px) padding.
+3. **Badge**: SHALL be rounded-full with px-2.5 py-0.5 padding, text-xs font-medium. Color variants SHALL match the web's status patterns: `bg-slate-100 text-slate-700` for neutral, `bg-emerald-100 text-emerald-700` for success, `bg-amber-100 text-amber-700` for warning, `bg-rose-100 text-rose-700` for error.
+4. **Input**: SHALL have rounded-xl (~14px), h-11 (44px), border-border, bg-surface, focus ring-2 ring-border-focus. Label SHALL be text-sm font-medium text-text-secondary.
+5. **Chip / Filter Pill**: WHEN selected, SHALL use `border-brand-300 bg-brand-50 text-brand-700` (teal border/background/text). WHEN unselected, SHALL use `border-slate-200 bg-white text-slate-600`.
+6. **Skeleton**: SHALL use `rounded-xl bg-surface-alt` with `animate-pulse`.
+7. **Avatar**: SHALL be rounded-full, border border-slate-200, bg-slate-100, text-slate-500. Sizes: sm=44px, md=64px, lg=80px. SHALL show initials fallback or User icon.
+8. **Star Display**: SHALL use `★` filled / `☆` empty characters in amber-400 (#fbbf24) color, matching web's `StarDisplay`.
+9. **Star Rating**: SHALL use filled `★` / empty `☆` in amber-400, matching web's interactive `StarRating`.
 
-### Requirement 8: Notifications
+### Requirement 5: Redesign Navigation (Tab Bar)
 
-**User Story:** As any user, I want to receive and respond to in-app notifications.
+**User Story:** As a user, I want the mobile bottom tab bar to visually match the web's bottom navigation.
 
 #### Acceptance Criteria
 
-1. WHEN a user has unread notifications, THE system SHALL display a badge indicator in the navigation
-2. WHEN a user opens the notifications panel, THE system SHALL show a list of notifications with title, body, timestamp, and read/unread state
-3. WHEN a user taps a notification, THE system SHALL mark it as read and navigate to the relevant screen
-4. WHEN a user uses the Mark All Read action, THE system SHALL mark all notifications as read
+1. THE tab bar SHALL be fixed at the bottom with height 64px (h-16).
+2. THE tab bar SHALL have border-top: 1px solid var(--color-nav-border).
+3. THE tab bar background SHALL be `nav-bg` (#ffffff light, #162636 dark).
+4. WHEN a tab is active, ITS icon SHALL use `nav-active` color (teal) with strokeWidth 2.25 and filled variant.
+5. WHEN a tab is inactive, ITS icon SHALL use `nav-inactive` color (#94a3b8) with strokeWidth 2.
+6. Tab labels SHALL be 10px font-size, centered below icons.
+7. Active tab labels SHALL be font-semibold nav-active color. Inactive SHALL be font-normal nav-inactive color.
+8. THE unread message badge SHALL be a red circle (bg-error), positioned at top-right of the Messages icon, showing count (max "9+").
+
+### Requirement 6: Add Dark Mode Support
+
+**User Story:** As a user, I want the mobile app to support dark mode matching the web app's dark theme.
+
+#### Acceptance Criteria
+
+1. WHEN the device is in dark mode, THE app SHALL automatically switch to dark color tokens.
+2. THE dark color palette SHALL exactly match the web's `html.dark` token values (teal #14b8a6, navy #93c5fd, dark bg #0f1f2e, dark surface #162636, etc.).
+3. ALL components (Button, Card, Badge, Input, TabBar, Skeleton, Avatar) SHALL respect the current theme context.
+4. THE `ScreenWrapper` background SHALL switch between `bg` light/dark.
+5. THE app SHALL use `useColorScheme()` from React Native to detect system preference.
+6. A `ThemeContext` or similar SHALL provide `isDark` to all consumers.
+
+### Requirement 7: Align Screen Layouts
+
+**User Story:** As a user, I want mobile screen layouts to match the visual hierarchy and spacing of the web.
+
+#### Acceptance Criteria
+
+1. THE `ScreenWrapper` background SHALL be `bg` (not white canvas) — matching the web body's `bg-bg`.
+2. Page-level padding SHALL use the spacing scale from the web (px-5 = 20px horizontal, py-10 for landing).
+3. Dashboard pages SHALL use the same section spacing and card patterns as the web.
+4. Forms SHALL use consistent label placement (text-sm font-medium text-text-secondary above inputs).
+5. Empty states SHALL use the same pattern as web's `EmptyState`: centered icon in rounded circle (bg-surface-alt), title (text-base font-semibold text-text-primary), description (text-sm text-text-secondary), optional action button.
 
 ## Scope
 
-### In-Scope
-- Full authentication flow (login, register, forgot/reset password, OTP verification)
-- Public nurse browsing with filters and nurse detail profiles
-- Family dashboard (home, browse nurses, request booking, booking list/detail, messages, profile)
-- Nurse dashboard (home, booking list/detail, messages, availability calendar, profile with document uploads)
-- Admin dashboard (home, verification queue/review, nurse/family/booking management)
-- In-app messaging system (per-booking message threads, inbox)
-- In-app notifications panel
-- Bottom tab navigation for dashboards, stack navigation for auth and detail screens
-- Airtable-inspired design system adapted to web brand colors
-- Supabase integration reusing the existing shared backend
-- Loading, error, and empty states for all screens
+### In-Spectrum
+1. Update `apps/mobile/src/theme/colors.ts` to match web's tokens (light + dark)
+2. Update `apps/mobile/src/theme/typography.ts` to use Plus Jakarta Sans
+3. Update `apps/mobile/src/theme/spacing.ts` to match web's spacing scale
+4. Update `apps/mobile/src/theme/rounded.ts` to match web's border radii
+5. Redesign Button, Card, Badge, Input, Chip, Skeleton, Avatar, StarDisplay, StarRating components
+6. Redesign TabBar to match web's BottomNav
+7. Add dark mode support with ThemeContext
+8. Update ScreenWrapper background
+9. Update landing screen (index.tsx) to match web's home page design
+10. Update login screen to match web's login page (teal branding, correct typography, layout)
+11. Update family and nurse dashboard screens to use new tokens/layout
+12. Update tab layouts to use new TabBar
 
-### Out-of-Scope
-- Push notifications (future enhancement — MVP uses in-app notifications only)
-- Offline mode / data caching (future enhancement)
-- Video calls or voice calls
-- Payment processing within the mobile app
-- Multi-language support (future enhancement)
-- Dark mode (future enhancement)
-- Biometric authentication (future enhancement)
-- Widget or home screen quick actions
-- Tablet-specific layout (responsive but phone-first)
+### Out-of-Spectrum
+1. Changing the routing structure or navigation logic (only visual styling)
+2. Adding new screens or features (only aligning existing ones)
+3. Changing the shared package types or validations
+4. Modifying the web frontend (mobile-only changes)
+5. Changing Supabase backend logic or API calls
+6. Accessibility audit beyond what the web already provides
+
+## Preservation Requirements
+
+1. ALL existing functionality, navigation flows, and business logic SHALL remain unchanged.
+2. ALL existing API calls, hooks, and data fetching SHALL remain unchanged.
+3. ALL form validation schemas and submission logic SHALL remain unchanged.
+4. The tab navigation structure (routes, auth guards) SHALL remain unchanged.

@@ -32,6 +32,7 @@ export const PH_REGION_CITIES: Record<PhRegion, string[]> = {
     "Las Piñas",
     "Marikina",
     "Muntinlupa",
+    "Malabon",
     "Navotas",
     "Parañaque",
     "Pasay",

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
@@ -14,7 +13,13 @@ import { familyProfileSchema, nurseProfileFormSchema, type NurseProfileFormValue
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { TermsAcceptanceModal } from "@/components/terms-acceptance-modal";
-import { hasValidTermsAcceptance, recordTermsAcceptance } from "@/lib/terms-acceptance";
+import { TurnstileWidget } from "@/components/turnstile-widget";
+import {
+  getTermsAcceptedAtForUser,
+  hasAcceptedTermsForUser,
+  recordTermsAcceptanceForUser,
+  syncTermsAcceptanceFromProfile
+} from "@/lib/terms-acceptance";
 import { mapUploadErrorMessage } from "@/lib/storage/parse-upload-response";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -24,33 +29,20 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { uploadNurseDocument } from "@/lib/upload-nurse-document";
 import { RegionCitySelects } from "@/components/region-city-selects";
 import { RateRangeSelect } from "@/components/rate-range-select";
-import {
-  resolveDailyRateBandValues,
-  resolveHourlyRateBandValues,
-  type DailyRateBandId,
-  type HourlyRateBandId
-} from "@/lib/rate-ranges";
+import type { DailyRateBandId, HourlyRateBandId } from "@/lib/rate-ranges";
 import { PROVIDER_SPECIALIZATIONS } from "@/lib/constants";
+import { ensureNurseProfile } from "@/lib/nurse/ensure-profile";
+import {
+  clearSignupStage,
+  clearSignupStageIfStale,
+  getSignupStageKeys,
+  isSignupStageOwnedBy,
+  saveSignupUserId,
+  SIGNUP_TOTAL_STEPS
+} from "@/lib/signup-stage";
+import { toTitleCase } from "@/lib/validation/format-name";
 
-const SIGNUP_TOTAL_STEPS = 4;
-
-const SIGNUP_STAGE_KEYS = {
-  step: "hanapkalinga.signup.step",
-  role: "hanapkalinga.signup.role",
-  email: "hanapkalinga.signup.email",
-  family: "hanapkalinga.signup.family",
-  nurse: "hanapkalinga.signup.nurse",
-  auth: "hanapkalinga.signup.auth"
-} as const;
-
-const LEGACY_SIGNUP_KEYS = [
-  "nurselink.signup.step",
-  "nurselink.signup.role",
-  "nurselink.signup.email",
-  "nurselink.signup.family",
-  "nurselink.signup.nurse",
-  "nurselink.signup.auth"
-] as const;
+const SIGNUP_STAGE_KEYS = getSignupStageKeys();
 
 export default function RegisterPage() {
   const [step, setStep] = useState(1);
@@ -64,13 +56,13 @@ export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSavingRole, setIsSavingRole] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
-  const [pendingCredentials, setPendingCredentials] = useState<{
-    email: string;
-    password: string;
-    confirmPassword: string;
-  } | null>(null);
+  const [termsPendingUserId, setTermsPendingUserId] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const supabase = createClient();
+  const turnstileRequired = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 
   const requiredLabel = (label: string, hasError?: boolean) => (
     <span className={hasError ? "text-sm font-medium text-rose-600" : "text-sm font-medium text-slate-700"}>
@@ -120,13 +112,14 @@ export default function RegisterPage() {
       bio: "",
       hourlyRateRange: "",
       dailyRateRange: "",
+      prcLicenseNo: "",
+      tesdaCertificateNo: "",
       specializations: [] as string[]
     }
   });
 
-  function clearSignupStage() {
-    Object.values(SIGNUP_STAGE_KEYS).forEach((key) => window.sessionStorage.removeItem(key));
-    LEGACY_SIGNUP_KEYS.forEach((key) => window.sessionStorage.removeItem(key));
+  function clearSignupStageLocal() {
+    clearSignupStage();
   }
 
   async function handleCredentialsSubmit(values: {
@@ -135,10 +128,22 @@ export default function RegisterPage() {
     confirmPassword: string;
   }) {
     setStatus(null);
-
-    if (!hasValidTermsAcceptance()) {
-      setPendingCredentials(values);
-      setShowTermsModal(true);
+    const existingUserId = await resolveAuthUserId(supabase, signupUserId);
+    if (existingUserId) {
+      setSignupUserId(existingUserId);
+      saveSignupUserId(existingUserId);
+      setEmail(values.email);
+      credentialsForm.setValue("email", values.email);
+      const hasTerms =
+        hasAcceptedTermsForUser(existingUserId) ||
+        (await syncTermsAcceptanceFromProfile(supabase, existingUserId));
+      if (hasTerms) setTermsAccepted(true);
+      if (!hasTerms) {
+        setTermsPendingUserId(existingUserId);
+        setShowTermsModal(true);
+        return;
+      }
+      setStep(2);
       return;
     }
 
@@ -153,15 +158,28 @@ export default function RegisterPage() {
     setStatus(null);
     setIsSubmitting(true);
 
+    if (turnstileRequired && !captchaToken) {
+      setStatus("Please complete the verification challenge.");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const { data, error } = await supabase.auth.signUp({
         email: values.email,
-        password: values.password
+        password: values.password,
+        options: captchaToken ? { captchaToken } : undefined
       });
 
       if (error) {
         console.error("signup.sign_up.error", error);
-        setStatus(mapSupabaseError(error, "signup"));
+        const lowered = error.message.toLowerCase();
+        if (lowered.includes("captcha") || lowered.includes("turnstile")) {
+          setStatus("Verification failed. Please try again.");
+          setCaptchaToken(null);
+        } else {
+          setStatus(mapSupabaseError(error, "signup"));
+        }
         setIsSubmitting(false);
         return;
       }
@@ -178,6 +196,7 @@ export default function RegisterPage() {
       }
 
       setSignupUserId(userId);
+      saveSignupUserId(userId);
 
       if (!data.session) {
         setStatus(
@@ -191,12 +210,19 @@ export default function RegisterPage() {
 
       const { role: existingRole } = await fetchProfileRole(supabase, userId);
       if (existingRole) {
-        clearSignupStage();
+        clearSignupStageLocal();
         const destination = resolvePostLoginDestination(existingRole, null);
         if (destination) {
           window.location.href = destination;
           return;
         }
+      }
+
+      if (!hasAcceptedTermsForUser(userId)) {
+        setTermsPendingUserId(userId);
+        setShowTermsModal(true);
+        setIsSubmitting(false);
+        return;
       }
 
       setEmail(values.email);
@@ -216,10 +242,28 @@ export default function RegisterPage() {
     setIsSubmitting(false);
   }
 
-  async function handleRoleSubmit(values: { role: string }) {
+  async function resolveTermsAcceptedUserId(): Promise<string | null> {
     const userId = await resolveAuthUserId(supabase, signupUserId);
     if (!userId) {
       setStatus("Your session expired. Please sign up again from step 1.");
+      return null;
+    }
+    if (hasAcceptedTermsForUser(userId)) {
+      setTermsAccepted(true);
+      return userId;
+    }
+    if (await syncTermsAcceptanceFromProfile(supabase, userId)) {
+      setTermsAccepted(true);
+      return userId;
+    }
+    setTermsPendingUserId(userId);
+    setShowTermsModal(true);
+    return null;
+  }
+
+  async function handleRoleSubmit(values: { role: string }) {
+    const userId = await resolveTermsAcceptedUserId();
+    if (!userId) {
       return;
     }
 
@@ -227,15 +271,39 @@ export default function RegisterPage() {
     setStatus(null);
 
     const nextRole = values.role as "family" | "nurse";
-    const { error } = await supabase.from("profiles").upsert({
+    const acceptedAt = getTermsAcceptedAtForUser(userId) ?? new Date().toISOString();
+    const { error: profileError } = await supabase.from("profiles").upsert({
       id: userId,
-      role: nextRole
+      role: nextRole,
+      terms_accepted_at: acceptedAt
     });
 
-    if (error) {
-      setStatus(mapSupabaseError(error, "generic"));
+    if (profileError) {
+      console.error("signup.profiles_role.error", profileError);
+      if (profileError.code === "23503") {
+        clearSignupStageLocal();
+        setSignupUserId(null);
+        setTermsAccepted(false);
+        setStep(1);
+        setStatus("Your session expired. Please sign up again from step 1.");
+      } else {
+        setStatus(mapSupabaseError(profileError, "generic"));
+      }
       setIsSavingRole(false);
       return;
+    }
+
+    recordTermsAcceptanceForUser(userId, acceptedAt);
+    setTermsAccepted(true);
+
+    if (nextRole === "nurse") {
+      const { error: nurseError } = await ensureNurseProfile(supabase, userId, "nurse");
+      if (nurseError) {
+        console.error("signup.nurses_stub.error", nurseError);
+        setStatus(mapSupabaseError(nurseError, "generic"));
+        setIsSavingRole(false);
+        return;
+      }
     }
 
     setRole(nextRole);
@@ -244,10 +312,8 @@ export default function RegisterPage() {
   }
 
   async function handleProfileSubmit(values: NurseProfileFormValues | Record<string, unknown>) {
-    const userId = await resolveAuthUserId(supabase, signupUserId);
-
+    const userId = await resolveTermsAcceptedUserId();
     if (!userId || !role) {
-      setStatus("Your session expired. Please sign up again from step 1.");
       return;
     }
 
@@ -265,31 +331,50 @@ export default function RegisterPage() {
         barangay: string;
         address: string;
       };
+      const acceptedAt = getTermsAcceptedAtForUser(userId) ?? new Date().toISOString();
+      const normalizedFirstName = toTitleCase(familyValues.firstName);
+      const normalizedMiddleName = toTitleCase(familyValues.middleName);
+      const normalizedLastName = toTitleCase(familyValues.lastName);
 
-      await supabase.from("profiles").upsert({
+      const { error: profileError } = await supabase.from("profiles").upsert({
         id: userId,
         role: "family",
-        full_name: [familyValues.firstName, familyValues.middleName, familyValues.lastName]
+        full_name: [normalizedFirstName, normalizedMiddleName, normalizedLastName]
           .filter((part) => part?.trim())
           .join(" "),
-        first_name: familyValues.firstName,
-        middle_name: familyValues.middleName?.trim() || null,
-        last_name: familyValues.lastName,
+        first_name: normalizedFirstName,
+        middle_name: normalizedMiddleName || null,
+        last_name: normalizedLastName,
         phone: familyValues.phone?.trim() || null,
         region: familyValues.region,
         city: familyValues.city,
         barangay: familyValues.barangay,
-        address: familyValues.address
+        address: familyValues.address,
+        terms_accepted_at: acceptedAt
       });
 
-      await supabase.from("families").upsert({
+      if (profileError) {
+        console.error("signup.family_profiles.error", profileError);
+        setStatus(mapSupabaseError(profileError, "generic"));
+        setIsSubmitting(false);
+        return;
+      }
+
+      const { error: familyError } = await supabase.from("families").upsert({
         id: userId,
         address: familyValues.address
       });
 
+      if (familyError) {
+        console.error("signup.families.error", familyError);
+        setStatus(mapSupabaseError(familyError, "generic"));
+        setIsSubmitting(false);
+        return;
+      }
+
       await establishUserSession(supabase, userId, navigator.userAgent);
 
-      clearSignupStage();
+      clearSignupStageLocal();
       setIsSubmitting(false);
       window.location.href = "/dashboard/family?welcome=1";
       return;
@@ -313,31 +398,25 @@ export default function RegisterPage() {
     }
     setDocErrors({});
 
-    const fullName = [nurseValues.firstName, nurseValues.middleName, nurseValues.lastName]
-      .filter((part) => part?.trim())
-      .join(" ");
-
-    await supabase.from("profiles").upsert({
-      id: userId,
-      role: "nurse",
-      full_name: fullName,
-      first_name: nurseValues.firstName,
-      middle_name: nurseValues.middleName?.trim() || null,
-      last_name: nurseValues.lastName,
-      phone: null,
-      region: nurseValues.region,
-      city: nurseValues.city,
-      barangay: nurseValues.barangay,
-      address: null
-    });
+    const { error: stubError } = await ensureNurseProfile(supabase, userId, nurseValues.providerType);
+    if (stubError) {
+      console.error("signup.nurses_provider_type.error", stubError);
+      setStatus(mapSupabaseError(stubError, "generic"));
+      setIsSubmitting(false);
+      return;
+    }
 
     const credentialPrefix = nurseValues.providerType === "nurse" ? "prc" : "tesda";
-    const credentialLabel =
-      nurseValues.providerType === "caregiver" ? "TESDA certificate" : "PRC license";
 
-    setUploadProgress(`Uploading ${credentialLabel}...`);
-    const credentialUpload = await uploadNurseDocument(pendingCredentialFile!, credentialPrefix, userId);
+    setUploadProgress("Uploading documents...");
+    const [credentialUpload, nbiUpload] = await Promise.all([
+      uploadNurseDocument(pendingCredentialFile!, credentialPrefix, userId),
+      uploadNurseDocument(pendingNbiFile!, "nbi", userId)
+    ]);
+
     if ("error" in credentialUpload) {
+      const credentialLabel =
+        nurseValues.providerType === "caregiver" ? "TESDA certificate" : "PRC license";
       setStatus(mapUploadErrorMessage(credentialUpload.error));
       setDocErrors((prev) => ({
         ...prev,
@@ -348,8 +427,6 @@ export default function RegisterPage() {
       return;
     }
 
-    setUploadProgress("Uploading NBI clearance...");
-    const nbiUpload = await uploadNurseDocument(pendingNbiFile!, "nbi", userId);
     if ("error" in nbiUpload) {
       setStatus(mapUploadErrorMessage(nbiUpload.error));
       setDocErrors((prev) => ({ ...prev, nbi: mapUploadErrorMessage(nbiUpload.error) }));
@@ -360,62 +437,86 @@ export default function RegisterPage() {
 
     setUploadProgress("Saving your profile...");
 
-    const credentialField =
-      nurseValues.providerType === "nurse" ? "prc_document_url" : "tesda_document_url";
-    const hourlyRates = resolveHourlyRateBandValues(
-      (nurseValues.hourlyRateRange || undefined) as HourlyRateBandId | undefined
-    );
-    const dailyRates = resolveDailyRateBandValues(
-      (nurseValues.dailyRateRange || undefined) as DailyRateBandId | undefined
-    );
-    const submittedAt = new Date().toISOString();
-    const { error: nurseError } = await supabase.from("nurses").upsert({
-      id: userId,
-      provider_type: nurseValues.providerType,
-      specializations: nurseValues.specializations,
-      bio: nurseValues.bio ?? null,
-      hourly_rate: hourlyRates.min,
-      hourly_rate_max: hourlyRates.max,
-      hourly_rate_range: nurseValues.hourlyRateRange || null,
-      daily_rate_12hr: dailyRates.min,
-      daily_rate_12hr_max: dailyRates.max,
-      daily_rate_range: nurseValues.dailyRateRange || null,
-      nbi_document_url: nbiUpload.path,
-      [credentialField]: credentialUpload.path,
-      verification_status: "pending",
-      submitted_at: submittedAt
+    const completeResponse = await fetch("/api/register/nurse", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...nurseValues,
+        prcDocumentPath: nurseValues.providerType === "nurse" ? credentialUpload.path : undefined,
+        tesdaDocumentPath: nurseValues.providerType === "caregiver" ? credentialUpload.path : undefined,
+        nbiDocumentPath: nbiUpload.path,
+        termsAcceptedAt: getTermsAcceptedAtForUser(userId) ?? undefined
+      })
     });
 
-    if (nurseError) {
-      setStatus(mapSupabaseError(nurseError, "generic"));
+    const completePayload = (await completeResponse.json()) as { error?: string };
+    if (!completeResponse.ok) {
+      console.error("signup.nurses_finalize.error", completePayload.error);
+      setStatus(completePayload.error ?? "Could not complete registration. Please try again.");
       setIsSubmitting(false);
       return;
     }
 
     await establishUserSession(supabase, userId, navigator.userAgent);
 
-    clearSignupStage();
+    clearSignupStageLocal();
     setUploadProgress(null);
     setIsSubmitting(false);
     window.location.href = "/dashboard/nurse";
   }
 
-  function handleTermsAccepted() {
-    recordTermsAcceptance();
-    setShowTermsModal(false);
-    if (pendingCredentials && step === 1) {
-      void performSignUp(pendingCredentials);
+  async function handleTermsAccepted() {
+    const acceptedUserId = await resolveAuthUserId(supabase, null);
+    if (!acceptedUserId) {
+      setStatus("Your session expired. Please sign up again from step 1.");
+      setShowTermsModal(false);
+      setTermsPendingUserId(null);
+      clearSignupStageLocal();
+      setSignupUserId(null);
+      setStep(1);
+      return;
     }
-    setPendingCredentials(null);
+    recordTermsAcceptanceForUser(acceptedUserId);
+    setTermsAccepted(true);
+    setSignupUserId(acceptedUserId);
+    saveSignupUserId(acceptedUserId);
+    setShowTermsModal(false);
+    setTermsPendingUserId(null);
+    if (step === 1) {
+      setStep(2);
+    }
   }
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const prefillEmail = params.get("email");
+    if (prefillEmail) {
+      credentialsForm.setValue("email", prefillEmail);
+    }
+  }, [credentialsForm]);
 
   useEffect(() => {
     async function restoreSignupSession() {
       const userId = await resolveAuthUserId(supabase, null);
-      if (userId) setSignupUserId(userId);
+      clearSignupStageIfStale(userId);
+      if (userId) {
+        setSignupUserId(userId);
+        saveSignupUserId(userId);
+        const hasTerms =
+          hasAcceptedTermsForUser(userId) ||
+          (await syncTermsAcceptanceFromProfile(supabase, userId));
+        setTermsAccepted(hasTerms);
+      }
+      setAuthChecked(true);
     }
     restoreSignupSession();
   }, [supabase]);
+
+  useEffect(() => {
+    if (signupUserId) {
+      saveSignupUserId(signupUserId);
+    }
+  }, [signupUserId]);
 
   useEffect(() => {
     async function redirectIfProfileComplete() {
@@ -427,7 +528,7 @@ export default function RegisterPage() {
 
       const destination = resolvePostLoginDestination(existingRole, null);
       if (destination) {
-        clearSignupStage();
+        clearSignupStageLocal();
         window.location.href = destination;
       }
     }
@@ -436,37 +537,56 @@ export default function RegisterPage() {
   }, [supabase]);
 
   useEffect(() => {
-    const storedStep = window.sessionStorage.getItem(SIGNUP_STAGE_KEYS.step);
-    const storedRole = window.sessionStorage.getItem(SIGNUP_STAGE_KEYS.role);
-    const storedEmail = window.sessionStorage.getItem(SIGNUP_STAGE_KEYS.email);
-    const storedAuth = window.sessionStorage.getItem(SIGNUP_STAGE_KEYS.auth);
-    const queryRole = new URLSearchParams(window.location.search).get("role");
-    if (storedStep) {
-      const nextStep = Number(storedStep);
-      if (!Number.isNaN(nextStep)) setStep(nextStep);
-    }
-    const normalizedQueryRole = queryRole === "provider" ? "nurse" : queryRole;
-    const nextRole =
-      normalizedQueryRole === "family" || normalizedQueryRole === "nurse"
-        ? normalizedQueryRole
-        : storedRole;
-    if (nextRole === "family" || nextRole === "nurse") {
-      setRole(nextRole);
-      roleForm.setValue("role", nextRole);
-    }
-    if (storedEmail) {
-      setEmail(storedEmail);
-      credentialsForm.setValue("email", storedEmail);
-    }
-    if (storedAuth) {
-      try {
-        const parsed = JSON.parse(storedAuth);
-        if (typeof parsed.email === "string") credentialsForm.setValue("email", parsed.email);
-      } catch {
-        // Ignore malformed auth cache.
+    if (!authChecked) return;
+
+    async function restoreCachedStage() {
+      const userId = await resolveAuthUserId(supabase, signupUserId);
+      const storedStepRaw = window.sessionStorage.getItem(SIGNUP_STAGE_KEYS.step);
+      const storedStep = storedStepRaw ? Number(storedStepRaw) : 1;
+
+      if (storedStep > 1 && (!userId || !isSignupStageOwnedBy(userId))) {
+        clearSignupStageLocal();
+        setStep(1);
+        setRole(null);
+        return;
+      }
+
+      const storedRole = window.sessionStorage.getItem(SIGNUP_STAGE_KEYS.role);
+      const storedEmail = window.sessionStorage.getItem(SIGNUP_STAGE_KEYS.email);
+      const storedAuth = window.sessionStorage.getItem(SIGNUP_STAGE_KEYS.auth);
+      const queryRole = new URLSearchParams(window.location.search).get("role");
+
+      if (storedStepRaw) {
+        if (!Number.isNaN(storedStep) && storedStep >= 1 && storedStep <= SIGNUP_TOTAL_STEPS) {
+          setStep(storedStep);
+        }
+      }
+
+      const normalizedQueryRole = queryRole === "provider" ? "nurse" : queryRole;
+      const nextRole =
+        normalizedQueryRole === "family" || normalizedQueryRole === "nurse"
+          ? normalizedQueryRole
+          : storedRole;
+      if (nextRole === "family" || nextRole === "nurse") {
+        setRole(nextRole);
+        roleForm.setValue("role", nextRole);
+      }
+      if (storedEmail) {
+        setEmail(storedEmail);
+        credentialsForm.setValue("email", storedEmail);
+      }
+      if (storedAuth) {
+        try {
+          const parsed = JSON.parse(storedAuth);
+          if (typeof parsed.email === "string") credentialsForm.setValue("email", parsed.email);
+        } catch {
+          // Ignore malformed auth cache.
+        }
       }
     }
-  }, [credentialsForm, roleForm]);
+
+    void restoreCachedStage();
+  }, [authChecked, credentialsForm, roleForm, signupUserId, supabase]);
 
   useEffect(() => {
     window.sessionStorage.setItem(SIGNUP_STAGE_KEYS.step, String(step));
@@ -567,11 +687,18 @@ export default function RegisterPage() {
                 {credentialsForm.formState.errors.confirmPassword.message}
               </p>
             ) : null}
+            <TurnstileWidget
+              className="flex justify-center"
+              onToken={setCaptchaToken}
+              onExpire={() => setCaptchaToken(null)}
+              onError={() => setCaptchaToken(null)}
+            />
             <LoadingButton
               type="submit"
               loading={isSubmitting}
               loadingText="Creating account..."
               className="w-full"
+              disabled={turnstileRequired && !captchaToken}
             >
               Continue
             </LoadingButton>
@@ -638,7 +765,15 @@ export default function RegisterPage() {
             </div>
             <div className="space-y-1">
               {optionalLabel("Phone (optional)")}
-              <Input placeholder="09XX XXX XXXX" {...familyForm.register("phone")} />
+              <Input
+                placeholder="09XXXXXXXXX"
+                inputMode="numeric"
+                maxLength={11}
+                {...familyForm.register("phone")}
+                onInput={(event) => {
+                  event.currentTarget.value = event.currentTarget.value.replace(/\D/g, "").slice(0, 11);
+                }}
+              />
             </div>
             <div className="space-y-3">
               <RegionCitySelects
@@ -805,6 +940,48 @@ export default function RegisterPage() {
                 }
               />
             </div>
+            {nurseForm.watch("providerType") === "nurse" ? (
+              <div className="space-y-1">
+                {requiredLabel("PRC License Number", !!nurseForm.formState.errors.prcLicenseNo)}
+                <Input
+                  placeholder="7-digit number"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  {...nurseForm.register("prcLicenseNo")}
+                  className={
+                    nurseForm.formState.errors.prcLicenseNo ? "border-rose-500 focus:ring-rose-500" : undefined
+                  }
+                />
+                <p className="text-xs text-slate-500">
+                  You can find this on your PRC ID card, usually a 7-digit number.
+                </p>
+                {nurseForm.formState.errors.prcLicenseNo ? (
+                  <p className="text-xs text-rose-600">{nurseForm.formState.errors.prcLicenseNo.message}</p>
+                ) : null}
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {requiredLabel("TESDA Certificate Number", !!nurseForm.formState.errors.tesdaCertificateNo)}
+                <Input
+                  placeholder="Certificate number"
+                  autoComplete="off"
+                  {...nurseForm.register("tesdaCertificateNo")}
+                  className={
+                    nurseForm.formState.errors.tesdaCertificateNo
+                      ? "border-rose-500 focus:ring-rose-500"
+                      : undefined
+                  }
+                />
+                <p className="text-xs text-slate-500">
+                  You can find this on your TESDA NC II certificate.
+                </p>
+                {nurseForm.formState.errors.tesdaCertificateNo ? (
+                  <p className="text-xs text-rose-600">
+                    {nurseForm.formState.errors.tesdaCertificateNo.message}
+                  </p>
+                ) : null}
+              </div>
+            )}
             {requiredLabel(
               nurseForm.watch("providerType") === "caregiver"
                 ? "TESDA NC II certificate"
@@ -853,23 +1030,32 @@ export default function RegisterPage() {
         {status ? <p className="text-sm text-rose-600">{status}</p> : null}
         <p className="text-xs text-text-muted">
           By continuing you agree to our{" "}
-          <button type="button" className="underline" onClick={() => setShowTermsModal(true)}>
+          <button
+            type="button"
+            className="legal-inline-link"
+            onClick={() => setShowTermsModal(true)}
+          >
             Terms of Service
           </button>{" "}
           and{" "}
-          <Link href="/privacy" target="_blank" className="underline">
+          <button
+            type="button"
+            className="legal-inline-link"
+            onClick={() => setShowTermsModal(true)}
+          >
             Privacy Policy
-          </Link>
+          </button>
           .
         </p>
       </div>
 
       <TermsAcceptanceModal
         open={showTermsModal}
+        alreadyAccepted={termsAccepted}
         onAccept={handleTermsAccepted}
-        onDecline={() => {
+        onClose={() => {
           setShowTermsModal(false);
-          setPendingCredentials(null);
+          setTermsPendingUserId(null);
         }}
       />
     </main>

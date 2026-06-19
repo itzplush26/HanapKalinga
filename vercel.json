@@ -1,6 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "npm ci",
-  "buildCommand": "npm run vercel-build",
-  "framework": "nextjs"
+  "installCommand": "cd ../.. && npm ci",
+  "buildCommand": "cd ../.. && npm run build --workspace=@hanapkalinga/web",
+  "regions": ["sin1"],
+  "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/cron/check-expiry",
+      "schedule": "0 1 * * *"
+    }
+  ]
 }

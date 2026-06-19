@@ -83,11 +83,12 @@ export default function ForgotPasswordScreen() {
           keyboardType="email-address"
           autoCapitalize="none"
           autoComplete="email"
+          testID="forgotPassword_input_email"
         />
 
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        {error ? <Text style={styles.errorText} testID="forgotPassword_text_error">{error}</Text> : null}
 
-        <Button onPress={handleSendResetLink} loading={loading} style={styles.button}>
+        <Button onPress={handleSendResetLink} loading={loading} style={styles.button} testID="forgotPassword_button_submit">
           Send Reset Link
         </Button>
 

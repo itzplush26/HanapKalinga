@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { getSupabaseConfig } from '@hanapkalinga/shared/api';
 import 'react-native-url-polyfill/auto';
 import * as SecureStore from 'expo-secure-store';
@@ -18,13 +18,40 @@ const SecureStoreAdapter = Platform.select({
   },
 });
 
-const { url, anonKey } = getSupabaseConfig();
+function createSupabaseClient() {
+  try {
+    const { url, anonKey } = getSupabaseConfig();
 
-export const supabase = createClient<Database>(url, anonKey, {
-  auth: {
-    storage: SecureStoreAdapter,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-  },
-});
+    console.log('[Supabase] Config:', { hasUrl: !!url, hasAnonKey: !!anonKey, urlPrefix: url?.substring(0, 20) });
+
+    if (!url || !anonKey) {
+      console.warn('Supabase URL or Anon Key is missing. Auth will be unavailable.');
+      return null;
+    }
+
+    return createClient<Database>(url, anonKey, {
+      auth: {
+        storage: SecureStoreAdapter,
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+        // Reduce network timeout for faster failures in test environments
+        flowType: 'pkce',
+      },
+      global: {
+        headers: {
+          'x-client-info': 'hanapkalinga-mobile',
+        },
+      },
+      // Set reasonable timeout for network requests to prevent hanging
+      realtime: {
+        timeout: 5000,
+      },
+    });
+  } catch (e) {
+    console.warn('Failed to create Supabase client:', e);
+    return null;
+  }
+}
+
+export const supabase = createSupabaseClient() as SupabaseClient<Database>;

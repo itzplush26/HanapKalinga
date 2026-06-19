@@ -1,119 +1,167 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { X } from "lucide-react";
 import { TermsContent, TERMS_LAST_UPDATED, TERMS_SUMMARY } from "@/lib/legal/terms-content";
+import { PrivacyContent, PRIVACY_LAST_UPDATED, PRIVACY_SUMMARY } from "@/lib/legal/privacy-content";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { cn } from "@/lib/utils";
 
 interface TermsAcceptanceModalProps {
   open: boolean;
   onAccept: () => void;
-  onDecline: () => void;
+  onClose: () => void;
+  alreadyAccepted?: boolean;
 }
 
-export function TermsAcceptanceModal({ open, onAccept, onDecline }: TermsAcceptanceModalProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [hasRead, setHasRead] = useState(false);
+function ConsentCheckbox({
+  id,
+  checked,
+  onChange,
+  children
+}: {
+  id: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  children: ReactNode;
+}) {
+  return (
+    <label htmlFor={id} className="flex cursor-pointer items-start gap-3 text-sm text-text-secondary">
+      <input
+        id={id}
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary"
+      />
+      <span>{children}</span>
+    </label>
+  );
+}
+
+export function TermsAcceptanceModal({
+  open,
+  onAccept,
+  onClose,
+  alreadyAccepted = false
+}: TermsAcceptanceModalProps) {
+  const [agreedPrivacy, setAgreedPrivacy] = useState(false);
+  const [agreedTerms, setAgreedTerms] = useState(false);
   const [accepting, setAccepting] = useState(false);
 
-  const checkScrollPosition = useCallback(() => {
-    const element = scrollRef.current;
-    if (!element) return;
-    const remaining = element.scrollHeight - element.scrollTop - element.clientHeight;
-    if (remaining <= 100) {
-      setHasRead(true);
-    }
-  }, []);
+  const canContinue = agreedPrivacy && agreedTerms;
 
   useEffect(() => {
-    if (!open) {
-      setHasRead(false);
+    if (open) {
+      setAgreedPrivacy(alreadyAccepted);
+      setAgreedTerms(alreadyAccepted);
       setAccepting(false);
       return;
     }
 
-    const frame = window.requestAnimationFrame(() => {
-      checkScrollPosition();
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [open, checkScrollPosition]);
+    setAgreedPrivacy(false);
+    setAgreedTerms(false);
+    setAccepting(false);
+  }, [open, alreadyAccepted]);
 
   if (!open) return null;
 
-  async function handleAccept() {
+  function handleAccept() {
+    if (!canContinue) return;
     setAccepting(true);
     onAccept();
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+      onClick={onClose}
+    >
       <div
-        className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-xl"
+        className="flex w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-border bg-surface shadow-xl sm:rounded-2xl"
+        style={{ maxHeight: "85vh" }}
         role="dialog"
         aria-modal="true"
         aria-labelledby="terms-modal-title"
+        onClick={(event) => event.stopPropagation()}
       >
-        <div className="border-b border-border px-5 py-4">
-          <h2 id="terms-modal-title" className="text-lg font-semibold text-text-primary">
-            Terms of Service
-          </h2>
-          <p className="mt-1 text-xs text-text-muted">Last updated: {TERMS_LAST_UPDATED}</p>
-          <p className="mt-3 text-sm text-text-secondary">{TERMS_SUMMARY}</p>
-        </div>
-
-        <div className="relative flex-1 min-h-0">
-          <div
-            ref={scrollRef}
-            onScroll={checkScrollPosition}
-            className="h-64 overflow-y-auto px-5 py-4 sm:h-72"
-          >
-            <TermsContent />
-          </div>
-          <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-surface to-transparent"
-            aria-hidden
-          />
-        </div>
-
-        <div className="space-y-3 border-t border-border px-5 py-4">
-          <p className={cn("text-xs", hasRead ? "text-success" : "text-text-muted")}>
-            {hasRead ? "You have reached the end of the terms." : "Scroll through the full terms to continue."}
-          </p>
-
-          <div className="group relative">
-            <LoadingButton
+        <div className="shrink-0 border-b border-border px-5 py-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 id="terms-modal-title" className="text-lg font-semibold text-text-primary">
+                Terms &amp; Privacy
+              </h2>
+              <p className="mt-1 text-xs text-text-muted">Review and accept to continue</p>
+            </div>
+            <button
               type="button"
-              className="w-full"
-              loading={accepting}
-              loadingText="Continuing..."
-              disabled={!hasRead}
-              onClick={() => void handleAccept()}
-              title={hasRead ? undefined : "Please scroll through the terms to continue"}
+              onClick={onClose}
+              className="shrink-0 rounded-full p-1 text-text-muted hover:bg-slate-100 hover:text-text-primary"
+              aria-label="Close"
             >
-              I have read and agree to the Terms of Service and Privacy Policy
-            </LoadingButton>
+              <X className="h-5 w-5" />
+            </button>
           </div>
+        </div>
 
-          <p className="text-center text-xs">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+          <section className="mb-8">
+            <h3 className="text-sm font-semibold text-text-primary">Privacy Policy</h3>
+            <p className="mt-1 text-xs text-text-muted">Last updated: {PRIVACY_LAST_UPDATED}</p>
+            <p className="mt-3 text-sm leading-relaxed text-text-secondary">{PRIVACY_SUMMARY}</p>
+            <div className="mt-4">
+              <PrivacyContent />
+            </div>
+          </section>
+
+          <section className="border-t border-border pt-8">
+            <h3 className="text-sm font-semibold text-text-primary">Terms of Service</h3>
+            <p className="mt-1 text-xs text-text-muted">Last updated: {TERMS_LAST_UPDATED}</p>
+            <p className="mt-3 text-sm leading-relaxed text-text-secondary">{TERMS_SUMMARY}</p>
+            <div className="mt-4">
+              <TermsContent />
+            </div>
+          </section>
+        </div>
+
+        <div className="shrink-0 space-y-3 border-t border-border px-5 py-4">
+          <ConsentCheckbox id="consent-privacy" checked={agreedPrivacy} onChange={setAgreedPrivacy}>
+            I have read and agree to the{" "}
             <Link
               href="/privacy"
               target="_blank"
               rel="noreferrer"
               className="text-primary underline underline-offset-2"
+              onClick={(event) => event.stopPropagation()}
             >
-              Read full Privacy Policy
+              Privacy Policy
             </Link>
-          </p>
+          </ConsentCheckbox>
 
-          <button
+          <ConsentCheckbox id="consent-terms" checked={agreedTerms} onChange={setAgreedTerms}>
+            I have read and agree to the{" "}
+            <Link
+              href="/terms"
+              target="_blank"
+              rel="noreferrer"
+              className="text-primary underline underline-offset-2"
+              onClick={(event) => event.stopPropagation()}
+            >
+              Terms of Service
+            </Link>
+          </ConsentCheckbox>
+
+          <LoadingButton
             type="button"
-            onClick={onDecline}
-            className="w-full text-center text-sm text-text-muted underline underline-offset-2 hover:text-text-secondary"
+            className={cn("w-full", !canContinue && "opacity-50")}
+            loading={accepting}
+            loadingText="Continuing..."
+            disabled={!canContinue}
+            onClick={handleAccept}
           >
-            Decline
-          </button>
+            Continue
+          </LoadingButton>
         </div>
       </div>
     </div>

@@ -1,5 +1,8 @@
 export const PRIVACY_LAST_UPDATED = "June 2, 2026";
 
+export const PRIVACY_SUMMARY =
+  "We collect account and professional information to operate the marketplace, verify credentials, and connect families with providers. We do not sell your data and handle information in line with the Philippine Data Privacy Act.";
+
 export function PrivacyContent() {
   return (
     <div className="flex flex-col gap-4 text-sm text-text-secondary">
@@ -100,7 +103,7 @@ export function PrivacyContent() {
         </p>
         <h2 className="text-base font-semibold text-text-primary">9. Contact Information</h2>
         <p>For privacy-related concerns or requests, please contact:</p>
-        <p>Email: support@hanapkalinga.ph</p>
+        <p>Email: support@hanapkalinga.com</p>
     </div>
   );
 }

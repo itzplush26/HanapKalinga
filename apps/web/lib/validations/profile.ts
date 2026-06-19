@@ -1,6 +1,24 @@
 import { z } from "zod";
 import { isCityInRegion } from "@/lib/data/ph-locations";
 import { DAILY_RATE_BAND_IDS, HOURLY_RATE_BAND_IDS } from "@/lib/data/rates";
+import { containsProfanity, sanitizeText } from "@/lib/validation/sanitize";
+import { philippineMobileSchema } from "@/lib/validation/phone";
+
+const APPROPRIATE_MESSAGE = "Please keep your content appropriate.";
+
+const requiredText = (minLength: number, requiredMessage: string) =>
+  z
+    .string()
+    .transform(sanitizeText)
+    .refine((value) => value.length >= minLength, requiredMessage)
+    .refine((value) => !containsProfanity(value), APPROPRIATE_MESSAGE);
+
+const optionalText = () =>
+  z
+    .string()
+    .transform(sanitizeText)
+    .refine((value) => !value || !containsProfanity(value), APPROPRIATE_MESSAGE)
+    .optional();
 
 const hourlyRateRangeField = z.union([z.enum(HOURLY_RATE_BAND_IDS), z.literal("")]);
 const dailyRateRangeField = z.union([z.enum(DAILY_RATE_BAND_IDS), z.literal("")]);
@@ -20,32 +38,60 @@ function validateCityInRegion(
 
 export const familyProfileSchema = z
   .object({
-    firstName: z.string().min(1, "First name is required."),
-    middleName: z.string().optional(),
-    lastName: z.string().min(1, "Last name is required."),
-    phone: z.string().min(10, "Enter a valid phone number.").optional().or(z.literal("")),
+    firstName: requiredText(1, "First name is required."),
+    middleName: optionalText(),
+    lastName: requiredText(1, "Last name is required."),
+    phone: philippineMobileSchema.optional(),
     region: z.string().min(2, "Region is required."),
     city: z.string().min(2, "City is required."),
-    barangay: z.string().min(2, "Barangay is required."),
-    address: z.string().min(5, "Home address is required.")
+    barangay: requiredText(2, "Barangay is required."),
+    address: requiredText(5, "Home address is required.")
   })
   .superRefine(validateCityInRegion);
 
-const nurseProfileFieldsSchema = z.object({
-  firstName: z.string().min(1, "First name is required."),
-  middleName: z.string().optional(),
-  lastName: z.string().min(1, "Last name is required."),
+export const nurseProfileFieldsSchema = z.object({
+  firstName: requiredText(1, "First name is required."),
+  middleName: optionalText(),
+  lastName: requiredText(1, "Last name is required."),
   providerType: z.enum(["nurse", "caregiver"]),
   region: z.string().min(2, "Region is required."),
   city: z.string().min(2, "City is required."),
-  barangay: z.string().min(2, "Barangay is required."),
-  bio: z.string().optional(),
+  barangay: requiredText(2, "Barangay is required."),
+  bio: optionalText(),
   hourlyRateRange: hourlyRateRangeField,
   dailyRateRange: dailyRateRangeField,
-  specializations: z.array(z.string()).min(1, "Select at least one specialization.")
+  specializations: z.array(z.string()).min(1, "Select at least one specialization."),
+  prcLicenseNo: z.string().optional(),
+  tesdaCertificateNo: z.string().optional()
 });
 
-export const nurseProfileFormSchema = nurseProfileFieldsSchema.superRefine(validateCityInRegion);
+export const nurseProfileFormSchema = nurseProfileFieldsSchema
+  .superRefine(validateCityInRegion)
+  .superRefine((values, ctx) => {
+    if (values.providerType === "nurse") {
+      const prcNo = values.prcLicenseNo?.trim() ?? "";
+      if (!prcNo) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "PRC license number is required.",
+          path: ["prcLicenseNo"]
+        });
+      } else if (!/^\d{5,10}$/.test(prcNo)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "PRC license number must be 5–10 digits.",
+          path: ["prcLicenseNo"]
+        });
+      }
+    }
+    if (values.providerType === "caregiver" && !values.tesdaCertificateNo?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "TESDA certificate number is required.",
+        path: ["tesdaCertificateNo"]
+      });
+    }
+  });
 
 export type NurseProfileFormValues = z.infer<typeof nurseProfileFormSchema>;
 
@@ -75,18 +121,19 @@ export const nurseProfileSchema = nurseProfileFieldsSchema
 
 export const nurseProfileEditSchema = z
   .object({
-    firstName: z.string().min(1, "First name is required."),
-    middleName: z.string().optional(),
-    lastName: z.string().min(1, "Last name is required."),
-    phone: z.string().min(10, "Enter a valid phone number.").optional().or(z.literal("")),
+    firstName: requiredText(1, "First name is required."),
+    middleName: optionalText(),
+    lastName: requiredText(1, "Last name is required."),
+    phone: philippineMobileSchema.optional(),
     region: z.string().min(2, "Region is required."),
     city: z.string().min(2, "City is required."),
-    barangay: z.string().min(2, "Barangay is required."),
-    address: z.string().optional(),
-    prcLicenseNo: z.string().optional(),
-    specializations: z.string().min(1, "Enter at least one specialization."),
+    barangay: requiredText(2, "Barangay is required."),
+    address: optionalText(),
+    prcLicenseNo: optionalText(),
+    tesdaCertificateNo: optionalText(),
+    specializations: requiredText(1, "Enter at least one specialization."),
     yearsExperience: z.number().min(0, "Years of experience cannot be negative."),
-    bio: z.string().optional(),
+    bio: optionalText(),
     hourlyRateRange: hourlyRateRangeField,
     dailyRateRange: dailyRateRangeField,
     profile_photo_url: z.string().optional(),

@@ -1,0 +1,42 @@
+appId: ${APP_ID}
+---
+# Login as family user
+- runFlow:
+    file: ../shared/setup.yaml
+- runFlow:
+    file: ../shared/helpers.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# Navigate to Browse tab
+- tapOn:
+    text: "Browse"
+
+# Wait for nurse list
+- extendedWaitUntil:
+    visible:
+      id: "browse_list_nurses"
+    timeout: 10000
+
+# Tap on the specific nurse card
+- tapOn:
+    id: "browse_card_nurse_${NURSE_ID}"
+
+# Verify nurse detail screen loaded
+- extendedWaitUntil:
+    visible:
+      id: "nurseDetail_text_name"
+    timeout: 10000
+
+# Verify rate is displayed
+- extendedWaitUntil:
+    visible:
+      id: "nurseDetail_text_rate"
+    timeout: 5000
+
+# Verify request booking button is present
+- extendedWaitUntil:
+    visible:
+      id: "nurseDetail_button_requestBooking"
+    timeout: 5000

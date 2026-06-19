@@ -22,8 +22,11 @@ is failing.
   npm run audit:critical
 
 ### Phase 5 — Secrets scan
-  grep -r "sk_" --include="*.ts" --include="*.tsx" .
-  grep -r "SUPABASE_SERVICE_ROLE" --include="*.ts" --include="*.tsx" .
+  ! rg -n "\\bsk_[A-Za-z0-9]{16,}" --glob "*.ts" --glob "*.tsx" --glob "*.js" .
+  ! rg -n "SUPABASE_SERVICE_ROLE\\s*=" --glob "*.ts" --glob "*.tsx" --glob "*.js" .
+  ! rg -n "https://[A-Za-z0-9.-]+\\.r2\\.cloudflarestorage\\.com" --glob "*.ts" --glob "*.tsx" --glob "*.js" .
+  ! rg -n -P "(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d]{32,}" --glob "*.ts" --glob "*.tsx" --glob "!**/node_modules/**" --glob "!**/.next/**" --glob "!apps/web/types/database.types.ts" .
+  ! rg -n "NEXT_PUBLIC_[A-Z0-9_]+" apps/web/lib/supabase/service.ts apps/web/app/api
 
 ## RULE 2 — Never commit directly to main
 
@@ -32,6 +35,7 @@ Use fix/, feat/, or chore/ branches. Open a PR to merge.
 ## RULE 3 — Environment variables
 
 Never hardcode secrets. Add new vars to .env.example with placeholders.
+Maintain only one canonical Vercel config at repository root: /vercel.json.
 
 ## RULE 4 — Database migrations
 

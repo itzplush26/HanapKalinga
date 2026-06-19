@@ -88,6 +88,7 @@ export default function UpdatePasswordScreen() {
           placeholder="At least 8 characters"
           secureTextEntry
           error={fieldErrors.password}
+          testID="updatePassword_input_password"
         />
 
         <Input
@@ -97,11 +98,12 @@ export default function UpdatePasswordScreen() {
           placeholder="Re-enter your password"
           secureTextEntry
           error={fieldErrors.confirmPassword}
+          testID="updatePassword_input_confirmPassword"
         />
 
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        {error ? <Text style={styles.errorText} testID="updatePassword_text_error">{error}</Text> : null}
 
-        <Button onPress={handleUpdate} loading={loading} style={styles.button}>
+        <Button onPress={handleUpdate} loading={loading} style={styles.button} testID="updatePassword_button_submit">
           Update Password
         </Button>
 

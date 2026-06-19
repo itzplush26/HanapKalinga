@@ -3,6 +3,7 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { LicenseExpiryGate } from "@/components/license-expiry-gate";
 import { createClient } from "@/lib/supabase/server";
 import { getDocumentExpiryItems } from "@/lib/license-expiry";
+import { isProviderRole } from "@/lib/provider-role";
 
 export default async function NurseDashboardLayout({
   children
@@ -30,11 +31,7 @@ export default async function NurseDashboardLayout({
     redirect("/dashboard/family");
   }
 
-  if (!profile?.role) {
-    redirect("/login?error=no_profile");
-  }
-
-  if (profile.role !== "nurse") {
+  if (!profile?.role || !isProviderRole(profile.role)) {
     redirect("/login?error=no_profile");
   }
 

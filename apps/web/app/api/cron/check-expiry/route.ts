@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { sendEmailSafe } from "@/lib/email/send-safe";
 import { getUserEmail } from "@/lib/email/user-email";
 import { licenseExpiryWarningEmail } from "@/lib/email/templates/license-expiry-warning";
+import { careRequestExpiredEmail } from "@/lib/email/templates/care-request-expired";
 import { getDocumentExpiryItems } from "@/lib/license-expiry";
 import { appUrl } from "@/lib/email/templates/layout";
 
@@ -14,7 +15,7 @@ export async function GET(request: Request) {
   const service = createServiceClient();
   const { data: nurses } = await service
     .from("nurses")
-    .select("id, provider_type, prc_license_expiry, tesda_cert_expiry, nbi_expiry, license_expiry_notified_at, profiles(full_name)");
+    .select("id, provider_type, prc_license_expiry, tesda_cert_expiry, nbi_expiry, license_expiry_notified_at, profiles!nurses_id_fkey(full_name)");
 
   const notifyCutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   let notified = 0;
@@ -67,11 +68,51 @@ export async function GET(request: Request) {
     notified += 1;
   }
 
-  await service
+  const nowIso = new Date().toISOString();
+  const { data: expiredCareRequests } = await service
     .from("care_requests")
-    .update({ status: "closed" })
+    .select("id, family_id, title, city")
     .eq("status", "open")
-    .lt("expires_at", new Date().toISOString());
+    .lte("expires_at", nowIso);
 
-  return NextResponse.json({ ok: true, notified });
+  let expiredCareRequestCount = 0;
+  for (const careRequest of expiredCareRequests ?? []) {
+    const { error: closeError } = await service
+      .from("care_requests")
+      .update({ status: "closed" })
+      .eq("id", careRequest.id)
+      .eq("status", "open");
+
+    if (closeError) continue;
+
+    expiredCareRequestCount += 1;
+    await service.from("notifications").insert({
+      user_id: careRequest.family_id,
+      type: "care_request_expired",
+      title: "Care request expired",
+      body: "Your care request has expired. You can post a new one from your dashboard.",
+      metadata: {
+        care_request_id: careRequest.id,
+        link: appUrl("/dashboard/family/care-requests/new")
+      }
+    });
+
+    const [{ data: profile }, familyEmail] = await Promise.all([
+      service.from("profiles").select("full_name").eq("id", careRequest.family_id).maybeSingle(),
+      getUserEmail(careRequest.family_id)
+    ]);
+
+    if (familyEmail) {
+      const { subject, html } = careRequestExpiredEmail({
+        familyName: profile?.full_name?.trim() || "there",
+        title: careRequest.title,
+        city: careRequest.city
+      });
+      sendEmailSafe({ to: familyEmail, subject, html });
+    }
+  }
+
+  console.info("[cron/check-expiry] care requests expired:", expiredCareRequestCount);
+
+  return NextResponse.json({ ok: true, notified, expiredCareRequestCount });
 }

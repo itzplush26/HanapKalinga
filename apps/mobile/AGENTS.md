@@ -1,10 +1,60 @@
 # Expo HAS CHANGED
 
-Read the exact versioned docs at https://docs.expo.dev/versions/v56.0.0/ before writing any code.
+Read the exact versioned docs at https://docs.expo.dev/versions/v54.0.0/ before writing any code.
 
-# SDK 56 Upgrade Notes (completed 2026-06-16)
-- Upgraded from SDK 54 → 56
-- Removed @react-navigation/* dependencies (expo-router forked from RN)
-- Migrated splash config from app.json root to expo-splash-screen plugin
-- Migrated @react-native-community/datetimepicker → @expo/ui/community/datetime-picker
-- The monorepo has React 18 (web) and React 19 (mobile) coexisting via metro.config.js redirect
+## Maestro E2E Testing
+
+### Prerequisites
+
+- Install Maestro CLI: `curl -Ls "https://get.maestro.mobile.dev" | bash`
+- Android Emulator or iOS Simulator running locally
+- Local Supabase instance (for `local` env) or access to staging Supabase
+
+### Setup
+
+E2E test infrastructure lives under `apps/mobile/`:
+- `maestro/` — Flow definitions (auth, family, nurse, admin suites)
+- `maestro/shared/` — Reusable helper flows (setup, teardown, loginAs, logout)
+- `maestro/.env.maestro` — Environment variable templates
+- `maestro/config.yaml` — Maestro flow discovery paths
+- `scripts/seed-e2e.mjs` — Creates deterministic test accounts via Supabase Admin API
+- `scripts/cleanup-e2e.mjs` — Deletes all e2e-test-* records
+- `scripts/run-maestro.ps1` — Orchestrator script (seed → test → cleanup)
+
+### Running locally
+
+```powershell
+# Full run (seed → all flows → cleanup) against local dev
+.\scripts\run-maestro.ps1 -Env local
+
+# Run a specific flow directory
+.\scripts\run-maestro.ps1 -Env local -Flows "maestro/auth/"
+
+# Manual steps (if you prefer):
+node scripts/seed-e2e.mjs
+maestro test maestro/
+node scripts/cleanup-e2e.mjs
+```
+
+### Required env vars (set in `.env.maestro` or CI secrets)
+
+| Variable | Description |
+|----------|-------------|
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key (admin API) |
+| `TEST_EMAIL_PREFIX` | Prefix for test accounts (default: e2e-test) |
+| `TEST_PASSWORD` | Shared password for test accounts |
+
+### GitHub Actions CI
+
+The `maestro-e2e` workflow (`.github/workflows/maestro-e2e.yml`) runs on:
+- `workflow_dispatch` — manual trigger with environment selection
+- `pull_request` — auto-triggered on mobile/maestro changes
+
+It requires these GitHub Actions secrets:
+| Secret | Description |
+|--------|-------------|
+| `SUPABASE_URL_STAGING` | Staging Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Staging service role key |
+
+The workflow builds the APK locally via `npx expo prebuild` + Gradle — no Expo account or EAS needed.

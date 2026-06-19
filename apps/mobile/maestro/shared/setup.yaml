@@ -1,0 +1,36 @@
+appId: ${APP_ID}
+---
+- launchApp:
+    appId: ${APP_ID}
+    stopApp: true
+    clearState: true
+
+# Wait for app to be interactive (give time for font loading, auth init, etc)
+# This prevents tapping before the app is ready
+- waitForAnimationToEnd:
+    timeout: 10000
+
+# If a previous session was restored from SecureStore (clearState doesn't clear it),
+# log out first so the landing screen becomes visible.
+# If already on the landing screen, this block is skipped.
+- runFlow:
+    when:
+      visible: "tab_profile"
+    commands:
+      - tapOn:
+          id: "tab_profile"
+      - tapOn:
+          id: "profile_button_logout"
+          optional: true
+      - tapOn:
+          id: "logout_button_confirm"
+          optional: true
+      - waitForAnimationToEnd:
+          timeout: 5000
+
+# Wait for landing screen to appear with extended timeout
+# Increased to 90 seconds to accommodate slow CI environments
+- extendedWaitUntil:
+    visible:
+      id: "landing_button_login"
+    timeout: 90000

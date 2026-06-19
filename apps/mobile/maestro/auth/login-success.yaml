@@ -1,0 +1,32 @@
+appId: ${APP_ID}
+---
+- runFlow:
+    file: ../shared/setup.yaml
+
+# Navigate to login from landing
+- tapOn:
+    id: "landing_button_login"
+
+# Enter credentials
+- tapOn:
+    id: "login_input_email"
+- inputText: ${TEST_EMAIL}
+- tapOn:
+    id: "login_input_password"
+- inputText: ${TEST_PASSWORD}
+
+# Submit login
+- tapOn:
+    id: "login_button_submit"
+
+# Wait for redirect away from login screen
+- extendedWaitUntil:
+    notVisible:
+      id: "login_button_submit"
+    timeout: 15000
+
+# Verify login succeeded by checking app is no longer on auth screens
+- extendedWaitUntil:
+    visible:
+      id: "browse_button_filter"
+    timeout: 10000

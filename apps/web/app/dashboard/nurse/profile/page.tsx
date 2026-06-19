@@ -34,10 +34,14 @@ import { isVerifiedProvider, type VerificationStatus } from "@/lib/verification"
 import { DocumentExpiryCard } from "@/components/document-expiry-card";
 import { getDocumentExpiryItems, hasExpiredDocuments, type DocumentExpiryItem } from "@/lib/license-expiry";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { ensureNurseProfile } from "@/lib/nurse/ensure-profile";
+import { mapSupabaseError } from "@/lib/user-errors";
+import { toTitleCase } from "@/lib/validation/format-name";
 
 export default function NurseProfilePage() {
   const supabase = createClient();
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>("pending");
   const [rejectionReason, setRejectionReason] = useState<string | null>(null);
   const [submittedAt, setSubmittedAt] = useState<string | null>(null);
@@ -59,6 +63,7 @@ export default function NurseProfilePage() {
       barangay: "",
       address: "",
       prcLicenseNo: "",
+      tesdaCertificateNo: "",
       specializations: "",
       yearsExperience: 0,
       bio: "",
@@ -77,19 +82,30 @@ export default function NurseProfilePage() {
       const user = auth.user;
       if (!user) return;
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("first_name, middle_name, last_name, full_name, phone, region, city, barangay, address, profile_photo_url")
-        .eq("id", user.id)
-        .maybeSingle();
+      const [{ data: profile, error: profileError }, { data: nurse, error: nurseError }] =
+        await Promise.all([
+          supabase
+            .from("profiles")
+            .select(
+              "first_name, middle_name, last_name, full_name, phone, region, city, barangay, address, profile_photo_url"
+            )
+            .eq("id", user.id)
+            .maybeSingle(),
+          supabase
+            .from("nurses")
+            .select(
+              "provider_type, verification_status, rejection_reason, submitted_at, prc_license_no, tesda_certificate_no, specializations, years_experience, bio, hourly_rate, hourly_rate_max, hourly_rate_range, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, prc_document_url, tesda_document_url, nbi_document_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry"
+            )
+            .eq("id", user.id)
+            .maybeSingle()
+        ]);
 
-      const { data: nurse } = await supabase
-        .from("nurses")
-        .select(
-          "provider_type, verification_status, rejection_reason, submitted_at, prc_license_no, specializations, years_experience, bio, hourly_rate, hourly_rate_max, hourly_rate_range, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, prc_document_url, tesda_document_url, nbi_document_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry"
-        )
-        .eq("id", user.id)
-        .maybeSingle();
+      if (profileError) {
+        console.error("nurse_profile.profiles.load", profileError);
+      }
+      if (nurseError) {
+        console.error("nurse_profile.nurses.load", nurseError);
+      }
 
       if (profile || nurse) {
         const nameParts = profile?.full_name?.split(" ") ?? [];
@@ -102,7 +118,7 @@ export default function NurseProfilePage() {
         setInitialCredentialUrl(credentialUrl);
         setInitialNbiUrl(nurse?.nbi_document_url ?? "");
         setProfilePhotoUrl(
-          resolveProfilePhotoUrl(nurse?.profile_photo_url ?? profile?.profile_photo_url ?? null)
+          resolveProfilePhotoUrl(profile?.profile_photo_url ?? nurse?.profile_photo_url ?? null)
         );
         form.reset({
           firstName: profile?.first_name ?? nameParts[0] ?? "",
@@ -114,6 +130,7 @@ export default function NurseProfilePage() {
           barangay: profile?.barangay ?? "",
           address: profile?.address ?? "",
           prcLicenseNo: nurse?.prc_license_no ?? "",
+          tesdaCertificateNo: nurse?.tesda_certificate_no ?? "",
           specializations: (nurse?.specializations ?? []).join(", "),
           yearsExperience: nurse?.years_experience ?? 0,
           bio: nurse?.bio ?? "",
@@ -127,7 +144,7 @@ export default function NurseProfilePage() {
             nurse?.daily_rate_12hr_max,
             nurse?.daily_rate_range
           ),
-          profile_photo_url: nurse?.profile_photo_url ?? profile?.profile_photo_url ?? "",
+          profile_photo_url: profile?.profile_photo_url ?? nurse?.profile_photo_url ?? "",
           prc_document_url: nurse?.prc_document_url ?? "",
           tesda_document_url: nurse?.tesda_document_url ?? "",
           nbi_document_url: nurse?.nbi_document_url ?? ""
@@ -140,11 +157,15 @@ export default function NurseProfilePage() {
 
   async function handleSubmit(values: NurseProfileEditValues) {
     setSaved(false);
+    setSaveError(null);
     const { data } = await supabase.auth.getUser();
     const user = data.user;
     if (!user) return;
 
-    const fullName = [values.firstName, values.middleName, values.lastName]
+    const normalizedFirstName = toTitleCase(values.firstName);
+    const normalizedMiddleName = toTitleCase(values.middleName);
+    const normalizedLastName = toTitleCase(values.lastName);
+    const fullName = [normalizedFirstName, normalizedMiddleName, normalizedLastName]
       .filter((item) => item && item.trim().length > 0)
       .join(" ");
 
@@ -155,12 +176,12 @@ export default function NurseProfilePage() {
       (values.dailyRateRange || undefined) as DailyRateBandId | undefined
     );
 
-    await supabase.from("profiles").upsert({
+    const { error: profileError } = await supabase.from("profiles").upsert({
       id: user.id,
       full_name: fullName,
-      first_name: values.firstName,
-      middle_name: values.middleName || null,
-      last_name: values.lastName,
+      first_name: normalizedFirstName,
+      middle_name: normalizedMiddleName || null,
+      last_name: normalizedLastName,
       phone: values.phone || null,
       region: values.region,
       city: values.city,
@@ -168,6 +189,19 @@ export default function NurseProfilePage() {
       address: values.address || null,
       role: "nurse"
     });
+
+    if (profileError) {
+      console.error("nurse_profile.profiles.error", profileError);
+      setSaveError(mapSupabaseError(profileError, "generic"));
+      return;
+    }
+
+    const { error: nurseStubError } = await ensureNurseProfile(supabase, user.id, providerType);
+    if (nurseStubError) {
+      console.error("nurse_profile.nurses_stub.error", nurseStubError);
+      setSaveError(mapSupabaseError(nurseStubError, "generic"));
+      return;
+    }
 
     const credentialUrl =
       providerType === "caregiver" ? values.tesda_document_url : values.prc_document_url;
@@ -186,31 +220,42 @@ export default function NurseProfilePage() {
         verificationStatus === "rejected" ||
         verificationStatus === "resubmission_required");
 
-    await supabase.from("nurses").upsert({
-      id: user.id,
-      prc_license_no: values.prcLicenseNo || null,
-      specializations: values.specializations.split(",").map((item: string) => item.trim()),
-      years_experience: values.yearsExperience,
-      bio: values.bio || null,
-      hourly_rate: hourlyRates.min,
-      hourly_rate_max: hourlyRates.max,
-      hourly_rate_range: values.hourlyRateRange || null,
-      daily_rate_12hr: dailyRates.min,
-      daily_rate_12hr_max: dailyRates.max,
-      daily_rate_range: values.dailyRateRange || null,
-      profile_photo_url: values.profile_photo_url || null,
-      prc_document_url: providerType === "nurse" ? values.prc_document_url || null : null,
-      tesda_document_url: providerType === "caregiver" ? values.tesda_document_url || null : null,
-      nbi_document_url: values.nbi_document_url || null,
-      ...(shouldResubmit
-        ? {
-            verification_status: "pending",
-            rejection_reason: null,
-            verified_at: null,
-            submitted_at: new Date().toISOString()
-          }
-        : {})
-    });
+    const { error: nurseError } = await supabase.from("nurses").upsert(
+      {
+        id: user.id,
+        provider_type: providerType,
+        prc_license_no: providerType === "nurse" ? values.prcLicenseNo || null : null,
+        tesda_certificate_no: providerType === "caregiver" ? values.tesdaCertificateNo || null : null,
+        specializations: values.specializations.split(",").map((item: string) => item.trim()),
+        years_experience: values.yearsExperience,
+        bio: values.bio || null,
+        hourly_rate: hourlyRates.min,
+        hourly_rate_max: hourlyRates.max,
+        hourly_rate_range: values.hourlyRateRange || null,
+        daily_rate_12hr: dailyRates.min,
+        daily_rate_12hr_max: dailyRates.max,
+        daily_rate_range: values.dailyRateRange || null,
+        profile_photo_url: values.profile_photo_url || null,
+        prc_document_url: providerType === "nurse" ? values.prc_document_url || null : null,
+        tesda_document_url: providerType === "caregiver" ? values.tesda_document_url || null : null,
+        nbi_document_url: values.nbi_document_url || null,
+        ...(shouldResubmit
+          ? {
+              verification_status: "pending",
+              rejection_reason: null,
+              verified_at: null,
+              submitted_at: new Date().toISOString()
+            }
+          : {})
+      },
+      { onConflict: "id" }
+    );
+
+    if (nurseError) {
+      console.error("nurse_profile.nurses.error", nurseError);
+      setSaveError(mapSupabaseError(nurseError, "generic"));
+      return;
+    }
 
     if (shouldResubmit) {
       setVerificationStatus("pending");
@@ -220,6 +265,11 @@ export default function NurseProfilePage() {
     }
 
     setProfilePhotoUrl(resolveProfilePhotoUrl(values.profile_photo_url || null));
+
+    if (verificationStatus === "verified") {
+      void fetch("/api/revalidate/nurse", { method: "POST" });
+    }
+
     setSaved(true);
   }
 
@@ -276,6 +326,16 @@ export default function NurseProfilePage() {
             <DocumentExpiryCard documents={documentExpiry} showRenewCta={false} />
           ) : null}
 
+          {isVerifiedProvider(verificationStatus) &&
+          ((providerType === "nurse" && !form.watch("prcLicenseNo")?.trim()) ||
+            (providerType === "caregiver" && !form.watch("tesdaCertificateNo")?.trim())) ? (
+            <div className="rounded-2xl border border-warning-border bg-warning-bg p-4 text-sm text-warning">
+              {providerType === "nurse"
+                ? "Add your PRC license number to help admins verify your credentials. This does not affect your verified status."
+                : "Add your TESDA certificate number to help admins verify your credentials. This does not affect your verified status."}
+            </div>
+          ) : null}
+
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4" id="documents">
             <div className="space-y-1">
               <Label htmlFor="firstName">First name</Label>
@@ -291,7 +351,16 @@ export default function NurseProfilePage() {
             </div>
             <div className="space-y-1">
               <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" placeholder="Phone" {...form.register("phone")} />
+              <Input
+                id="phone"
+                placeholder="09XXXXXXXXX"
+                inputMode="numeric"
+                maxLength={11}
+                {...form.register("phone")}
+                onInput={(event) => {
+                  event.currentTarget.value = event.currentTarget.value.replace(/\D/g, "").slice(0, 11);
+                }}
+              />
             </div>
             <RegionCitySelects
               region={form.watch("region")}
@@ -315,8 +384,21 @@ export default function NurseProfilePage() {
               <Textarea id="address" placeholder="Home address (optional)" {...form.register("address")} />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="prcLicenseNo">PRC license number</Label>
-              <Input id="prcLicenseNo" placeholder="PRC license number" {...form.register("prcLicenseNo")} />
+              {providerType === "nurse" ? (
+                <>
+                  <Label htmlFor="prcLicenseNo">PRC license number</Label>
+                  <Input id="prcLicenseNo" placeholder="PRC license number" {...form.register("prcLicenseNo")} />
+                </>
+              ) : (
+                <>
+                  <Label htmlFor="tesdaCertificateNo">TESDA certificate number</Label>
+                  <Input
+                    id="tesdaCertificateNo"
+                    placeholder="TESDA NC II certificate number"
+                    {...form.register("tesdaCertificateNo")}
+                  />
+                </>
+              )}
             </div>
             <div className="space-y-1">
               <Label htmlFor="specializations">Specializations</Label>
@@ -402,6 +484,7 @@ export default function NurseProfilePage() {
               <DocumentPendingRow label="NBI Clearance" />
             )}
 
+            {saveError ? <p className="text-sm text-rose-600">{saveError}</p> : null}
             {saved ? <p className="text-sm text-emerald-700">Profile saved successfully.</p> : null}
             <Button type="submit" className="w-full">
               Save

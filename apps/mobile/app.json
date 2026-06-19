@@ -54,6 +54,14 @@
       ],
       "expo-secure-store",
       [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#1455e0",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "Allow HanapKalinga to access your photos for profile and document uploads.",

@@ -15,6 +15,7 @@ type NavTab = {
   label: string;
   icon: typeof Home;
   match: (path: string) => boolean;
+  prefetch?: boolean;
 };
 
 const FAMILY_TABS: NavTab[] = [
@@ -28,13 +29,15 @@ const FAMILY_TABS: NavTab[] = [
     href: "/nurses",
     label: "Browse",
     icon: Search,
-    match: (path) => path.startsWith("/nurses")
+    match: (path) => path.startsWith("/nurses"),
+    prefetch: true
   },
   {
     href: "/dashboard/family/bookings",
     label: "Bookings",
     icon: Calendar,
-    match: (path) => path.startsWith("/dashboard/family/bookings")
+    match: (path) => path.startsWith("/dashboard/family/bookings"),
+    prefetch: true
   },
   {
     href: "/dashboard/family/messages",
@@ -61,13 +64,15 @@ const NURSE_TABS: NavTab[] = [
     href: "/dashboard/nurse/availability",
     label: "Schedule",
     icon: Calendar,
-    match: (path) => path === "/dashboard/nurse/availability"
+    match: (path) => path === "/dashboard/nurse/availability",
+    prefetch: true
   },
   {
     href: "/dashboard/nurse/bookings",
     label: "Bookings",
     icon: Calendar,
-    match: (path) => path.startsWith("/dashboard/nurse/bookings")
+    match: (path) => path.startsWith("/dashboard/nurse/bookings"),
+    prefetch: true
   },
   {
     href: "/dashboard/nurse/messages",
@@ -145,6 +150,7 @@ export function BottomNav({ role }: BottomNavProps) {
             <Link
               key={tab.href}
               href={tab.href}
+              prefetch={tab.prefetch ?? false}
               className="relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 overflow-visible px-0.5 md:px-2"
               aria-current={active ? "page" : undefined}
               title={tab.label}

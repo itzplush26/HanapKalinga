@@ -1,0 +1,30 @@
+appId: ${APP_ID}
+---
+# Login as admin user
+- runFlow:
+    file: ../shared/setup.yaml
+- runFlow:
+    file: ../shared/helpers.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# Navigate to Verifications tab
+- tapOn:
+    text: "Verifications tab"
+
+# Wait for verification queue
+- extendedWaitUntil:
+    visible:
+      id: "verificationQueue_list_requests"
+    timeout: 15000
+
+# Verify filter tabs are present
+- extendedWaitUntil:
+    visible:
+      id: "verificationQueue_filter_all"
+    timeout: 5000
+- extendedWaitUntil:
+    visible:
+      id: "verificationQueue_filter_pending"
+    timeout: 5000

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { DAILY_RATE_BAND_IDS } from "@/lib/data/rates";
+import { containsProfanity, sanitizeText } from "@/lib/validation/sanitize";
 
 export const bookingRequestSchema = z
   .object({
@@ -11,7 +12,12 @@ export const bookingRequestSchema = z
     patientCondition: z.enum(["bedridden", "mobile", "assisted"]),
     requiredSkills: z.array(z.string()).min(1),
     budgetRange: z.enum(DAILY_RATE_BAND_IDS),
-    additionalInstructions: z.string().max(1200).optional()
+    additionalInstructions: z
+      .string()
+      .transform(sanitizeText)
+      .refine((value) => !value || !containsProfanity(value), "Please keep your content appropriate.")
+      .pipe(z.string().max(1200))
+      .optional()
   })
   .superRefine((values, context) => {
     if (values.shift === "custom") {

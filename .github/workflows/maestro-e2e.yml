@@ -1,0 +1,345 @@
+name: maestro-e2e
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment (staging or local)
+        required: true
+        type: choice
+        options:
+          - staging
+          - local
+        default: staging
+  pull_request:
+    paths:
+      - apps/mobile/src/**
+      - apps/mobile/app/**
+      - apps/mobile/maestro/**
+      - apps/mobile/scripts/*.mjs
+      - apps/mobile/package.json
+      - .github/workflows/maestro-e2e.yml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+env:
+  NODE_VERSION: "22"
+  JAVA_VERSION: "17"
+
+jobs:
+  build-apk:
+    name: Build release APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo apt-get clean
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Cache Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Prebuild & assemble release APK
+        working-directory: apps/mobile
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          npx expo prebuild --platform android --clean
+          # Legacy native lib packaging — required for SoLoader on x86_64 CI emulators (see RN #55637)
+          sed -i 's/expo.useLegacyPackaging=false/expo.useLegacyPackaging=true/' android/gradle.properties
+          echo "--- gradle.properties (packaging) ---"
+          grep -E 'useLegacyPackaging' android/gradle.properties
+          cd android
+          ./gradlew assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk ${{ runner.temp }}/app.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: ${{ runner.temp }}/app.apk
+          retention-days: 1
+
+  seed-e2e:
+    name: Seed E2E test data
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      ADMIN_EMAIL: ${{ steps.seed.outputs.ADMIN_EMAIL }}
+      FAMILY_EMAIL: ${{ steps.seed.outputs.FAMILY_EMAIL }}
+      NURSE_EMAIL: ${{ steps.seed.outputs.NURSE_EMAIL }}
+      PASSWORD: ${{ steps.seed.outputs.PASSWORD }}
+      BOOKING_ID: ${{ steps.seed.outputs.BOOKING_ID }}
+      NURSE_ID: ${{ steps.seed.outputs.NURSE_ID }}
+      VERIFICATION_ID: ${{ steps.seed.outputs.VERIFICATION_ID }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Run seed
+        id: seed
+        run: |
+          cd ${{ github.workspace }}
+          node apps/mobile/scripts/seed-e2e.mjs | tee /tmp/seed-output.txt
+          grep -oE '^[A-Z_]+=.+' /tmp/seed-output.txt >> $GITHUB_OUTPUT
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+  maestro-android:
+    name: Maestro (${{ matrix.shard }})
+    needs: [build-apk, seed-e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        shard:
+          - auth
+          - nurse
+          - family
+          - admin
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo apt-get clean
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Cache AVD snapshot
+        id: avd-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.android/avd/
+            ~/.android/adb*
+          key: avd-34-google_apis-x86_64-v1
+
+      - name: Download release APK
+        uses: actions/download-artifact@v4
+        with:
+          name: app-release-apk
+          path: ${{ runner.temp }}
+
+      - name: Install Maestro CLI
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+
+      - name: Generate AVD snapshot (cache miss)
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          avd-name: Pixel_6
+          cores: 2
+          ram-size: 2048M
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: false
+          script: echo "AVD snapshot generated and cached"
+
+      - name: Run Maestro E2E tests (${{ matrix.shard }})
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          avd-name: Pixel_6
+          cores: 2
+          ram-size: 2048M
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot-save
+          disable-animations: true
+          emulator-boot-timeout: 120
+          script: |
+            adb install ${{ runner.temp }}/app.apk
+            
+            # Pre-warm the app by launching it once before tests
+            echo "Pre-warming the app..."
+            adb shell am start -n com.hanapkalinga.mobile/.MainActivity
+            sleep 10
+            adb shell am force-stop com.hanapkalinga.mobile
+            sleep 2
+            
+            # Clear any persisted auth state from SecureStore
+            adb shell pm clear com.hanapkalinga.mobile
+            
+            # === DIAGNOSTIC: Check if app survives launch ===
+            echo "=== DIAGNOSTIC: Launching app and checking if it stays alive ==="
+            mkdir -p "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}"
+            adb shell am start -n com.hanapkalinga.mobile/.MainActivity
+            sleep 15
+            echo "--- Process list for com.hanapkalinga ---"
+            adb shell ps | grep com.hanapkalinga || echo "NO PROCESS FOUND (app process died)"
+            echo "--- PID check via pidof ---"
+            adb shell pidof com.hanapkalinga.mobile 2>/dev/null || echo "App process not found"
+            echo "--- Foreground activity ---"
+            adb shell dumpsys activity activities 2>/dev/null | grep -E 'mResumedActivity|mFocusedActivity' || echo "NO FOREGROUND ACTIVITY (app crashed)"
+            echo "--- FATAL EXCEPTION stack (full) ---"
+            adb logcat -d 2>/dev/null | grep -A 40 "FATAL EXCEPTION" | tail -80 || echo "No FATAL EXCEPTION in logcat"
+            echo "--- SoLoader / DSO errors ---"
+            adb logcat -d 2>/dev/null | grep -iE 'SoLoader|DSONotFound|UnsatisfiedLinkError' | tail -30 || echo "No SoLoader errors in logcat"
+            echo "--- Last 500 logcat lines (crash traces) ---"
+            adb logcat -d -t 500 2>/dev/null | grep -iE 'crash|exception|fatal|error|androidRuntime|com\.hanapkalinga|NativeModule|SoLoader|FATAL' || echo "No crash traces in logcat"
+            echo "--- Logcat for com.hanapkalinga ---"
+            adb logcat -d 2>/dev/null | grep -i 'com\.hanapkalinga' | tail -30 || echo "No hanapkalinga logs"
+            echo "--- Screenshot ---"
+            adb exec-out screencap -p > "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}/diagnostic-screenshot.png" 2>/dev/null || echo "Screenshot failed"
+            echo "--- UI hierarchy dump ---"
+            adb shell uiautomator dump /sdcard/diagnostic-window.xml 2>/dev/null || true
+            adb pull /sdcard/diagnostic-window.xml "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}/diagnostic-window.xml" 2>/dev/null || echo "UI dump pull failed"
+            echo "=== DIAGNOSTIC END ==="
+            adb shell am force-stop com.hanapkalinga.mobile
+            sleep 2
+            
+            bash apps/mobile/scripts/run-maestro-shard.sh "${{ matrix.shard }}" "${{ inputs.environment || 'staging' }}" "${{ needs.seed-e2e.outputs.FAMILY_EMAIL }}" "${{ needs.seed-e2e.outputs.NURSE_EMAIL }}" "${{ needs.seed-e2e.outputs.ADMIN_EMAIL }}" "${{ needs.seed-e2e.outputs.PASSWORD }}" "${{ needs.seed-e2e.outputs.BOOKING_ID }}" "${{ needs.seed-e2e.outputs.NURSE_ID }}" "${{ needs.seed-e2e.outputs.VERIFICATION_ID }}" "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}"
+
+      - name: Sanitize screenshot filenames (remove emoji characters)
+        if: always()
+        run: |
+          find ~/.maestro/tests/ -name "*.png" | while IFS= read -r f; do
+            dir=$(dirname "$f")
+            base=$(basename "$f")
+            newbase=$(echo "$base" | sed 's/[^a-zA-Z0-9_.()-]//g')
+            if [ "$base" != "$newbase" ]; then
+              mv "$f" "$dir/$newbase"
+            fi
+          done
+
+      - name: Upload Maestro screenshots (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-screenshots-${{ matrix.shard }}
+          path: ~/.maestro/tests/**/*.png
+          retention-days: 7
+
+      - name: Upload emulator debug artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-debug-${{ matrix.shard }}
+          path: |
+            ${{ runner.temp }}/maestro-debug/${{ matrix.shard }}/
+            ${{ runner.temp }}/maestro-debug/${{ matrix.shard }}/**/*
+          retention-days: 7
+
+      - name: Upload Maestro report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-report-${{ matrix.shard }}
+          path: ~/.maestro/reports/
+          retention-days: 7
+
+  maestro-summary:
+    name: Generate E2E summary report
+    needs: [maestro-android]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download all shard debug artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: maestro-debug-*
+          path: ${{ runner.temp }}/maestro-summary/
+          merge-multiple: true
+
+      - name: List downloaded result files
+        run: |
+          echo "Downloaded artifacts to ${{ runner.temp }}/maestro-summary/"
+          find "${{ runner.temp }}/maestro-summary/" -name "results.txt" -type f || echo "No results.txt files found"
+          echo "---"
+          find "${{ runner.temp }}/maestro-summary/" -type f | head -30 || echo "No files found at all"
+
+      - name: Generate consolidated summary
+        id: summary
+        run: |
+          chmod +x apps/mobile/scripts/consolidate-maestro-summary.sh
+          apps/mobile/scripts/consolidate-maestro-summary.sh "${{ runner.temp }}/maestro-summary/" /tmp/maestro-final-report.md
+          echo "--- Full summary report ---"
+          cat /tmp/maestro-final-report.md
+
+      - name: Post summary to GITHUB_STEP_SUMMARY
+        run: |
+          if [ -f /tmp/maestro-final-report.md ]; then
+            cat /tmp/maestro-final-report.md >> $GITHUB_STEP_SUMMARY
+            echo "Summary posted to step summary."
+          else
+            echo "::warning::No summary report generated."
+          fi
+
+      - name: Upload consolidated summary as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-consolidated-summary
+          path: /tmp/maestro-final-report.md
+          retention-days: 30
+
+  cleanup-e2e:
+    name: Cleanup E2E test data
+    needs: [maestro-summary]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Run cleanup
+        run: node apps/mobile/scripts/cleanup-e2e.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { EmptyState } from "@/components/empty-state";
+import { Button } from "@/components/ui/button";
 import { SHIFT_LABELS } from "@/lib/booking-notes";
 import type { InboxRow } from "@/lib/messages";
 import { formatMessageTimestamp } from "@/lib/messages-format";
@@ -10,10 +12,26 @@ interface MessagesInboxProps {
   rows: InboxRow[];
   selectedBookingId?: string | null;
   onSelect: (bookingId: string) => void;
+  role?: "family" | "nurse";
 }
 
-export function MessagesInbox({ rows, selectedBookingId, onSelect }: MessagesInboxProps) {
+export function MessagesInbox({ rows, selectedBookingId, onSelect, role = "nurse" }: MessagesInboxProps) {
   if (rows.length === 0) {
+    if (role === "family") {
+      return (
+        <EmptyState
+          icon={MessageCircle}
+          title="No messages yet"
+          description="Messages will appear here once you have an active booking."
+          action={
+            <Button asChild size="sm">
+              <Link href="/nurses">Find a caregiver</Link>
+            </Button>
+          }
+        />
+      );
+    }
+
     return (
       <EmptyState
         icon={MessageCircle}

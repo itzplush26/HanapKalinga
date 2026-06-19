@@ -22,7 +22,7 @@ Supabase database migrations and seed data shared between web and mobile apps.
 
 After running the seed file:
 
-- Email: `admin@hanapkalinga.ph`
+- Email: `admin@hanapkalinga.com`
 - Password: `ChangeMe123!`
 
 **Important:** Change this password in production!
@@ -44,7 +44,7 @@ After running the seed file:
 
 ## Admin login troubleshooting
 
-If password login fails for `admin@hanapkalinga.ph` after seeding:
+If password login fails for `admin@hanapkalinga.com` after seeding:
 
 1. Re-run `supabase/seed.sql` — it is idempotent and creates the missing `auth.identities` row when needed.
 2. Confirm migrations through **0007** are applied (admin RLS helper).

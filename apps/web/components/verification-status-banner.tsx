@@ -104,7 +104,8 @@ export function VerificationStatusBanner({
 
     if (key === "pending" || key === "under_review") {
       return (
-        <div className="inline-flex items-center rounded-full bg-surface-alt px-3 py-1.5 text-sm font-medium text-text-secondary">
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/35 bg-primary/15 px-3 py-1.5 text-sm font-medium text-primary">
+          <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
           Verification Pending
         </div>
       );

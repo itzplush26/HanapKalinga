@@ -1,0 +1,26 @@
+appId: ${APP_ID}
+---
+# Navigate to login from landing
+- tapOn:
+    id: "landing_button_login"
+
+# Enter credentials
+- tapOn:
+    id: "login_input_email"
+- inputText: ${EMAIL}
+- tapOn:
+    id: "login_input_password"
+- inputText: ${PASSWORD}
+
+# Dismiss keyboard before submit
+- hideKeyboard
+
+# Submit
+- tapOn:
+    id: "login_button_submit"
+
+# Wait for redirect to dashboard
+- extendedWaitUntil:
+    notVisible:
+      id: "login_button_submit"
+    timeout: 30000

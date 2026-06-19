@@ -1,0 +1,40 @@
+appId: ${APP_ID}
+---
+# Login as nurse user
+- runFlow:
+    file: ../shared/setup.yaml
+- runFlow:
+    file: ../shared/helpers.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# Navigate to Bookings tab
+- tapOn:
+    text: "Bookings"
+
+# Wait for bookings list
+- extendedWaitUntil:
+    visible:
+      id: "nurseBookings_list_bookings"
+    timeout: 15000
+
+# Tap on a pending booking
+- tapOn:
+    id: "nurseBookings_card_${BOOKING_ID}"
+
+# Wait for booking detail
+- extendedWaitUntil:
+    visible:
+      id: "nurseBookingDetail_button_decline"
+    timeout: 10000
+
+# Tap decline
+- tapOn:
+    id: "nurseBookingDetail_button_decline"
+
+# Wait for confirmation / state change
+- extendedWaitUntil:
+    notVisible:
+      id: "nurseBookingDetail_button_decline"
+    timeout: 10000

@@ -61,6 +61,7 @@ export default function ChooseRoleScreen() {
                 accessibilityRole="radio"
                 accessibilityState={{ selected: isSelected }}
                 accessibilityLabel={option.title}
+                testID={`chooseRole_button_${option.value}`}
               >
                 <View style={styles.cardContent}>
                   <View style={styles.cardText}>

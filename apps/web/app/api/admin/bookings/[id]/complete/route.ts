@@ -52,14 +52,14 @@ export async function POST(_request: Request, { params }: RouteContext) {
 
     const { data: nurse } = await service
       .from("nurses")
-      .select("profiles(full_name)")
+      .select("profiles!nurses_id_fkey(full_name)")
       .eq("id", booking.nurse_id)
       .maybeSingle();
 
     const nurseProfile = Array.isArray(nurse?.profiles) ? nurse?.profiles[0] : nurse?.profiles;
     const nurseName = nurseProfile?.full_name?.trim() || "your nurse";
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://hanapkalinga.com";
+    const appUrl = process.env.APP_URL ?? "https://hanapkalinga.com";
     const bookingUrl = `${appUrl}/dashboard/family/bookings/${booking.id}`;
 
     await service.from("notifications").insert({
