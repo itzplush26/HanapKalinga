@@ -4,7 +4,7 @@ appId: ${APP_ID}
 # Required env: TEST_EMAIL, TEST_PASSWORD
 - runFlow:
     when:
-      true: ${TEST_EMAIL != null AND TEST_PASSWORD != null}
+      true: ${TEST_EMAIL != null && TEST_PASSWORD != null}
     file: "../shared/login-actions.yaml"
     env:
       EMAIL: ${TEST_EMAIL}
