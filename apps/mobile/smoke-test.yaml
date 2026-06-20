@@ -1,0 +1,15 @@
+appId: ${APP_ID}
+---
+- launchApp
+- waitForAnimationToEnd:
+    timeout: 15000
+- assertVisible:
+    id: "landing_button_login"
+- assertVisible:
+    id: "landing_button_register"
+- tapOn:
+    id: "landing_button_login"
+- waitForAnimationToEnd:
+    timeout: 5000
+- assertVisible:
+    id: "login_input_email"
