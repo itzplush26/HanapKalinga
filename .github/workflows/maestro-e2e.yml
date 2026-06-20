@@ -291,7 +291,6 @@ jobs:
         with:
           pattern: maestro-debug-*
           path: ${{ runner.temp }}/maestro-summary/
-          merge-multiple: true
 
       - name: List downloaded result files
         run: |
