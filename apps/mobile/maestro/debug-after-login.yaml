@@ -1,0 +1,21 @@
+appId: ${APP_ID}
+---
+- extendedWaitUntil:
+    visible:
+      id: "landing_button_login"
+    timeout: 60000
+- tapOn:
+    id: "landing_button_login"
+- tapOn:
+    id: "login_input_email"
+- inputText: ${TEST_EMAIL}
+- tapOn:
+    id: "login_input_password"
+- inputText: ${TEST_PASSWORD}
+- hideKeyboard
+- tapOn:
+    id: "login_button_submit"
+- extendedWaitUntil:
+    notVisible:
+      id: "login_button_submit"
+    timeout: 30000
