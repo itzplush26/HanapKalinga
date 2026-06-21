@@ -41,7 +41,7 @@ export default function FamilyDashboardScreen() {
   const recentBookings = bookings.slice(0, 3);
 
   return (
-    <ScreenWrapper scroll>
+    <ScreenWrapper scroll testID="familyDashboard_screen">
       <View style={styles.container}>
         {showWelcome && (
           <View style={[styles.welcomeBanner, { backgroundColor: colors.primary }]}>
@@ -81,6 +81,7 @@ export default function FamilyDashboardScreen() {
             style={styles.promoButton}
             accessibilityRole="button"
             accessibilityLabel="Browse nurses"
+            testID="familyDashboard_button_browse"
           >
             <Text style={[styles.promoButtonText, { color: colors.primary }]}>
               Browse now
@@ -129,6 +130,7 @@ export default function FamilyDashboardScreen() {
         <Button
           variant="default"
           onPress={() => router.push('/(family)/browse')}
+          testID="familyDashboard_button_requestBooking"
         >
           Request a booking
         </Button>
