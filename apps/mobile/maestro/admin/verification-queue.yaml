@@ -11,7 +11,7 @@ appId: ${APP_ID}
 
 # Navigate to Verifications tab
 - tapOn:
-    text: "Verifications tab"
+    id: "tab_verifications"
 
 # Wait for verification queue
 - extendedWaitUntil:
