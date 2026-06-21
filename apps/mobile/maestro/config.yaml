@@ -1,10 +1,9 @@
 flows:
   paths:
-    - shared/
     - auth/
     - family/
     - nurse/
     - admin/
   env:
     ENV: "local"
-    APP_ID: "host.exp.Exponent"
+    APP_ID: "com.hanapkalinga.mobile"
