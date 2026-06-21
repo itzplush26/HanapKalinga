@@ -1,4 +1,6 @@
 appId: ${APP_ID}
+env:
+  APP_ID: "com.hanapkalinga.mobile"
 ---
 - launchApp:
     appId: ${APP_ID}
