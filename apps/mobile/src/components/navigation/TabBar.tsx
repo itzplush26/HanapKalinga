@@ -35,6 +35,7 @@ export function TabBar({ tabs, activeTab, onTabPress }: TabBarProps) {
             key={tab.key}
             onPress={() => onTabPress(tab.key)}
             style={styles.tab}
+            testID={`tab_${tab.key}`}
             accessibilityRole="tab"
             accessibilityState={{ selected: isActive }}
             accessibilityLabel={tab.label}
