@@ -51,7 +51,8 @@ export default function NurseTabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, focused }) => (
+          tabBarTestID: 'tab_home' as never,
+          tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
             <House
               size={22}
               color={color}
@@ -59,13 +60,14 @@ export default function NurseTabLayout() {
               fill={focused ? color : 'none'}
             />
           ),
-        }}
+        } as any}
       />
       <Tabs.Screen
         name="bookings/index"
         options={{
           title: 'Bookings',
-          tabBarIcon: ({ color, focused }) => (
+          tabBarTestID: 'tab_bookings' as never,
+          tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
             <Calendar
               size={22}
               color={color}
@@ -73,20 +75,22 @@ export default function NurseTabLayout() {
               fill={focused ? color : 'none'}
             />
           ),
-        }}
+        } as any}
       />
       <Tabs.Screen
         name="care-requests"
         options={{
           title: 'Care Requests',
-          tabBarIcon: ({ color }) => <FileText size={22} color={color} />,
-        }}
+          tabBarTestID: 'tab_care-requests' as never,
+          tabBarIcon: ({ color }: { color: string }) => <FileText size={22} color={color} />,
+        } as any}
       />
       <Tabs.Screen
         name="messages"
         options={{
           title: 'Messages',
-          tabBarIcon: ({ color, focused }) => (
+          tabBarTestID: 'tab_messages' as never,
+          tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
             <MessageSquare
               size={22}
               color={color}
@@ -94,13 +98,14 @@ export default function NurseTabLayout() {
               fill={focused ? color : 'none'}
             />
           ),
-        }}
+        } as any}
       />
       <Tabs.Screen
         name="availability"
         options={{
           title: 'Schedule',
-          tabBarIcon: ({ color, focused }) => (
+          tabBarTestID: 'tab_schedule' as never,
+          tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
             <Clock
               size={22}
               color={color}
@@ -108,13 +113,14 @@ export default function NurseTabLayout() {
               fill={focused ? color : 'none'}
             />
           ),
-        }}
+        } as any}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, focused }) => (
+          tabBarTestID: 'tab_profile' as never,
+          tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
             <User
               size={22}
               color={color}
@@ -122,7 +128,7 @@ export default function NurseTabLayout() {
               fill={focused ? color : 'none'}
             />
           ),
-        }}
+        } as any}
       />
     </Tabs>
   );
