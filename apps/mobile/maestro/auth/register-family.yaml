@@ -63,7 +63,7 @@ env:
 - tapOn:
     id: "chooseRole_button_family"
 - tapOn:
-    text: "Continue"
+    id: "chooseRole_button_continue"
 
 # Wait for profile screen
 - extendedWaitUntil:
@@ -85,7 +85,7 @@ env:
 
 # Tap Next (navigates to set-password)
 - tapOn:
-    text: "Next"
+    id: "profile_button_next"
 
 # Wait for set-password screen
 - extendedWaitUntil:

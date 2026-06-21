@@ -65,7 +65,7 @@ env:
 - tapOn:
     id: "chooseRole_button_nurse"
 - tapOn:
-    text: "Continue"
+    id: "chooseRole_button_continue"
 
 # Wait for profile screen
 - extendedWaitUntil:
@@ -81,16 +81,16 @@ env:
 # Fill hourly rate
 - scrollUntilVisible:
     element:
-      text: "Hourly Rate (PHP)"
+      id: "profileNurse_input_hourlyRate"
     direction: DOWN
     timeout: 10000
 - tapOn:
-    text: "Hourly Rate (PHP)"
+    id: "profileNurse_input_hourlyRate"
 - inputText: ${NURSE_HOURLY_RATE}
 
 # Fill daily rate
 - tapOn:
-    text: "Daily Rate (PHP)"
+    id: "profileNurse_input_dailyRate"
 - inputText: ${NURSE_DAILY_RATE}
 
 # Scroll to Next button
@@ -102,7 +102,7 @@ env:
 
 # Tap Next (navigates to set-password)
 - tapOn:
-    text: "Next"
+    id: "profile_button_next"
 
 # Wait for set-password screen
 - extendedWaitUntil:
