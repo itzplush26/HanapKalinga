@@ -1,5 +1,6 @@
 appId: ${APP_ID}
 env:
+  APP_ID: "com.hanapkalinga.mobile"
   # OTP for registration flows
   OTP_DIGIT_0: "0"
   OTP_DIGIT_1: "0"
