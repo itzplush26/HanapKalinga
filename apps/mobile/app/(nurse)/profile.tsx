@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, TextInput as RNTextInput, ScrollView, Alert, StyleSheet } from 'react-native';
+import { View, Text, TextInput as RNTextInput, ScrollView, Modal, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { User, AlertTriangle } from 'lucide-react-native';
 import { useAuth } from '../../src/contexts/AuthContext';
@@ -28,6 +28,7 @@ export default function NurseProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -372,22 +373,39 @@ export default function NurseProfileScreen() {
 
         <Button
           variant="outline"
-          onPress={() => {
-            Alert.alert('Sign out', 'Are you sure you want to sign out?', [
-              { text: 'Cancel', style: 'cancel' },
-              {
-                text: 'Sign out',
-                style: 'destructive',
-                onPress: async () => {
-                  await signOut();
-                  router.replace('/');
-                },
-              },
-            ]);
-          }}
+          testID="profile_button_logout"
+          onPress={() => setShowSignOutModal(true)}
         >
           Sign out
         </Button>
+
+        <Modal visible={showSignOutModal} transparent animationType="fade" onRequestClose={() => setShowSignOutModal(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Sign out</Text>
+              <Text style={styles.modalMessage}>Are you sure you want to sign out?</Text>
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.modalCancelButton}
+                  onPress={() => setShowSignOutModal(false)}
+                >
+                  <Text style={styles.modalCancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  testID="logout_button_confirm"
+                  style={styles.modalConfirmButton}
+                  onPress={async () => {
+                    setShowSignOutModal(false);
+                    await signOut();
+                    router.replace('/');
+                  }}
+                >
+                  <Text style={styles.modalConfirmText}>Sign out</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </ScreenWrapper>
   );
@@ -455,5 +473,55 @@ const styles = StyleSheet.create({
     fontSize: typography.size.caption,
     fontFamily: typography.fontFamily.body,
     color: colors.semantic.error,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: colors.canvas,
+    borderRadius: 12,
+    padding: spacing.lg,
+    width: '80%',
+    maxWidth: 320,
+    gap: spacing.md,
+  },
+  modalTitle: {
+    fontSize: typography.size.titleMd,
+    fontFamily: typography.fontFamily.display,
+    color: colors.ink,
+  },
+  modalMessage: {
+    fontSize: typography.size.body,
+    fontFamily: typography.fontFamily.body,
+    color: colors.body,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  modalCancelButton: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  modalCancelText: {
+    fontSize: typography.size.button,
+    fontFamily: typography.fontFamily.bodySemiBold,
+    color: colors.muted,
+  },
+  modalConfirmButton: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.semantic.error,
+    borderRadius: 8,
+  },
+  modalConfirmText: {
+    fontSize: typography.size.button,
+    fontFamily: typography.fontFamily.bodySemiBold,
+    color: colors.canvas,
   },
 });
