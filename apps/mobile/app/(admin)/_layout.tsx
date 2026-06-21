@@ -83,6 +83,7 @@ function AdminHeader() {
               key={tab.name}
               onPress={() => handleTabPress(tab.name)}
               style={[styles.tab, isActive && styles.tabActive]}
+              testID={`tab_${tab.name}`}
               accessibilityRole="button"
               accessibilityLabel={`${tab.label} tab`}
               accessibilityState={{ selected: isActive }}

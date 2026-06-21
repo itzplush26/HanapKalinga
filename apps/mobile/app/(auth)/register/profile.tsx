@@ -292,6 +292,7 @@ export default function RegisterProfileScreen() {
                 onChangeText={setHourlyRate}
                 placeholder="e.g. 200"
                 keyboardType="numeric"
+                testID="profileNurse_input_hourlyRate"
               />
 
               <Input
@@ -300,6 +301,7 @@ export default function RegisterProfileScreen() {
                 onChangeText={setDailyRate}
                 placeholder="e.g. 1500"
                 keyboardType="numeric"
+                testID="profileNurse_input_dailyRate"
               />
 
               {providerType === 'nurse' && (
@@ -339,6 +341,7 @@ export default function RegisterProfileScreen() {
             loading={loading}
             disabled={uploading}
             style={styles.submit}
+            testID="profile_button_next"
           >
             Next
           </Button>
