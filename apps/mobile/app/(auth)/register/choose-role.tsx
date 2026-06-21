@@ -88,6 +88,7 @@ export default function ChooseRoleScreen() {
             onPress={handleContinue}
             disabled={!selectedRole}
             style={styles.button}
+            testID="chooseRole_button_continue"
           >
             Continue
           </Button>
