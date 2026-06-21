@@ -47,14 +47,14 @@ appId: ${APP_ID}
 - tapOn:
     id: "bookingNew_picker_shift_morning"
 
-# Select a required skill (tap by text)
+# Select a required skill (tap by testID)
 - scrollUntilVisible:
     element:
-      text: "Wound Care"
+      id: "bookingNew_chip_skill_Wound_Care"
     direction: DOWN
     timeout: 5000
 - tapOn:
-    text: "Wound Care"
+    id: "bookingNew_chip_skill_Wound_Care"
 
 # Select budget
 - scrollUntilVisible:
@@ -74,8 +74,8 @@ appId: ${APP_ID}
 - tapOn:
     id: "bookingNew_button_submit"
 
-# Wait for booking success alert
+# Wait for booking success modal
 - extendedWaitUntil:
     visible:
-      text: "Booking Requested"
+      id: "bookingNew_text_success"
     timeout: 15000
