@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   RefreshControl,
+  TextInput,
   StyleSheet,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
@@ -25,6 +26,7 @@ export default function BrowseNursesScreen() {
   const router = useRouter();
   const [filters, setFilters] = useState<NurseFilters>({});
   const [showFilters, setShowFilters] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { data, loading, loadingMore, error, refetch, loadMore, hasMore } = useNurses(filters);
 
   const handleNursePress = useCallback(
@@ -113,6 +115,15 @@ export default function BrowseNursesScreen() {
         }}
       />
 
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search nurses..."
+        placeholderTextColor={colors.muted}
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        testID="browse_input_search"
+      />
+
       {loading ? (
         renderSkeletons()
       ) : error ? (
@@ -163,6 +174,20 @@ export default function BrowseNursesScreen() {
 }
 
 const styles = StyleSheet.create({
+  searchInput: {
+    marginHorizontal: spacing.md,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.hairline,
+    borderRadius: 8,
+    fontSize: typography.size.body,
+    fontFamily: typography.fontFamily.body,
+    color: colors.ink,
+    backgroundColor: colors.canvas,
+  },
   filterButton: {
     padding: spacing.xs,
     position: 'relative',
