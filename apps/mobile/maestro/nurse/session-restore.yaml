@@ -1,0 +1,44 @@
+appId: ${APP_ID}
+---
+- runFlow:
+    file: ../shared/setup.yaml
+
+# Log in with valid credentials
+- tapOn:
+    id: "landing_button_login"
+- tapOn:
+    id: "login_input_email"
+- inputText: ${TEST_EMAIL}
+- tapOn:
+    id: "login_input_password"
+- inputText: ${TEST_PASSWORD}
+- tapOn:
+    id: "login_button_submit"
+
+# Verify login succeeded
+- extendedWaitUntil:
+    notVisible:
+      id: "login_button_submit"
+    timeout: 15000
+
+# Stop app (simulate background kill)
+- stopApp:
+    appId: ${APP_ID}
+
+# Relaunch WITHOUT clearing state to verify session persists
+- launchApp:
+    appId: ${APP_ID}
+    clearState: false
+
+# Wait for app to initialize and redirect to role dashboard
+# Login button should NOT be visible — session was restored
+- extendedWaitUntil:
+    notVisible:
+      id: "landing_button_login"
+    timeout: 20000
+
+# Verify we landed on nurse dashboard
+- extendedWaitUntil:
+    visible:
+      id: "availability_button_save"
+    timeout: 15000
