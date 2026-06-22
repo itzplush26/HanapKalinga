@@ -77,21 +77,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const initialize = async () => {
+      const t0 = performance.now();
       let hasSession = false;
       try {
-        // Add timeout to prevent hanging on slow network
-        const sessionPromise = client.auth.getSession();
-        const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 5000));
-        
-        const result = await Promise.race([sessionPromise, timeoutPromise]) as any;
-        hasSession = !!result?.data?.session?.user;
-        
-        if (result?.data?.session?.user) {
-          setUser(result.data.session.user);
-          await fetchProfile(result.data.session.user.id);
+        const t1 = performance.now();
+        const { data } = await client.auth.getSession();
+        const t2 = performance.now();
+
+        const elapsed = Math.round(t2 - t0);
+        const getSessionMs = Math.round(t2 - t1);
+
+        hasSession = !!data?.session?.user;
+
+        if (data?.session?.user) {
+          setUser(data.session.user);
+          await fetchProfile(data.session.user.id);
         }
+
+        console.log(
+          `[Auth] initialize: ${elapsed}ms total, getSession: ${getSessionMs}ms, hasSession: ${hasSession}`
+        );
       } catch (error) {
-        // session restore failed silently
         console.log('Auth initialization error:', error);
       } finally {
         // #region agent log
