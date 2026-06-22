@@ -108,5 +108,5 @@ env:
 # Verify redirect to family dashboard
 - extendedWaitUntil:
     visible:
-      id: "browse_button_filter"
+      id: "familyDashboard_button_browse"
     timeout: 15000
