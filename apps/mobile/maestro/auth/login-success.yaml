@@ -28,5 +28,5 @@ appId: ${APP_ID}
 # Verify login succeeded by checking app is no longer on auth screens
 - extendedWaitUntil:
     visible:
-      id: "browse_button_filter"
+      id: "familyDashboard_button_browse"
     timeout: 10000
