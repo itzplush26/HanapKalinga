@@ -1,6 +1,8 @@
 appId: ${APP_ID}
 env:
   APP_ID: "com.hanapkalinga.mobile"
+  TEST_EMAIL: ${TEST_EMAIL}
+  TEST_PASSWORD: ${TEST_PASSWORD}
 ---
 - launchApp:
     appId: ${APP_ID}
