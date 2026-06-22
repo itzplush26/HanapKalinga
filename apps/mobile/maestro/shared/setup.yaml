@@ -8,6 +8,7 @@ env:
     appId: ${APP_ID}
     stopApp: true
     clearState: true
+    clearKeychain: true
 
 # Wait for app to be interactive (give time for font loading, auth init, etc)
 # This prevents tapping before the app is ready

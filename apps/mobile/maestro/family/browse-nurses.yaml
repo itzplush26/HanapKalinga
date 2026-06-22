@@ -9,15 +9,15 @@ appId: ${APP_ID}
       TEST_EMAIL: ${TEST_EMAIL}
       TEST_PASSWORD: ${TEST_PASSWORD}
 
+# Navigate to Browse tab
+- tapOn:
+    id: "tab_browse"
+
 # Wait for family dashboard
 - extendedWaitUntil:
     visible:
       id: "browse_button_filter"
     timeout: 15000
-
-# Navigate to Browse tab
-- tapOn:
-    id: "tab_browse"
 
 # Verify browse screen loaded
 - extendedWaitUntil:
