@@ -1,6 +1,10 @@
 appId: ${APP_ID}
 env:
   APP_ID: "com.hanapkalinga.mobile"
+  # Set these via --env when running maestro
+  TEST_EMAIL: ${TEST_EMAIL}
+  TEST_PASSWORD: ${TEST_PASSWORD}
+  TEST_EMAIL_PREFIX: ${TEST_EMAIL_PREFIX}
   # OTP for registration flows
   OTP_DIGIT_0: "0"
   OTP_DIGIT_1: "0"
