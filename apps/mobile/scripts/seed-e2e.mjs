@@ -31,10 +31,10 @@ const HEADERS = {
   "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
 };
 
-async function api(path, body) {
+async function api(path, body, method = "POST") {
   const url = `${SUPABASE_URL}${path}`;
   const res = await fetch(url, {
-    method: "POST",
+    method,
     headers: HEADERS,
     body: body ? JSON.stringify(body) : undefined,
   });
@@ -70,6 +70,13 @@ async function createUser(email, role, fullName) {
     email_confirm: true,
     user_metadata: { role, full_name: fullName },
   });
+
+  // Explicitly confirm email via PUT (email_confirm: true in POST is unreliable
+  // when "Confirm email" is enabled in the Supabase Dashboard)
+  await api(`/auth/v1/admin/users/${id}`, {
+    email_confirm: true,
+    email_confirmed_at: new Date().toISOString(),
+  }, "PUT");
 
   // Create profile
   await rest("/profiles", "POST", {
@@ -199,6 +206,28 @@ async function main() {
   console.log(`BOOKING_ID=${booking.id}`);
   console.log(`COMPLETED_BOOKING_ID=${completedBooking.id}`);
   console.log("--- End ---");
+
+  // Verify that seeded credentials actually work (fail fast if they don't)
+  console.log("\nVerifying seeded credentials...");
+  const verifyRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SERVICE_ROLE_KEY,
+      "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
+    },
+    body: JSON.stringify({ email: familyEmail, password: PASSWORD }),
+  });
+  if (!verifyRes.ok) {
+    const verifyErr = await verifyRes.json();
+    console.error(`❌ VERIFICATION FAILED: Seeded credentials don't work!`);
+    console.error(`   Login attempt for ${familyEmail} returned: ${JSON.stringify(verifyErr)}`);
+    console.error(`   This means E2E tests will ALL fail at login.`);
+    console.error(`   Check: email confirmation settings, password hashing, or Supabase project config.`);
+    process.exit(1);
+  }
+  console.log("  ✅ Seeded credentials verified successfully.");
+
   console.log("\nSeed complete.");
 }
 
