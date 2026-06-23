@@ -21,7 +21,7 @@ appId: ${APP_ID}
 
 # Navigate to Schedule tab
 - tapOn:
-    id: "tab_schedule"
+    text: "Schedule"
 
 # Wait for availability grid
 - extendedWaitUntil:

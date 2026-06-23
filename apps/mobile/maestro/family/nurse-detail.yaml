@@ -11,13 +11,19 @@ appId: ${APP_ID}
 
 # Navigate to Browse tab
 - tapOn:
-    id: "tab_browse"
+    text: "Browse"
+
+# Wait for browse screen to load
+- extendedWaitUntil:
+    visible:
+      id: "browse_input_search"
+    timeout: 10000
 
 # Wait for nurse list
 - extendedWaitUntil:
     visible:
       id: "browse_list_nurses"
-    timeout: 10000
+    timeout: 15000
 
 # Tap on the specific nurse card
 - tapOn:

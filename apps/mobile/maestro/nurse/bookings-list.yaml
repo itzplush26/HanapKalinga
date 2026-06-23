@@ -11,7 +11,7 @@ appId: ${APP_ID}
 
 # Navigate to Bookings tab
 - tapOn:
-    id: "tab_bookings"
+    text: "Bookings"
 
 # Verify bookings list screen loaded
 - extendedWaitUntil:
