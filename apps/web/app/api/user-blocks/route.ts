@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 
 const bodySchema = z.object({ blockedId: z.string().uuid() });
+const querySchema = z.object({ blockedId: z.string().uuid() });
 
 export async function POST(request: Request) {
   const supabase = createClient();
@@ -31,14 +32,14 @@ export async function DELETE(request: Request) {
   if (!auth.user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
-  const blockedId = searchParams.get("blockedId");
-  if (!blockedId) return NextResponse.json({ error: "blockedId required." }, { status: 400 });
+  const parsed = querySchema.safeParse({ blockedId: searchParams.get("blockedId") });
+  if (!parsed.success) return NextResponse.json({ error: "blockedId required." }, { status: 400 });
 
   const { error } = await supabase
     .from("user_blocks")
     .delete()
     .eq("blocker_id", auth.user.id)
-    .eq("blocked_id", blockedId);
+    .eq("blocked_id", parsed.data.blockedId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });

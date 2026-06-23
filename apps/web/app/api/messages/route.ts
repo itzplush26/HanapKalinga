@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { containsProfanity } from "@/lib/validation/sanitize";
+import { maskProfanity } from "@/lib/validation/sanitize";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const bodySchema = z.object({
   bookingId: z.string().uuid(),
@@ -69,6 +70,14 @@ export async function POST(request: Request) {
   }
 
   const { bookingId, content } = parsed.data;
+  const messageRate = checkRateLimit(`messages:${auth.user.id}`, 20, 60_000);
+  if (!messageRate.allowed) {
+    return NextResponse.json(
+      { error: "Too many messages sent. Please wait before sending again." },
+      { status: 429 }
+    );
+  }
+
   const context = await resolveConversationContext(supabase, bookingId, auth.user.id);
   if ("error" in context) {
     return NextResponse.json({ error: context.error }, { status: context.status });
@@ -78,16 +87,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Messaging is unavailable for this conversation." }, { status: 403 });
   }
 
-  if (containsProfanity(content)) {
-    return NextResponse.json({ error: "Please keep messages respectful." }, { status: 400 });
-  }
+  const maskedContent = maskProfanity(content.trim());
 
   const { data: message, error } = await supabase
     .from("messages")
     .insert({
       booking_id: bookingId,
       sender_id: auth.user.id,
-      content: content.trim()
+      content: maskedContent
     })
     .select("id, sender_id, content, created_at")
     .single();

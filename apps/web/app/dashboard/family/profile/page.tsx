@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RegionCitySelects } from "@/components/region-city-selects";
 import { PageHeader } from "@/components/page-header";
@@ -19,7 +20,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { resolveProfileDisplayName } from "@/lib/profile-display";
 import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
 import { z } from "zod";
-import { toTitleCase } from "@/lib/validation/format-name";
+import { buildFormattedFullName, toTitleCase } from "@/lib/validation/format-name";
+import { FAMILY_NAME_SUFFIXES } from "@/lib/validation/name-suffix";
 
 type FamilyProfileValues = z.infer<typeof familyProfileSchema>;
 
@@ -34,6 +36,7 @@ export default function FamilyProfilePage() {
       firstName: "",
       middleName: "",
       lastName: "",
+      nameSuffix: "",
       phone: "",
       region: "",
       city: "",
@@ -53,7 +56,7 @@ export default function FamilyProfilePage() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("first_name, middle_name, last_name, full_name, phone, region, city, barangay, address, profile_photo_url")
+        .select("first_name, middle_name, last_name, name_suffix, full_name, phone, region, city, barangay, address, profile_photo_url")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -64,6 +67,7 @@ export default function FamilyProfilePage() {
           firstName: profile.first_name ?? nameParts[0] ?? "",
           middleName: profile.middle_name ?? "",
           lastName: profile.last_name ?? nameParts.slice(1).join(" ") ?? "",
+          nameSuffix: profile.name_suffix ?? "",
           phone: profile.phone ?? "",
           region: profile.region ?? "",
           city: profile.city ?? "",
@@ -86,9 +90,13 @@ export default function FamilyProfilePage() {
     const normalizedFirstName = toTitleCase(values.firstName);
     const normalizedMiddleName = toTitleCase(values.middleName);
     const normalizedLastName = toTitleCase(values.lastName);
-    const fullName = [normalizedFirstName, normalizedMiddleName, normalizedLastName]
-      .filter((item) => item && item.trim().length > 0)
-      .join(" ");
+    const normalizedNameSuffix = values.nameSuffix?.trim() || null;
+    const fullName = buildFormattedFullName({
+      firstName: normalizedFirstName,
+      middleName: normalizedMiddleName,
+      lastName: normalizedLastName,
+      suffix: normalizedNameSuffix
+    });
 
     await supabase.from("profiles").upsert({
       id: user.id,
@@ -96,6 +104,7 @@ export default function FamilyProfilePage() {
       first_name: normalizedFirstName,
       middle_name: normalizedMiddleName || null,
       last_name: normalizedLastName,
+      name_suffix: normalizedNameSuffix,
       phone: values.phone || null,
       region: values.region,
       city: values.city,
@@ -115,7 +124,9 @@ export default function FamilyProfilePage() {
 
   const displayName = resolveProfileDisplayName({
     first_name: form.watch("firstName"),
-    last_name: form.watch("lastName")
+    middle_name: form.watch("middleName"),
+    last_name: form.watch("lastName"),
+    name_suffix: form.watch("nameSuffix")
   });
 
   async function handleProfilePhotoChange(url: string) {
@@ -174,6 +185,17 @@ export default function FamilyProfilePage() {
             {form.formState.errors.lastName ? (
               <p className="text-xs text-rose-600">{form.formState.errors.lastName.message}</p>
             ) : null}
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="nameSuffix">Suffix (optional)</Label>
+            <Select id="nameSuffix" {...form.register("nameSuffix")}>
+              <option value="">None</option>
+              {FAMILY_NAME_SUFFIXES.map((suffix) => (
+                <option key={suffix} value={suffix}>
+                  {suffix}
+                </option>
+              ))}
+            </Select>
           </div>
           <div className="space-y-1">
             <Label htmlFor="phone">Phone</Label>

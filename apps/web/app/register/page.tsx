@@ -41,8 +41,9 @@ import {
   saveSignupUserId,
   SIGNUP_TOTAL_STEPS
 } from "@/lib/signup-stage";
-import { toTitleCase } from "@/lib/validation/format-name";
+import { buildFormattedFullName, toTitleCase } from "@/lib/validation/format-name";
 import { normalizePrcLicenseInput } from "@/lib/validation/prc-license";
+import { FAMILY_NAME_SUFFIXES, PROVIDER_NAME_SUFFIXES } from "@/lib/validation/name-suffix";
 
 const SIGNUP_STAGE_KEYS = getSignupStageKeys();
 
@@ -93,6 +94,7 @@ export default function RegisterPage() {
       firstName: "",
       middleName: "",
       lastName: "",
+      nameSuffix: "",
       phone: "",
       region: "",
       city: "",
@@ -107,6 +109,7 @@ export default function RegisterPage() {
       firstName: "",
       middleName: "",
       lastName: "",
+      nameSuffix: "",
       providerType: "nurse" as NurseProfileFormValues["providerType"],
       region: "",
       city: "",
@@ -353,6 +356,7 @@ export default function RegisterPage() {
         firstName: string;
         middleName?: string;
         lastName: string;
+        nameSuffix?: string;
         phone?: string;
         region: string;
         city: string;
@@ -363,16 +367,21 @@ export default function RegisterPage() {
       const normalizedFirstName = toTitleCase(familyValues.firstName);
       const normalizedMiddleName = toTitleCase(familyValues.middleName);
       const normalizedLastName = toTitleCase(familyValues.lastName);
+      const normalizedNameSuffix = familyValues.nameSuffix?.trim() || null;
 
       const { error: profileError } = await supabase.from("profiles").upsert({
         id: userId,
         role: "family",
-        full_name: [normalizedFirstName, normalizedMiddleName, normalizedLastName]
-          .filter((part) => part?.trim())
-          .join(" "),
+        full_name: buildFormattedFullName({
+          firstName: normalizedFirstName,
+          middleName: normalizedMiddleName,
+          lastName: normalizedLastName,
+          suffix: normalizedNameSuffix
+        }),
         first_name: normalizedFirstName,
         middle_name: normalizedMiddleName || null,
         last_name: normalizedLastName,
+        name_suffix: normalizedNameSuffix,
         phone: familyValues.phone?.trim() || null,
         region: familyValues.region,
         city: familyValues.city,
@@ -473,6 +482,7 @@ export default function RegisterPage() {
         prcDocumentPath: nurseValues.providerType === "nurse" ? credentialUpload.path : undefined,
         tesdaDocumentPath: nurseValues.providerType === "caregiver" ? credentialUpload.path : undefined,
         nbiDocumentPath: nbiUpload.path,
+        nameSuffix: nurseValues.nameSuffix || undefined,
         termsAcceptedAt: getTermsAcceptedAtForUser(userId) ?? undefined
       })
     });
@@ -791,6 +801,17 @@ export default function RegisterPage() {
               />
             </div>
             <div className="space-y-1">
+              {optionalLabel("Suffix (optional)")}
+              <Select {...familyForm.register("nameSuffix")}>
+                <option value="">None</option>
+                {FAMILY_NAME_SUFFIXES.map((suffix) => (
+                  <option key={suffix} value={suffix}>
+                    {suffix}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className="space-y-1">
               {optionalLabel("Phone (optional)")}
               <Input
                 placeholder="09XXXXXXXXX"
@@ -884,6 +905,17 @@ export default function RegisterPage() {
               {nurseForm.formState.errors.lastName ? (
                 <p className="text-xs text-rose-600">{nurseForm.formState.errors.lastName.message}</p>
               ) : null}
+            </div>
+            <div className="space-y-1">
+              {optionalLabel("Suffix (optional)")}
+              <Select {...nurseForm.register("nameSuffix")}>
+                <option value="">None</option>
+                {PROVIDER_NAME_SUFFIXES.map((suffix) => (
+                  <option key={suffix} value={suffix}>
+                    {suffix}
+                  </option>
+                ))}
+              </Select>
             </div>
             {requiredLabel("Provider type", !!nurseForm.formState.errors.providerType)}
             <Select

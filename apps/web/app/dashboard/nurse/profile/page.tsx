@@ -37,8 +37,9 @@ import { getDocumentExpiryItems, hasExpiredDocuments, type DocumentExpiryItem } 
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ensureNurseProfile } from "@/lib/nurse/ensure-profile";
 import { mapSupabaseError } from "@/lib/user-errors";
-import { toTitleCase } from "@/lib/validation/format-name";
+import { buildFormattedFullName, toTitleCase } from "@/lib/validation/format-name";
 import { normalizePrcLicenseInput } from "@/lib/validation/prc-license";
+import { PROVIDER_NAME_SUFFIXES } from "@/lib/validation/name-suffix";
 import {
   mergeSpecializations,
   SpecializationsPicker,
@@ -64,6 +65,7 @@ export default function NurseProfilePage() {
       firstName: "",
       middleName: "",
       lastName: "",
+      nameSuffix: "",
       phone: "",
       region: "",
       city: "",
@@ -95,7 +97,7 @@ export default function NurseProfilePage() {
           supabase
             .from("profiles")
             .select(
-              "first_name, middle_name, last_name, full_name, phone, region, city, barangay, address, profile_photo_url"
+              "first_name, middle_name, last_name, name_suffix, full_name, phone, region, city, barangay, address, profile_photo_url"
             )
             .eq("id", user.id)
             .maybeSingle(),
@@ -133,6 +135,7 @@ export default function NurseProfilePage() {
           firstName: profile?.first_name ?? nameParts[0] ?? "",
           middleName: profile?.middle_name ?? "",
           lastName: profile?.last_name ?? nameParts.slice(1).join(" ") ?? "",
+          nameSuffix: profile?.name_suffix ?? "",
           phone: profile?.phone ?? "",
           region: profile?.region ?? "",
           city: profile?.city ?? "",
@@ -175,9 +178,13 @@ export default function NurseProfilePage() {
     const normalizedFirstName = toTitleCase(values.firstName);
     const normalizedMiddleName = toTitleCase(values.middleName);
     const normalizedLastName = toTitleCase(values.lastName);
-    const fullName = [normalizedFirstName, normalizedMiddleName, normalizedLastName]
-      .filter((item) => item && item.trim().length > 0)
-      .join(" ");
+    const normalizedNameSuffix = values.nameSuffix?.trim() || null;
+    const fullName = buildFormattedFullName({
+      firstName: normalizedFirstName,
+      middleName: normalizedMiddleName,
+      lastName: normalizedLastName,
+      suffix: normalizedNameSuffix
+    });
 
     const hourlyRates = resolveHourlyRateBandValues(
       (values.hourlyRateRange || undefined) as HourlyRateBandId | undefined
@@ -192,6 +199,7 @@ export default function NurseProfilePage() {
       first_name: normalizedFirstName,
       middle_name: normalizedMiddleName || null,
       last_name: normalizedLastName,
+      name_suffix: normalizedNameSuffix,
       phone: values.phone || null,
       region: values.region,
       city: values.city,
@@ -310,7 +318,9 @@ export default function NurseProfilePage() {
     providerType === "caregiver" ? "TESDA NC II Certificate" : "PRC License";
   const displayName = resolveProfileDisplayName({
     first_name: form.watch("firstName"),
-    last_name: form.watch("lastName")
+    middle_name: form.watch("middleName"),
+    last_name: form.watch("lastName"),
+    name_suffix: form.watch("nameSuffix")
   });
 
   async function handleProfilePhotoChange(url: string) {
@@ -387,6 +397,17 @@ export default function NurseProfilePage() {
               {form.formState.errors.lastName ? (
                 <p className="text-xs text-rose-600">{form.formState.errors.lastName.message}</p>
               ) : null}
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="nameSuffix">Suffix (optional)</Label>
+              <Select id="nameSuffix" {...form.register("nameSuffix")}>
+                <option value="">None</option>
+                {PROVIDER_NAME_SUFFIXES.map((suffix) => (
+                  <option key={suffix} value={suffix}>
+                    {suffix}
+                  </option>
+                ))}
+              </Select>
             </div>
             <div className="space-y-1">
               <Label htmlFor="phone">Phone</Label>

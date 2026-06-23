@@ -11,7 +11,7 @@ import {
 } from "@/lib/rate-ranges";
 import { isProviderRole, profileRoleForProviderType } from "@/lib/provider-role";
 import { hasRequiredDocuments } from "@/lib/admin/verification-documents";
-import { toTitleCase } from "@/lib/validation/format-name";
+import { buildFormattedFullName, toTitleCase } from "@/lib/validation/format-name";
 
 export async function POST(request: Request) {
   try {
@@ -59,9 +59,13 @@ export async function POST(request: Request) {
     const normalizedFirstName = toTitleCase(values.firstName);
     const normalizedMiddleName = toTitleCase(values.middleName);
     const normalizedLastName = toTitleCase(values.lastName);
-    const fullName = [normalizedFirstName, normalizedMiddleName, normalizedLastName]
-      .filter((part) => part?.trim())
-      .join(" ");
+    const normalizedNameSuffix = values.nameSuffix?.trim() || null;
+    const fullName = buildFormattedFullName({
+      firstName: normalizedFirstName,
+      middleName: normalizedMiddleName,
+      lastName: normalizedLastName,
+      suffix: normalizedNameSuffix
+    });
 
     const hourlyRates = resolveHourlyRateBandValues(
       (values.hourlyRateRange || undefined) as HourlyRateBandId | undefined
@@ -80,6 +84,7 @@ export async function POST(request: Request) {
       first_name: normalizedFirstName,
       middle_name: normalizedMiddleName || null,
       last_name: normalizedLastName,
+      name_suffix: normalizedNameSuffix,
       phone: null,
       region: values.region,
       city: values.city,

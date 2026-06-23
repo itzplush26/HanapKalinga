@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState, type RefObject } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { containsProfanity } from "@/lib/validation/sanitize";
 
 type BookingRequestValues = z.infer<typeof bookingRequestSchema>;
 
@@ -91,15 +92,22 @@ function BookingForm() {
     defaultValues: {
       nurseId: defaultNurse,
       requestedDate: "",
-      shift: "morning",
+      shift: "",
       customStartTime: "",
       customEndTime: "",
-      patientCondition: "mobile",
+      patientCondition: "",
       requiredSkills: [],
+      customSkills: [],
       budgetRange: "1500_2500",
       additionalInstructions: ""
     }
   });
+  const [customSkillInput, setCustomSkillInput] = useState("");
+  const [customSkillError, setCustomSkillError] = useState<string | null>(null);
+  const dateFieldRef = useRef<HTMLDivElement | null>(null);
+  const shiftFieldRef = useRef<HTMLDivElement | null>(null);
+  const conditionFieldRef = useRef<HTMLDivElement | null>(null);
+  const skillsFieldRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!defaultNurse) {
@@ -168,25 +176,6 @@ function BookingForm() {
   async function handleSubmit(values: BookingRequestValues) {
     setSubmitError(null);
     setIsSubmitting(true);
-    const { data } = await supabase.auth.getUser();
-    const user = data.user;
-    if (!user) {
-      setIsSubmitting(false);
-      return;
-    }
-
-    const structuredRequest = {
-      patientCondition: values.patientCondition,
-      requiredSkills: values.requiredSkills,
-      budgetRange: values.budgetRange,
-      additionalInstructions: values.additionalInstructions ?? "",
-      ...(values.shift === "custom"
-        ? {
-            customStartTime: values.customStartTime,
-            customEndTime: values.customEndTime
-          }
-        : {})
-    };
 
     const response = await fetch("/api/bookings", {
       method: "POST",
@@ -210,7 +199,56 @@ function BookingForm() {
     setIsSubmitting(false);
   }
 
+  function addCustomSkill() {
+    const normalized = customSkillInput.trim().replace(/\s+/g, " ");
+    if (!normalized) return;
+    if (containsProfanity(normalized)) {
+      setCustomSkillError("Please keep skill descriptions appropriate.");
+      return;
+    }
+
+    const current = form.getValues("customSkills");
+    if (current.length >= 10) {
+      setCustomSkillError("You can add up to 10 custom skills only.");
+      return;
+    }
+    if (current.some((skill) => skill.toLowerCase() === normalized.toLowerCase())) {
+      setCustomSkillInput("");
+      setCustomSkillError(null);
+      return;
+    }
+
+    form.setValue("customSkills", [...current, normalized], { shouldValidate: true });
+    setCustomSkillInput("");
+    setCustomSkillError(null);
+  }
+
+  function removeCustomSkill(skill: string) {
+    const current = form.getValues("customSkills");
+    form.setValue(
+      "customSkills",
+      current.filter((item) => item !== skill),
+      { shouldValidate: true }
+    );
+  }
+
+  function handleInvalidSubmit() {
+    const errors = form.formState.errors;
+    const orderedFields: Array<[keyof BookingRequestValues, RefObject<HTMLDivElement | null>]> = [
+      ["requestedDate", dateFieldRef],
+      ["shift", shiftFieldRef],
+      ["patientCondition", conditionFieldRef],
+      ["requiredSkills", skillsFieldRef]
+    ];
+
+    const firstError = orderedFields.find(([key]) => Boolean(errors[key]));
+    if (firstError?.[1].current) {
+      firstError[1].current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }
+
   const selectedSkills = form.watch("requiredSkills");
+  const customSkills = form.watch("customSkills");
   const selectedShift = form.watch("shift");
   const requestedDate = form.watch("requestedDate");
 
@@ -253,7 +291,7 @@ function BookingForm() {
   }
 
   return (
-    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-3">
+    <form onSubmit={form.handleSubmit(handleSubmit, handleInvalidSubmit)} className="space-y-3">
       {loadingNurse ? (
         <p className="text-sm text-slate-600">Loading nurse...</p>
       ) : nursePreview ? (
@@ -262,32 +300,57 @@ function BookingForm() {
         <p className="text-sm text-rose-600">Nurse not found.</p>
       )}
       <input type="hidden" {...form.register("nurseId")} />
-      <div className="space-y-1">
+      <div ref={dateFieldRef} className="space-y-1">
         <label className="text-sm font-medium text-slate-700">Requested date</label>
-        <AvailableDateInput
-          value={requestedDate}
-          availableDates={availableDates}
-          hasAvailabilitySet={hasAvailabilitySet}
-          onChange={(value) => form.setValue("requestedDate", value, { shouldValidate: true })}
-        />
+        <div
+          className={
+            form.formState.errors.requestedDate
+              ? "rounded-xl border border-rose-500 p-2"
+              : "rounded-xl border border-transparent p-2"
+          }
+        >
+          <AvailableDateInput
+            value={requestedDate}
+            availableDates={availableDates}
+            hasAvailabilitySet={hasAvailabilitySet}
+            onChange={(value) => form.setValue("requestedDate", value, { shouldValidate: true })}
+          />
+        </div>
+        {form.formState.errors.requestedDate ? (
+          <p className="text-xs text-rose-600">{form.formState.errors.requestedDate.message}</p>
+        ) : null}
       </div>
-      <div className="space-y-1">
+      <div ref={conditionFieldRef} className="space-y-1">
         <label className="text-sm font-medium text-slate-700">Patient condition</label>
-        <Select {...form.register("patientCondition")}>
+        <Select
+          {...form.register("patientCondition")}
+          className={form.formState.errors.patientCondition ? "border-rose-500 focus:ring-rose-500" : undefined}
+        >
+          <option value="">Select patient condition</option>
           <option value="bedridden">Bedridden</option>
           <option value="mobile">Mobile</option>
           <option value="assisted">Needs assistance</option>
         </Select>
+        {form.formState.errors.patientCondition ? (
+          <p className="text-xs text-rose-600">{form.formState.errors.patientCondition.message}</p>
+        ) : null}
       </div>
-      <div className="space-y-1">
+      <div ref={shiftFieldRef} className="space-y-1">
         <label className="text-sm font-medium text-slate-700">Shift</label>
-        <Select {...form.register("shift")}>
+        <Select
+          {...form.register("shift")}
+          className={form.formState.errors.shift ? "border-rose-500 focus:ring-rose-500" : undefined}
+        >
+          <option value="">Select shift</option>
           <option value="morning">Morning (6am–2pm)</option>
           <option value="afternoon">Afternoon (2pm–10pm)</option>
           <option value="evening">Evening (10pm–6am)</option>
           <option value="full_day">Full day (24hr)</option>
           <option value="custom">Custom time</option>
         </Select>
+        {form.formState.errors.shift ? (
+          <p className="text-xs text-rose-600">{form.formState.errors.shift.message}</p>
+        ) : null}
       </div>
       {selectedShift === "custom" ? (
         <div className="grid grid-cols-2 gap-3">
@@ -301,29 +364,76 @@ function BookingForm() {
           </div>
         </div>
       ) : null}
-      <div className="space-y-2">
+      <div ref={skillsFieldRef} className="space-y-2">
         <label className="text-sm font-medium text-slate-700">Skills needed</label>
-        <div className="flex flex-wrap gap-2">
-          {BOOKING_SKILLS.map((skill) => {
-            const isSelected = selectedSkills.includes(skill);
-            return (
-              <button
-                key={skill}
-                type="button"
-                onClick={() => toggleSkill(skill)}
-                className={
-                  isSelected
-                    ? "rounded-full border border-brand-300 bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700"
-                    : "rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600"
+        <div
+          className={
+            form.formState.errors.requiredSkills
+              ? "rounded-xl border border-rose-500 p-2"
+              : "rounded-xl border border-transparent p-2"
+          }
+        >
+          <div className="flex flex-wrap gap-2">
+            {BOOKING_SKILLS.map((skill) => {
+              const isSelected = selectedSkills.includes(skill);
+              return (
+                <button
+                  key={skill}
+                  type="button"
+                  onClick={() => toggleSkill(skill)}
+                  className={
+                    isSelected
+                      ? "rounded-full border border-brand-300 bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700"
+                      : "rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600"
+                  }
+                >
+                  {skill}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <p className="text-xs text-slate-600">
+            Add a skill not in the list above and press Enter or click Add.
+          </p>
+          <div className="flex gap-2">
+            <Input
+              value={customSkillInput}
+              placeholder="Add a skill not in the list above and press Enter or click Add."
+              onChange={(event) => setCustomSkillInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  addCustomSkill();
                 }
-              >
-                {skill}
-              </button>
-            );
-          })}
+              }}
+            />
+            <Button type="button" variant="outline" onClick={addCustomSkill}>
+              Add
+            </Button>
+          </div>
+          {customSkills.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {customSkills.map((skill) => (
+                <button
+                  key={skill}
+                  type="button"
+                  onClick={() => removeCustomSkill(skill)}
+                  className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-700"
+                  aria-label={`Remove ${skill}`}
+                >
+                  {skill} ×
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
         {form.formState.errors.requiredSkills ? (
-          <p className="text-xs text-rose-600">Select at least one skill.</p>
+          <p className="text-xs text-rose-600">{form.formState.errors.requiredSkills.message}</p>
+        ) : null}
+        {customSkillError ? (
+          <p className="text-xs text-rose-600">{customSkillError}</p>
         ) : null}
       </div>
       <div className="space-y-1">

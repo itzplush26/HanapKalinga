@@ -565,6 +565,7 @@ export type Database = {
           id: string
           last_name: string | null
           middle_name: string | null
+          name_suffix: string | null
           phone: string | null
           profile_photo_url: string | null
           region: string | null
@@ -581,6 +582,7 @@ export type Database = {
           id: string
           last_name?: string | null
           middle_name?: string | null
+          name_suffix?: string | null
           phone?: string | null
           profile_photo_url?: string | null
           region?: string | null
@@ -597,6 +599,7 @@ export type Database = {
           id?: string
           last_name?: string | null
           middle_name?: string | null
+          name_suffix?: string | null
           phone?: string | null
           profile_photo_url?: string | null
           region?: string | null

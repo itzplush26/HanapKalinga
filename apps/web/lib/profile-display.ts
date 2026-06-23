@@ -1,15 +1,25 @@
-import { toTitleCase } from "@/lib/validation/format-name";
+import { buildFormattedFullName, toTitleCase } from "@/lib/validation/format-name";
 
 export type ProfileNameFields = {
   full_name?: string | null;
   first_name?: string | null;
+  middle_name?: string | null;
   last_name?: string | null;
+  name_suffix?: string | null;
 };
 
 export function resolveProfileDisplayName(
   profile: ProfileNameFields | null | undefined,
   fallback = "Care provider"
 ): string {
+  const structuredName = buildFormattedFullName({
+    firstName: profile?.first_name,
+    middleName: profile?.middle_name,
+    lastName: profile?.last_name,
+    suffix: profile?.name_suffix
+  });
+  if (structuredName) return structuredName;
+
   const fullName = profile?.full_name?.trim();
   if (fullName) return toTitleCase(fullName);
 
