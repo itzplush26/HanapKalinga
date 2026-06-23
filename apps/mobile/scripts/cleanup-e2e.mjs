@@ -68,7 +68,9 @@ async function getIds(table, column, filter) {
 async function main() {
   console.log(`Cleaning up E2E test data (prefix: ${EMAIL_PREFIX})...`);
 
-  // Find all E2E test profile IDs
+  // Find all E2E test profile IDs by full_name prefix
+  // The seed script always creates profiles with full_name starting with "E2E".
+  // This is deterministic and won't match production user data.
   const ids = await getIds("profiles", "id", {
     "full_name": `like.E2E %`,
   });
