@@ -3,13 +3,15 @@ import { isCityInRegion } from "@/lib/data/ph-locations";
 import { nurseProfileFieldsSchema } from "@/lib/validations/profile";
 import { containsProfanity } from "@/lib/validation/sanitize";
 import { isValidPrcLicenseNo, PRC_LICENSE_ERROR } from "@/lib/validation/prc-license";
+import { PROVIDER_NAME_SUFFIXES } from "@/lib/validation/name-suffix";
 
 export const completeNurseRegistrationSchema = nurseProfileFieldsSchema
   .extend({
     prcDocumentPath: z.string().optional(),
     tesdaDocumentPath: z.string().optional(),
     nbiDocumentPath: z.string().min(1, "NBI clearance is required."),
-    termsAcceptedAt: z.string().datetime().optional()
+    termsAcceptedAt: z.string().datetime().optional(),
+    nameSuffix: z.union([z.literal(""), z.enum(PROVIDER_NAME_SUFFIXES)]).optional()
   })
   .superRefine((values, ctx) => {
     if (values.region && values.city && !isCityInRegion(values.city, values.region)) {
