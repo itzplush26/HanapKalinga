@@ -14,6 +14,8 @@
  *   TEST_PASSWORD       — shared password for all test accounts (default: TestPass123!)
  */
 
+import { createClient } from '@supabase/supabase-js';
+
 const SUPABASE_URL = process.env.SUPABASE_URL?.replace(/\/+$/, "");
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const EMAIL_PREFIX = process.env.TEST_EMAIL_PREFIX || "e2e-test";
@@ -25,25 +27,16 @@ if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
   process.exit(1);
 }
 
+// Create Supabase admin client (service_role key bypasses RLS)
+const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+  auth: { autoRefreshToken: false, persistSession: false },
+});
+
 const HEADERS = {
   "Content-Type": "application/json",
   "apikey": SERVICE_ROLE_KEY,
   "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
 };
-
-async function api(path, body, method = "POST") {
-  const url = `${SUPABASE_URL}${path}`;
-  const res = await fetch(url, {
-    method,
-    headers: HEADERS,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(`Supabase API error (${res.status}): ${JSON.stringify(data)}`);
-  }
-  return data;
-}
 
 async function rest(path, method = "GET", body = undefined) {
   const url = `${SUPABASE_URL}/rest/v1${path}`;
@@ -63,22 +56,26 @@ async function rest(path, method = "GET", body = undefined) {
 }
 
 async function createUser(email, role, fullName) {
-  // Create auth user via Supabase Admin API
-  const { id } = await api("/auth/v1/admin/users", {
+  // Create auth user via Supabase Admin client
+  const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
     email,
     password: PASSWORD,
     email_confirm: true,
     user_metadata: { role, full_name: fullName },
   });
 
-  // Explicitly confirm email via PUT (email_confirm: true in POST is unreliable
-  // when "Confirm email" is enabled in the Supabase Dashboard)
-  await api(`/auth/v1/admin/users/${id}`, {
-    email_confirm: true,
-    email_confirmed_at: new Date().toISOString(),
-  }, "PUT");
+  if (createError) throw new Error(`Failed to create user ${email}: ${createError.message}`);
+  const id = userData.user.id;
 
-  // Create profile
+  // Explicitly confirm email via admin client (more reliable than raw API)
+  const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(id, {
+    email_confirm: true,
+  });
+  if (confirmError) {
+    console.warn(`  Warning: Could not confirm email for ${email}: ${confirmError.message}`);
+  }
+
+  // Create profile (uses public schema REST API)
   await rest("/profiles", "POST", {
     id,
     role,
@@ -209,21 +206,13 @@ async function main() {
 
   // Verify that seeded credentials actually work (fail fast if they don't)
   console.log("\nVerifying seeded credentials...");
-  const verifyRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "apikey": SERVICE_ROLE_KEY,
-      "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
-    },
-    body: JSON.stringify({ email: familyEmail, password: PASSWORD }),
+  const { data: signInData, error: signInError } = await supabaseAdmin.auth.signInWithPassword({
+    email: familyEmail,
+    password: PASSWORD,
   });
-  if (!verifyRes.ok) {
-    const verifyErr = await verifyRes.json();
+  if (signInError || !signInData.user) {
     console.error(`❌ VERIFICATION FAILED: Seeded credentials don't work!`);
-    console.error(`   Login attempt for ${familyEmail} returned: ${JSON.stringify(verifyErr)}`);
-    console.error(`   This means E2E tests will ALL fail at login.`);
-    console.error(`   Check: email confirmation settings, password hashing, or Supabase project config.`);
+    console.error(`   Login attempt for ${familyEmail} returned: ${JSON.stringify(signInError)}`);
     process.exit(1);
   }
   console.log("  ✅ Seeded credentials verified successfully.");
