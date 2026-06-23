@@ -28,6 +28,22 @@ case "$shard" in
     ;;
 esac
 
+# Validate credentials are non-empty (fail fast with clear error)
+if [ -z "$test_email" ]; then
+  echo "ERROR: TEST_EMAIL is empty for shard '$shard'. Seed output may be missing." >&2
+  echo "Check that seed-e2e job produced valid outputs." >&2
+  exit 1
+fi
+if [ -z "$password" ]; then
+  echo "ERROR: TEST_PASSWORD is empty for shard '$shard'. Seed output may be missing." >&2
+  exit 1
+fi
+
+# Default prefix for registration flows; must match seed-e2e.mjs default
+email_prefix="${TEST_EMAIL_PREFIX:-e2e-test}"
+
+echo "→ Shard: $shard | Email: $test_email | Prefix: $email_prefix"
+
 failures=0
 total=0
 mkdir -p "$debug_dir"
@@ -63,6 +79,7 @@ for flow in "${flows[@]}"; do
     --env ENV="$target_env" \
     --env TEST_EMAIL="$test_email" \
     --env TEST_PASSWORD="$password" \
+    --env TEST_EMAIL_PREFIX="$email_prefix" \
     --env BOOKING_ID="$booking_id" \
     --env NURSE_ID="$nurse_id" \
     --env VERIFICATION_ID="$verification_id" \
@@ -78,11 +95,15 @@ for flow in "${flows[@]}"; do
     echo "$name|FAIL|$error_msg" >> "$results_file"
     echo "  ❌ $shard/$name: FAILED - $error_msg"
     
+    # Take screenshot and dump hierarchy for debugging
     adb exec-out screencap -p > "$debug_dir/$name.png" || true
     adb shell uiautomator dump /sdcard/window.xml || true
     adb pull /sdcard/window.xml "$debug_dir/$name-window.xml" || true
     adb logcat -d -t 500 > "$debug_dir/$name-logcat.txt" || true
   fi
+
+  # Always force-stop and clear app after each test to prevent state leakage
+  adb shell am force-stop com.hanapkalinga.mobile 2>/dev/null || true
 
   echo "::endgroup::"
 done

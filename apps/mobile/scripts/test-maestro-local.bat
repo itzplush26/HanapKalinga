@@ -129,10 +129,10 @@ if "%VERIFICATION_ID%"=="" set VERIFICATION_ID=test-verification-id
 REM Run tests
 if "%SHARD%"=="all" (
     echo Running all test suites...
-    maestro test maestro\ --env APP_ID=%APP_ID% --env ENV=%ENV% --env TEST_EMAIL=%TEST_EMAIL% --env TEST_PASSWORD=%TEST_PASSWORD% --env BOOKING_ID=%BOOKING_ID% --env NURSE_ID=%NURSE_ID% --env VERIFICATION_ID=%VERIFICATION_ID%
+    maestro test maestro\ --env APP_ID=%APP_ID% --env ENV=%ENV% --env TEST_EMAIL=%TEST_EMAIL% --env TEST_PASSWORD=%TEST_PASSWORD% --env TEST_EMAIL_PREFIX=e2e-test --env BOOKING_ID=%BOOKING_ID% --env NURSE_ID=%NURSE_ID% --env VERIFICATION_ID=%VERIFICATION_ID%
 ) else (
     echo Running %SHARD% tests...
-    maestro test maestro\%SHARD%\ --env APP_ID=%APP_ID% --env ENV=%ENV% --env TEST_EMAIL=%TEST_EMAIL% --env TEST_PASSWORD=%TEST_PASSWORD% --env BOOKING_ID=%BOOKING_ID% --env NURSE_ID=%NURSE_ID% --env VERIFICATION_ID=%VERIFICATION_ID%
+    maestro test maestro\%SHARD%\ --env APP_ID=%APP_ID% --env ENV=%ENV% --env TEST_EMAIL=%TEST_EMAIL% --env TEST_PASSWORD=%TEST_PASSWORD% --env TEST_EMAIL_PREFIX=e2e-test --env BOOKING_ID=%BOOKING_ID% --env NURSE_ID=%NURSE_ID% --env VERIFICATION_ID=%VERIFICATION_ID%
 )
 
 echo.
