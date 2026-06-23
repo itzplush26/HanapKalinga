@@ -76,7 +76,11 @@ jobs:
         run: |
           npx expo prebuild --platform android --clean
           # Legacy native lib packaging — required for SoLoader on x86_64 CI emulators (see RN #55637)
-          sed -i 's/expo.useLegacyPackaging=false/expo.useLegacyPackaging=true/' android/gradle.properties
+          if grep -q 'expo.useLegacyPackaging' android/gradle.properties; then
+            sed -i 's/expo.useLegacyPackaging=.*/expo.useLegacyPackaging=true/' android/gradle.properties
+          else
+            echo 'expo.useLegacyPackaging=true' >> android/gradle.properties
+          fi
           echo "--- gradle.properties (packaging) ---"
           grep -E 'useLegacyPackaging' android/gradle.properties
           cd android
@@ -166,7 +170,7 @@ jobs:
 
       - name: Install Maestro CLI
         run: |
-          curl -Ls "https://get.maestro.mobile.dev" | bash
+          curl -Ls "https://get.maestro.mobile.dev" | bash -s -- --version 1.39.0
           echo "$HOME/.maestro/bin" >> $GITHUB_PATH
 
       - name: Generate AVD snapshot (cache miss)
@@ -237,7 +241,7 @@ jobs:
             adb shell am force-stop com.hanapkalinga.mobile
             sleep 2
             
-            bash apps/mobile/scripts/run-maestro-shard.sh "${{ matrix.shard }}" "${{ inputs.environment || 'staging' }}" "${{ needs.seed-e2e.outputs.FAMILY_EMAIL }}" "${{ needs.seed-e2e.outputs.NURSE_EMAIL }}" "${{ needs.seed-e2e.outputs.ADMIN_EMAIL }}" "${{ needs.seed-e2e.outputs.PASSWORD }}" "${{ needs.seed-e2e.outputs.BOOKING_ID }}" "${{ needs.seed-e2e.outputs.NURSE_ID }}" "${{ needs.seed-e2e.outputs.VERIFICATION_ID }}" "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}"
+            bash apps/mobile/scripts/run-maestro-shard.sh "${{ matrix.shard }}" "${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'staging' }}" "${{ needs.seed-e2e.outputs.FAMILY_EMAIL }}" "${{ needs.seed-e2e.outputs.NURSE_EMAIL }}" "${{ needs.seed-e2e.outputs.ADMIN_EMAIL }}" "${{ needs.seed-e2e.outputs.PASSWORD }}" "${{ needs.seed-e2e.outputs.BOOKING_ID }}" "${{ needs.seed-e2e.outputs.NURSE_ID }}" "${{ needs.seed-e2e.outputs.VERIFICATION_ID }}" "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}"
 
       - name: Sanitize screenshot filenames (remove emoji characters)
         if: always()
