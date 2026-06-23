@@ -3,6 +3,7 @@
  *
  * Creates deterministic test accounts and sample data needed by Maestro flows.
  * Uses the Supabase Admin API (service_role key) — NOT the anon key.
+ * Uses only native fetch (no npm imports) so it can run without npm install.
  *
  * Usage:
  *   node scripts/seed-e2e.mjs
@@ -13,8 +14,6 @@
  *   TEST_EMAIL_PREFIX   — prefix for test emails (default: e2e-test)
  *   TEST_PASSWORD       — shared password for all test accounts (default: TestPass123!)
  */
-
-import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL?.replace(/\/+$/, "");
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -27,16 +26,25 @@ if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
   process.exit(1);
 }
 
-// Create Supabase admin client (service_role key bypasses RLS)
-const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-  auth: { autoRefreshToken: false, persistSession: false },
-});
-
 const HEADERS = {
   "Content-Type": "application/json",
   "apikey": SERVICE_ROLE_KEY,
   "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
 };
+
+async function api(path, body, method = "POST") {
+  const url = `${SUPABASE_URL}${path}`;
+  const res = await fetch(url, {
+    method,
+    headers: HEADERS,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(`Supabase API error (${res.status}): ${JSON.stringify(data)}`);
+  }
+  return data;
+}
 
 async function rest(path, method = "GET", body = undefined) {
   const url = `${SUPABASE_URL}/rest/v1${path}`;
@@ -56,23 +64,23 @@ async function rest(path, method = "GET", body = undefined) {
 }
 
 async function createUser(email, role, fullName) {
-  // Create auth user via Supabase Admin client
-  const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
+  // Create auth user via Supabase Admin API
+  const user = await api("/auth/v1/admin/users", {
     email,
     password: PASSWORD,
     email_confirm: true,
     user_metadata: { role, full_name: fullName },
   });
+  const id = user.id;
 
-  if (createError) throw new Error(`Failed to create user ${email}: ${createError.message}`);
-  const id = userData.user.id;
-
-  // Explicitly confirm email via admin client (more reliable than raw API)
-  const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(id, {
-    email_confirm: true,
-  });
-  if (confirmError) {
-    console.warn(`  Warning: Could not confirm email for ${email}: ${confirmError.message}`);
+  // Confirm email via PUT (more reliable than email_confirm in POST alone,
+  // which can be ignored when "Confirm email" is enabled in Supabase Dashboard)
+  try {
+    await api(`/auth/v1/admin/users/${id}`, {
+      email_confirm: true,
+    }, "PUT");
+  } catch (err) {
+    console.warn(`  Warning: Could not confirm email for ${email} via PUT: ${err.message}`);
   }
 
   // Create profile (uses public schema REST API)
@@ -206,13 +214,20 @@ async function main() {
 
   // Verify that seeded credentials actually work (fail fast if they don't)
   console.log("\nVerifying seeded credentials...");
-  const { data: signInData, error: signInError } = await supabaseAdmin.auth.signInWithPassword({
-    email: familyEmail,
-    password: PASSWORD,
+  const verifyRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SERVICE_ROLE_KEY,
+    },
+    body: JSON.stringify({ email: familyEmail, password: PASSWORD }),
   });
-  if (signInError || !signInData.user) {
+  if (!verifyRes.ok) {
+    const verifyErr = await verifyRes.json();
     console.error(`❌ VERIFICATION FAILED: Seeded credentials don't work!`);
-    console.error(`   Login attempt for ${familyEmail} returned: ${JSON.stringify(signInError)}`);
+    console.error(`   Login attempt for ${familyEmail} returned: ${JSON.stringify(verifyErr)}`);
+    console.error(`   This means E2E tests will ALL fail at login.`);
+    console.error(`   Check: email confirmation settings, password hashing, or Supabase project config.`);
     process.exit(1);
   }
   console.log("  ✅ Seeded credentials verified successfully.");
