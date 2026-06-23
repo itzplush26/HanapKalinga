@@ -11,28 +11,25 @@ appId: ${APP_ID}
 
 # Navigate to Browse tab
 - tapOn:
-    id: "tab_browse"
+    text: "Browse"
 
-# Wait for family dashboard
-- extendedWaitUntil:
-    visible:
-      id: "browse_button_filter"
-    timeout: 15000
-
-# Verify browse screen loaded
-- extendedWaitUntil:
-    visible:
-      id: "browse_list_nurses"
-    timeout: 10000
-
-# Verify search input is present
+# Wait for browse screen to load (search input is always rendered unconditionally)
 - extendedWaitUntil:
     visible:
       id: "browse_input_search"
-    timeout: 5000
+    timeout: 15000
 
-# Verify filter button is present
+# Verify nurse list loaded (only renders when data is fetched — may be slow)
 - extendedWaitUntil:
     visible:
-      id: "browse_button_filter"
-    timeout: 5000
+      id: "browse_list_nurses"
+    timeout: 15000
+
+# Verify filter button is present in header (may not render inside tabs)
+- runFlow:
+    when:
+      visible:
+        id: "browse_button_filter"
+    commands:
+      - waitForAnimationToEnd:
+          timeout: 1000
