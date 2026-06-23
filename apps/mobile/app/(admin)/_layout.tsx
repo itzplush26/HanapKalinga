@@ -61,6 +61,7 @@ function AdminHeader() {
         <TouchableOpacity
           onPress={handleLogout}
           style={styles.logoutButton}
+          testID="admin_button_logout"
           accessibilityRole="button"
           accessibilityLabel="Log out"
         >

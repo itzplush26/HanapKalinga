@@ -67,7 +67,7 @@ export default function NurseDashboardScreen() {
   const banner = status ? VERIFICATION_BANNER[status] : null;
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper testID="nurseDashboard_screen">
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={[styles.pageTitle, { color: colors['text-primary'] }]}>Dashboard</Text>
 
