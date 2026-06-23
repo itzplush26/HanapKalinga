@@ -8,25 +8,62 @@ SHARD=${1:-auth}
 APP_ID="com.hanapkalinga.mobile"
 ENV="staging"
 
-# Default test credentials
-TEST_EMAIL="e2e-test-family@example.com"
-TEST_PASSWORD="TestPass123!"
+# Default test password
+TEST_PASSWORD="${TEST_PASSWORD:-TestPass123!}"
 
-# Optional IDs (set these if running booking/verification tests)
-BOOKING_ID="${BOOKING_ID:-test-booking-id}"
-NURSE_ID="${NURSE_ID:-test-nurse-id}"
-VERIFICATION_ID="${VERIFICATION_ID:-test-verification-id}"
+# ------------------------------------------------------------------
+# Seed test data if Supabase credentials are configured
+# ------------------------------------------------------------------
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SEED_OUTPUT=""
 
-echo "🧪 Running Maestro E2E tests for: $SHARD"
-echo "📱 App ID: $APP_ID"
-echo "🌍 Environment: $ENV"
+if [ -n "${SUPABASE_URL:-}" ] && [ -n "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
+  echo "→ Seeding E2E test data..."
+  SEED_OUTPUT=$(node "$SCRIPT_DIR/seed-e2e.mjs" 2>&1)
+  echo "$SEED_OUTPUT"
+  
+  # Extract values from seed output
+  FAMILY_EMAIL=$(echo "$SEED_OUTPUT" | grep -oE '^FAMILY_EMAIL=.+' | cut -d= -f2)
+  NURSE_EMAIL=$(echo "$SEED_OUTPUT" | grep -oE '^NURSE_EMAIL=.+' | cut -d= -f2)
+  ADMIN_EMAIL=$(echo "$SEED_OUTPUT" | grep -oE '^ADMIN_EMAIL=.+' | cut -d= -f2)
+  SEED_PASSWORD=$(echo "$SEED_OUTPUT" | grep -oE '^PASSWORD=.+' | cut -d= -f2)
+  BOOKING_ID=$(echo "$SEED_OUTPUT" | grep -oE '^BOOKING_ID=.+' | cut -d= -f2)
+  NURSE_ID=$(echo "$SEED_OUTPUT" | grep -oE '^NURSE_ID=.+' | cut -d= -f2)
+  VERIFICATION_ID=$(echo "$SEED_OUTPUT" | grep -oE '^VERIFICATION_ID=.+' | cut -d= -f2)
+  
+  if [ -n "$SEED_PASSWORD" ]; then
+    TEST_PASSWORD="$SEED_PASSWORD"
+  fi
+  
+  echo "→ Seed complete. Using dynamically generated test accounts."
+else
+  echo ""
+  echo "NOTE: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY not set."
+  echo "To auto-seed test accounts, set these environment variables."
+  echo "Using fallback defaults (tests will fail if accounts don't exist)."
+  echo ""
+fi
+
+echo "→ Running Maestro E2E tests for: $SHARD"
+echo "→ App ID: $APP_ID"
+echo "→ Environment: $ENV"
 echo ""
 
 # Check if maestro is installed
+MAESTRO_VERSION="1.39.0"
+
 if ! command -v maestro &> /dev/null; then
-    echo "❌ Maestro CLI not found. Installing..."
-    curl -Ls "https://get.maestro.mobile.dev" | bash
+    echo "❌ Maestro CLI not found. Installing v${MAESTRO_VERSION}..."
+    curl -Ls "https://get.maestro.mobile.dev" | bash -s -- --version "${MAESTRO_VERSION}"
     export PATH="$HOME/.maestro/bin:$PATH"
+else
+    # Check installed version
+    INSTALLED=$(maestro --version 2>/dev/null || echo "unknown")
+    if [ "$INSTALLED" != "$MAESTRO_VERSION" ]; then
+        echo "⚠️  Maestro CLI v${INSTALLED} installed, expected v${MAESTRO_VERSION}. Upgrading..."
+        curl -Ls "https://get.maestro.mobile.dev" | bash -s -- --version "${MAESTRO_VERSION}"
+        export PATH="$HOME/.maestro/bin:$PATH"
+    fi
 fi
 
 # Check if emulator is running
@@ -70,18 +107,28 @@ echo ""
 echo "🚀 Starting Maestro tests..."
 echo ""
 
-# Adjust email based on shard
-case $SHARD in
-    nurse)
-        TEST_EMAIL="e2e-test-nurse@example.com"
-        ;;
-    admin)
-        TEST_EMAIL="e2e-test-admin@example.com"
-        ;;
-    family|auth|all)
-        TEST_EMAIL="e2e-test-family@example.com"
-        ;;
-esac
+# Determine email and IDs based on shard
+if [ -n "${FAMILY_EMAIL:-}" ]; then
+    # Using seeded values
+    case $SHARD in
+        nurse)  TEST_EMAIL="$NURSE_EMAIL" ;;
+        admin)  TEST_EMAIL="$ADMIN_EMAIL" ;;
+        *)      TEST_EMAIL="$FAMILY_EMAIL" ;;
+    esac
+else
+    # Fallback hardcoded defaults
+    echo "WARNING: Using hardcoded test emails. Run seed-e2e.mjs or set SUPABASE_URL first."
+    case $SHARD in
+        nurse)  TEST_EMAIL="e2e-test-nurse@example.com" ;;
+        admin)  TEST_EMAIL="e2e-test-admin@example.com" ;;
+        *)      TEST_EMAIL="e2e-test-family@example.com" ;;
+    esac
+fi
+
+# Ensure IDs are set (seed may have been skipped)
+BOOKING_ID="${BOOKING_ID:-test-booking-id}"
+NURSE_ID="${NURSE_ID:-test-nurse-id}"
+VERIFICATION_ID="${VERIFICATION_ID:-test-verification-id}"
 
 # Run tests
 if [ "$SHARD" == "all" ]; then
