@@ -138,6 +138,7 @@ if [ "$SHARD" == "all" ]; then
         --env ENV="$ENV" \
         --env TEST_EMAIL="$TEST_EMAIL" \
         --env TEST_PASSWORD="$TEST_PASSWORD" \
+        --env TEST_EMAIL_PREFIX="e2e-test" \
         --env BOOKING_ID="$BOOKING_ID" \
         --env NURSE_ID="$NURSE_ID" \
         --env VERIFICATION_ID="$VERIFICATION_ID"
@@ -148,6 +149,7 @@ else
         --env ENV="$ENV" \
         --env TEST_EMAIL="$TEST_EMAIL" \
         --env TEST_PASSWORD="$TEST_PASSWORD" \
+        --env TEST_EMAIL_PREFIX="e2e-test" \
         --env BOOKING_ID="$BOOKING_ID" \
         --env NURSE_ID="$NURSE_ID" \
         --env VERIFICATION_ID="$VERIFICATION_ID"
