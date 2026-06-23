@@ -19,3 +19,9 @@ appId: ${APP_ID}
     notVisible:
       id: "login_button_submit"
     timeout: 30000
+
+# Verify we actually landed on a dashboard (confirm login succeeded)
+- extendedWaitUntil:
+    visible:
+      id: "familyDashboard_button_browse"
+    timeout: 15000

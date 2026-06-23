@@ -18,9 +18,12 @@ env:
 # If a previous session was restored from SecureStore (clearState doesn't clear it),
 # log out first so the landing screen becomes visible.
 # If already on the landing screen, this block is skipped.
+
+# Handle family/nurse logout (they have a Profile tab)
 - runFlow:
     when:
-      visible: "tab_profile"
+      visible:
+        id: "tab_profile"
     commands:
       - tapOn:
           id: "tab_profile"
@@ -29,6 +32,21 @@ env:
           optional: true
       - tapOn:
           id: "logout_button_confirm"
+          optional: true
+      - waitForAnimationToEnd:
+          timeout: 5000
+
+# Handle admin logout (admin layout uses custom header, not tab_profile)
+- runFlow:
+    when:
+      visible:
+        id: "dashboard_metrics_pendingVerifications"
+    commands:
+      - tapOn:
+          id: "admin_button_logout"
+          optional: true
+      - tapOn:
+          text: "Log out"
           optional: true
       - waitForAnimationToEnd:
           timeout: 5000

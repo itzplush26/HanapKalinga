@@ -1,8 +1,10 @@
 appId: ${APP_ID}
 ---
-- launchApp
-- waitForAnimationToEnd:
-    timeout: 15000
+# Use shared setup to clear auth state and ensure we're on the landing screen
+- runFlow:
+    file: shared/setup.yaml
+
+# Smoke test: verify key landing page elements are visible
 - assertVisible:
     id: "landing_button_login"
 - assertVisible:
