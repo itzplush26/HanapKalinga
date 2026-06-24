@@ -106,7 +106,9 @@ for flow in "${flows[@]}"; do
     adb exec-out screencap -p > "$debug_dir/$name.png" || true
     adb shell uiautomator dump /sdcard/window.xml || true
     adb pull /sdcard/window.xml "$debug_dir/$name-window.xml" || true
-    adb logcat -d -t 500 > "$debug_dir/$name-logcat.txt" || true
+    # Capture app JS logs (ReactNativeJS) + WebView console + broader buffer
+    adb logcat -d -s ReactNativeJS:V -t 3000 > "$debug_dir/$name-logcat.txt" 2>/dev/null || true
+    adb logcat -d -t 3000 >> "$debug_dir/$name-logcat.txt" 2>/dev/null || true
   fi
 
   # Always force-stop and clear app after each test to prevent state leakage
