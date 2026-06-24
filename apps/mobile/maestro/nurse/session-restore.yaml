@@ -12,6 +12,18 @@ appId: ${APP_ID}
 - tapOn:
     id: "login_input_password"
 - inputText: ${TEST_PASSWORD}
+
+# Wait for captcha to be ready (if captcha is configured)
+- runFlow:
+    when:
+      visible:
+        id: "login_captcha_widget"
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: "login_captcha_ready"
+          timeout: 30000
+
 - tapOn:
     id: "login_button_submit"
 
