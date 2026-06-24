@@ -133,10 +133,17 @@ if (-not $SkipSeed) {
 # =============================================
 
 function Get-CommonEnv {
+  # Generate unique registration emails (Maestro has no built-in ${RANDOM} variable)
+  $registerTs = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+  $registerEmailFamily = "e2e-test-family-$registerTs@example.com"
+  $registerEmailNurse = "e2e-test-nurse-$registerTs@example.com"
+
   $argsList = @(
     "--env", "APP_ID=$env:APP_ID",
     "--env", "ENV=$Env",
-    "--env", "TEST_EMAIL_PREFIX=$env:TEST_EMAIL_PREFIX"
+    "--env", "TEST_EMAIL_PREFIX=$env:TEST_EMAIL_PREFIX",
+    "--env", "REGISTER_EMAIL_FAMILY=$registerEmailFamily",
+    "--env", "REGISTER_EMAIL_NURSE=$registerEmailNurse"
   )
   if ($SEED['PASSWORD']) {
     $argsList += "--env"; $argsList += "TEST_PASSWORD=$($SEED['PASSWORD'])"

@@ -212,25 +212,30 @@ async function main() {
   console.log(`COMPLETED_BOOKING_ID=${completedBooking.id}`);
   console.log("--- End ---");
 
-  // Verify that seeded credentials actually work (fail fast if they don't)
-  console.log("\nVerifying seeded credentials...");
-  const verifyRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "apikey": SERVICE_ROLE_KEY,
-    },
-    body: JSON.stringify({ email: familyEmail, password: PASSWORD }),
+  // Verify that seeded users exist and are email-confirmed (fail fast if they don't).
+  // We use the Admin API (service_role key) instead of the password grant endpoint
+  // because the password grant endpoint enforces captcha protection, which the seed
+  // script cannot solve. The Admin API bypasses captcha.
+  console.log("\nVerifying seeded users via Admin API...");
+  const verifyRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${familyId}`, {
+    method: "GET",
+    headers: HEADERS,
   });
   if (!verifyRes.ok) {
-    const verifyErr = await verifyRes.json();
-    console.error(`❌ VERIFICATION FAILED: Seeded credentials don't work!`);
-    console.error(`   Login attempt for ${familyEmail} returned: ${JSON.stringify(verifyErr)}`);
-    console.error(`   This means E2E tests will ALL fail at login.`);
-    console.error(`   Check: email confirmation settings, password hashing, or Supabase project config.`);
+    const verifyErr = await verifyRes.json().catch(() => ({}));
+    console.error(`❌ VERIFICATION FAILED: Seeded user not found via Admin API!`);
+    console.error(`   Lookup for ${familyEmail} (id: ${familyId}) returned: ${JSON.stringify(verifyErr)}`);
+    console.error(`   This means the seed did not create the user correctly.`);
     process.exit(1);
   }
-  console.log("  ✅ Seeded credentials verified successfully.");
+  const verifyUser = await verifyRes.json();
+  if (!verifyUser.email_confirmed_at) {
+    console.error(`❌ VERIFICATION FAILED: Seeded user email is not confirmed!`);
+    console.error(`   User ${familyEmail} has email_confirmed_at: null`);
+    console.error(`   Check Supabase Dashboard → Authentication → Settings → "Confirm email" settings.`);
+    process.exit(1);
+  }
+  console.log("  ✅ Seeded user verified (exists, email confirmed).");
 
   console.log("\nSeed complete.");
 }

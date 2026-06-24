@@ -130,6 +130,11 @@ BOOKING_ID="${BOOKING_ID:-test-booking-id}"
 NURSE_ID="${NURSE_ID:-test-nurse-id}"
 VERIFICATION_ID="${VERIFICATION_ID:-test-verification-id}"
 
+# Generate unique registration emails (Maestro has no built-in ${RANDOM} variable)
+REGISTER_TS="$(date +%s%N 2>/dev/null || date +%s)"
+REGISTER_EMAIL_FAMILY="e2e-test-family-${REGISTER_TS}@example.com"
+REGISTER_EMAIL_NURSE="e2e-test-nurse-${REGISTER_TS}@example.com"
+
 # Run tests
 if [ "$SHARD" == "all" ]; then
     echo "Running all test suites..."
@@ -139,6 +144,8 @@ if [ "$SHARD" == "all" ]; then
         --env TEST_EMAIL="$TEST_EMAIL" \
         --env TEST_PASSWORD="$TEST_PASSWORD" \
         --env TEST_EMAIL_PREFIX="e2e-test" \
+        --env REGISTER_EMAIL_FAMILY="$REGISTER_EMAIL_FAMILY" \
+        --env REGISTER_EMAIL_NURSE="$REGISTER_EMAIL_NURSE" \
         --env BOOKING_ID="$BOOKING_ID" \
         --env NURSE_ID="$NURSE_ID" \
         --env VERIFICATION_ID="$VERIFICATION_ID"
@@ -150,6 +157,8 @@ else
         --env TEST_EMAIL="$TEST_EMAIL" \
         --env TEST_PASSWORD="$TEST_PASSWORD" \
         --env TEST_EMAIL_PREFIX="e2e-test" \
+        --env REGISTER_EMAIL_FAMILY="$REGISTER_EMAIL_FAMILY" \
+        --env REGISTER_EMAIL_NURSE="$REGISTER_EMAIL_NURSE" \
         --env BOOKING_ID="$BOOKING_ID" \
         --env NURSE_ID="$NURSE_ID" \
         --env VERIFICATION_ID="$VERIFICATION_ID"
