@@ -42,6 +42,11 @@ fi
 # Default prefix for registration flows; must match seed-e2e.mjs default
 email_prefix="${TEST_EMAIL_PREFIX:-e2e-test}"
 
+# Generate unique registration emails (Maestro has no built-in ${RANDOM} variable)
+register_ts="$(date +%s%N 2>/dev/null || date +%s)"
+register_email_family="${email_prefix}-family-${register_ts}@example.com"
+register_email_nurse="${email_prefix}-nurse-${register_ts}@example.com"
+
 echo "→ Shard: $shard | Email: $test_email | Prefix: $email_prefix"
 
 failures=0
@@ -80,6 +85,8 @@ for flow in "${flows[@]}"; do
     --env TEST_EMAIL="$test_email" \
     --env TEST_PASSWORD="$password" \
     --env TEST_EMAIL_PREFIX="$email_prefix" \
+    --env REGISTER_EMAIL_FAMILY="$register_email_family" \
+    --env REGISTER_EMAIL_NURSE="$register_email_nurse" \
     --env BOOKING_ID="$booking_id" \
     --env NURSE_ID="$nurse_id" \
     --env VERIFICATION_ID="$verification_id" \
