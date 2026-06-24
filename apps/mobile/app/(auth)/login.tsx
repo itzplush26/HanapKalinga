@@ -10,6 +10,7 @@ import { ScreenWrapper } from '../../src/components/ScreenWrapper';
 import { Input } from '../../src/components/ui/Input';
 import { Button } from '../../src/components/ui/Button';
 import { TextLink } from '../../src/components/ui/TextLink';
+import { TurnstileWidget, useTurnstileRequired } from '../../src/components/TurnstileWidget';
 import { spacing } from '../../src/theme/spacing';
 import { typography } from '../../src/theme/typography';
 
@@ -17,11 +18,13 @@ export default function LoginScreen() {
   const router = useRouter();
   const { getRedirectPath } = useAuth();
   const { colors } = useTheme();
+  const turnstileRequired = useTurnstileRequired();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const handleLogin = async () => {
     setError('');
@@ -38,15 +41,31 @@ export default function LoginScreen() {
       return;
     }
 
+    if (turnstileRequired && !captchaToken) {
+      setError('Please complete the verification challenge.');
+      return;
+    }
+
     setLoading(true);
     try {
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
+        options: captchaToken ? { captchaToken } : undefined,
       });
 
       if (authError) {
-        setError('Invalid email or password');
+        const lowered = authError.message.toLowerCase();
+        if (lowered.includes('captcha') || lowered.includes('turnstile')) {
+          setError('Verification failed. Please try again.');
+          setCaptchaToken(null);
+        } else if (__DEV__) {
+          // Show the real error in dev for debugging (e.g., "Email not confirmed")
+          console.warn('[Login] Auth error:', authError.message);
+          setError(authError.message);
+        } else {
+          setError('Invalid email or password');
+        }
         return;
       }
 
@@ -111,7 +130,22 @@ export default function LoginScreen() {
             </Text>
           ) : null}
 
-          <Button onPress={handleLogin} loading={loading} style={styles.submit} testID="login_button_submit">
+          {turnstileRequired ? (
+            <TurnstileWidget
+              onToken={setCaptchaToken}
+              onExpire={() => setCaptchaToken(null)}
+              onError={() => setCaptchaToken(null)}
+              testIDPrefix="login_captcha"
+            />
+          ) : null}
+
+          <Button
+            onPress={handleLogin}
+            loading={loading}
+            disabled={turnstileRequired && !captchaToken}
+            style={styles.submit}
+            testID="login_button_submit"
+          >
             Sign In
           </Button>
 
