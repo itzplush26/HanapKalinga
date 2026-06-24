@@ -1,6 +1,6 @@
 appId: ${APP_ID}
 env:
-  REGISTER_EMAIL: ${TEST_EMAIL_PREFIX}-family-${RANDOM}@test.com
+  REGISTER_EMAIL: ${REGISTER_EMAIL_FAMILY}
   OTP_DIGIT_0: "0"
   OTP_DIGIT_1: "0"
   OTP_DIGIT_2: "0"
@@ -20,6 +20,18 @@ env:
 - tapOn:
     id: "register_input_email"
 - inputText: ${REGISTER_EMAIL}
+
+# Wait for captcha to be ready (if captcha is configured)
+- runFlow:
+    when:
+      visible:
+        id: "register_captcha_widget"
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: "register_captcha_ready"
+          timeout: 30000
+
 - tapOn:
     id: "register_button_sendOtp"
 
