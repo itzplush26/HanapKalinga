@@ -71,17 +71,15 @@ jobs:
       - name: Prebuild & assemble release APK
         working-directory: apps/mobile
         env:
-          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          # Turnstile site key — baked into the JS bundle so the WebView
-          # renders the Cloudflare Turnstile widget. Use the real production
-          # site key (the widget must be in Non-Interactive or Invisible mode
-          # so the CI emulator auto-passes without user interaction).
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL_STAGING }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY_STAGING }}
+          # Turnstile site key — using Cloudflare's official test key
+          # (1x00000000000000000000AA). This always passes in CI environments
+          # without requiring a real Turnstile challenge.
           EXPO_PUBLIC_TURNSTILE_SITE_KEY: ${{ secrets.EXPO_PUBLIC_TURNSTILE_SITE_KEY_E2E }}
           # App URL — used as the WebView baseUrl so Turnstile sees an
-          # authorized hostname. Must match a hostname in your Cloudflare
-          # Turnstile widget's allowed hostnames.
-          EXPO_PUBLIC_APP_URL: ${{ secrets.EXPO_PUBLIC_APP_URL }}
+          # authorized hostname. Test keys accept any hostname.
+          EXPO_PUBLIC_APP_URL: https://example.com
         run: |
           npx expo prebuild --platform android --clean
           # Legacy native lib packaging — required for SoLoader on x86_64 CI emulators (see RN #55637)
@@ -130,8 +128,8 @@ jobs:
           node apps/mobile/scripts/seed-e2e.mjs 2>&1 | tee /tmp/seed-output.txt
           grep -oE '^[A-Z_]+=.+' /tmp/seed-output.txt >> $GITHUB_OUTPUT
         env:
-          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL_STAGING }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY_STAGING }}
 
   maestro-android:
     name: Maestro (${{ matrix.shard }})
@@ -181,7 +179,12 @@ jobs:
       - name: Install Maestro CLI
         run: |
           curl -Ls "https://get.maestro.mobile.dev" | bash -s -- --version 1.39.0
+          if [ ! -x "$HOME/.maestro/bin/maestro" ]; then
+            echo "ERROR: Maestro CLI installation failed (binary not found)" >&2
+            exit 1
+          fi
           echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+          maestro --version
 
       - name: Generate AVD snapshot (cache miss)
         if: steps.avd-cache.outputs.cache-hit != 'true'
@@ -354,5 +357,5 @@ jobs:
       - name: Run cleanup
         run: node apps/mobile/scripts/cleanup-e2e.mjs
         env:
-          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL_STAGING }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY_STAGING }}
