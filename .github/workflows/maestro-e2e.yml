@@ -184,6 +184,7 @@ jobs:
             exit 1
           fi
           echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.maestro/bin:$PATH"
           maestro --version
 
       - name: Generate AVD snapshot (cache miss)
