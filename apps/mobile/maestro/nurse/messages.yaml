@@ -11,7 +11,7 @@ appId: ${APP_ID}
 
 # Navigate to Messages tab
 - tapOn:
-    text: "Messages"
+    id: "tab_messages"
 
 # Verify messages screen loaded
 - extendedWaitUntil:
