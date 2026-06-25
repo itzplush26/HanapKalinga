@@ -11,7 +11,7 @@ appId: ${APP_ID}
 
 # Navigate to Browse tab
 - tapOn:
-    text: "Browse"
+    id: "tab_browse"
 
 # Wait for browse screen to load (search input is always rendered unconditionally)
 - extendedWaitUntil:
