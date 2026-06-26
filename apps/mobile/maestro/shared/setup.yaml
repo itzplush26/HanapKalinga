@@ -23,10 +23,10 @@ env:
 - runFlow:
     when:
       visible:
-        id: "tab_profile"
+        text: "Profile"
     commands:
       - tapOn:
-          id: "tab_profile"
+          text: "Profile"
       - tapOn:
           id: "profile_button_logout"
           optional: true

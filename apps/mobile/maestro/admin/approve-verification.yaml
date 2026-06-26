@@ -19,7 +19,13 @@ appId: ${APP_ID}
       id: "verificationQueue_list_requests"
     timeout: 15000
 
-# Tap on verification request
+# Scroll to and tap on verification request
+- scrollUntilVisible:
+    element:
+      id: "verificationQueue_card_${VERIFICATION_ID}"
+    direction: DOWN
+    timeout: 15000
+    speed: 40
 - tapOn:
     id: "verificationQueue_card_${VERIFICATION_ID}"
 

@@ -15,6 +15,9 @@ appId: ${APP_ID}
     id: "login_input_password"
 - inputText: ${TEST_PASSWORD}
 
+# Dismiss keyboard before captcha/submit
+- hideKeyboard
+
 # Wait for captcha to be ready (if captcha is configured)
 - runFlow:
     when:
