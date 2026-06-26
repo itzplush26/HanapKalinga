@@ -45,8 +45,24 @@ appId: ${APP_ID}
 - tapOn:
     id: "verificationDetail_button_approve"
 
-# Wait for action to complete and return to queue
+# Confirm the approve action in the native dialog
 - extendedWaitUntil:
     visible:
-      id: "verificationQueue_list_requests"
-    timeout: 15000
+      text: "Are you sure you want to approve this applicant?"
+    timeout: 5000
+- tapOn:
+    text: "Approve"
+
+# Wait for and dismiss the success dialog
+- extendedWaitUntil:
+    visible:
+      text: "Verification approved completed"
+    timeout: 10000
+- tapOn:
+    text: "OK"
+
+# Verify the status has been updated on the detail screen
+- extendedWaitUntil:
+    visible:
+      text: "verified"
+    timeout: 10000
