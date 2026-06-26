@@ -1,9 +1,10 @@
-import { Redirect } from 'expo-router';
+// Directly render the BrowseNursesScreen component rather than using <Redirect>
+// or router.replace() — cross-group navigation from (family) to (public) via
+// routing primitives crashes the app or switches to the Nexus Launcher.
+// By importing the component directly, we stay within the (family) tab context
+// while rendering the same browse UI.
+import BrowseNursesScreen from '../(public)/nurses/index';
 
 export default function BrowseTab() {
-  // Use <Redirect> instead of imperative router.replace to ensure Expo Router
-  // properly resolves the cross-group navigation from (family) to (public).
-  // The browse screen lives at (public)/nurses/index.tsx and is always rendered
-  // unconditionally including its search input (testID: browse_input_search).
-  return <Redirect href="/(public)/nurses" />;
+  return <BrowseNursesScreen />;
 }
