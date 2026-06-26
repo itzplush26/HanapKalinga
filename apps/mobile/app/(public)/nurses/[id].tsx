@@ -201,13 +201,13 @@ export default function NurseDetailScreen() {
           <View style={styles.rateGrid}>
             <Card variant="default" roundedSize="md" style={styles.rateCard}>
               <Text style={styles.rateLabel}>Hourly Rate</Text>
-              <Text style={styles.rateValue} testID="nurseDetail_text_rate">
+              <Text style={styles.rateValue} testID="nurseDetail_text_hourlyRate">
                 {nurse.hourly_rate ? `P${nurse.hourly_rate}/hr` : 'Not set'}
               </Text>
             </Card>
             <Card variant="default" roundedSize="md" style={styles.rateCard}>
               <Text style={styles.rateLabel}>Daily Rate (12hr)</Text>
-              <Text style={styles.rateValue} testID="nurseDetail_text_rate">
+              <Text style={styles.rateValue} testID="nurseDetail_text_dailyRate">
                 {nurse.daily_rate_12hr ? `P${nurse.daily_rate_12hr.toLocaleString('en-PH')}/day` : 'Not set'}
               </Text>
             </Card>
