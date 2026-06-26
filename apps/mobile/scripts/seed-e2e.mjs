@@ -98,7 +98,11 @@ async function createUser(email, role, fullName) {
 }
 
 async function createNurse(id, overrides = {}) {
-  await rest(`/nurses?id=eq.${id}`, "PATCH", {
+  // Use POST (upsert) instead of PATCH so the record is created if it doesn't exist.
+  // Supabase REST API upserts when sending POST with Prefer: resolution=merge-duplicates.
+  const url = `${SUPABASE_URL}/rest/v1/nurses`;
+  const body = {
+    id,
     provider_type: "nurse",
     prc_license_no: `PRC-${TIMESTAMP}`,
     prc_document_url: `https://example.com/prc-${TIMESTAMP}.pdf`,
@@ -114,7 +118,20 @@ async function createNurse(id, overrides = {}) {
     profile_slug: `e2e-nurse-${TIMESTAMP}`,
     submitted_at: new Date().toISOString(),
     ...overrides,
+  };
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      ...HEADERS,
+      "Prefer": "return=representation, resolution=merge-duplicates",
+    },
+    body: JSON.stringify(body),
   });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(`Supabase REST upsert error (${res.status}): ${JSON.stringify(data)}`);
+  }
+  return data;
 }
 
 async function createFamily(id) {
