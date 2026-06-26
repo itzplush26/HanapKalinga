@@ -372,6 +372,7 @@ export default function VerificationReviewScreen() {
                   onChangeText={setRejectionReason}
                   multiline
                   accessibilityLabel="Rejection reason"
+                  testID="verificationDetail_input_rejectionReason"
                 />
                 <TextInput
                   style={styles.textArea}
@@ -393,7 +394,7 @@ export default function VerificationReviewScreen() {
                   >
                     Cancel
                   </Button>
-                  <Button variant="primary" onPress={confirmReject}>
+                  <Button variant="primary" onPress={confirmReject} testID="verificationDetail_button_confirmReject">
                     Confirm Reject
                   </Button>
                 </View>
