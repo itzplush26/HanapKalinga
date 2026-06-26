@@ -55,7 +55,7 @@ function buildNurseQuery(filters: NurseFilters, page: number) {
       verification_status,
       provider_type,
       bio,
-      profile:profiles!inner(
+      profile:profiles!nurses_id_fkey!inner(
         full_name,
         city,
         region

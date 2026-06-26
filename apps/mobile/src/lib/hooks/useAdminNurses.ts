@@ -44,7 +44,7 @@ export function useAdminNurses(): UseAdminNursesResult {
           id,
           verification_status,
           provider_type,
-          profile:profiles!inner(
+          profile:profiles!nurses_id_fkey!inner(
             full_name,
             city
           )
