@@ -200,6 +200,15 @@ async function main() {
   });
   console.log(`  Created sample booking: ${booking.id}`);
 
+  // 5b. Create a second pending booking for the decline flow.
+  //      Must be a separate booking so both accept-booking and decline-booking
+  //      can act on a pending booking (they share a shard and run sequentially).
+  const declineBooking = await createBooking(familyId, nurseId, "pending", {
+    notes: "E2E test - pending booking for decline flow",
+    requested_date: new Date(Date.now() + 2 * 86400000).toISOString().split("T")[0],
+  });
+  console.log(`  Created decline booking: ${declineBooking.id}`);
+
   // 6. Create sample availability for the verified nurse
   for (let day = 1; day <= 7; day++) {
     await createAvailability(nurseId, day, "morning");
@@ -226,6 +235,7 @@ async function main() {
   console.log(`NURSE_ID=${nurseId}`);
   console.log(`VERIFICATION_ID=${pendingNurseId}`);
   console.log(`BOOKING_ID=${booking.id}`);
+  console.log(`DECLINE_BOOKING_ID=${declineBooking.id}`);
   console.log(`COMPLETED_BOOKING_ID=${completedBooking.id}`);
   console.log("--- End ---");
 
