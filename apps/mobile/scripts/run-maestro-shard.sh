@@ -47,7 +47,40 @@ register_ts="$(date +%s%N 2>/dev/null || date +%s)"
 register_email_family="${email_prefix}-family-${register_ts}@example.com"
 register_email_nurse="${email_prefix}-nurse-${register_ts}@example.com"
 
+# Compute the current week's Monday date (YYYY-MM-DD) for set-availability flow.
+# Passed as --env to work around Maestro 1.39.0 runScript output scoping issues.
+# GNU date syntax (Ubuntu CI): "N days ago" with N = (1 - day_of_week).
+# day_of_week: 1=Mon .. 7=Sun, so 1 - $(date +%u) gives 0 (Mon) to -6 (Sun).
+monday_offset="$((1 - $(date +%u)))"
+monday_date="$(date -d "${monday_offset} days" +%Y-%m-%d 2>/dev/null)"
+if [ -z "$monday_date" ]; then
+  # Fallback: compute manually
+  day_of_week="$(date +%w)" # 0=Sun .. 6=Sat
+  diff="$(( (day_of_week == 0 ? -6 : 1) - day_of_week ))"
+  monday_date="$(date -d "${diff} days" +%Y-%m-%d)"
+fi
+echo "→ Computed Monday date: $monday_date"
+
 echo "→ Shard: $shard | Email: $test_email | Prefix: $email_prefix"
+
+# === Verify app is running before executing any flows ===
+# This prevents "Nexus Launcher" failures on the first flow after APK install.
+echo "→ Verifying app process is running..."
+for attempt in 1 2 3 4 5; do
+  if adb shell pidof com.hanapkalinga.mobile > /dev/null 2>&1; then
+    echo "  ✓ App process found (attempt $attempt)"
+    break
+  fi
+  echo "  App process not found, relaunching (attempt $attempt)..."
+  adb shell am start -n com.hanapkalinga.mobile/.MainActivity
+  sleep 5
+done
+if ! adb shell pidof com.hanapkalinga.mobile > /dev/null 2>&1; then
+  echo "  ⚠ App process still not found after 5 attempts. Proceeding anyway (first flow may fail)."
+fi
+adb shell am force-stop com.hanapkalinga.mobile 2>/dev/null || true
+sleep 2
+echo ""
 
 failures=0
 total=0
@@ -90,6 +123,7 @@ for flow in "${flows[@]}"; do
     --env BOOKING_ID="$booking_id" \
     --env NURSE_ID="$nurse_id" \
     --env VERIFICATION_ID="$verification_id" \
+    --env dateStr="$monday_date" \
     > "$output_file" 2>&1; then
     echo "$name|PASS|" >> "$results_file"
     echo "  ✅ $shard/$name: PASSED"
