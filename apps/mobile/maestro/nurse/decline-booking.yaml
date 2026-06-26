@@ -25,7 +25,7 @@ appId: ${APP_ID}
 
 # Tap on a pending booking
 - tapOn:
-    id: "nurseBookings_card_${BOOKING_ID}"
+    id: "nurseBookings_card_${DECLINE_BOOKING_ID}"
 
 # Wait for booking detail
 - extendedWaitUntil:
