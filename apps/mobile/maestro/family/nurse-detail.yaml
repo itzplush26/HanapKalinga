@@ -10,8 +10,12 @@ appId: ${APP_ID}
       TEST_PASSWORD: ${TEST_PASSWORD}
 
 # Navigate to Browse tab
+- extendedWaitUntil:
+    visible:
+      text: "Browse"
+    timeout: 15000
 - tapOn:
-    id: "tab_browse"
+    text: "Browse"
 
 # Wait for browse screen to load
 - extendedWaitUntil:

@@ -30,5 +30,5 @@ appId: ${APP_ID}
 # Verify nurse dashboard loaded
 - extendedWaitUntil:
     visible:
-      id: "availability_button_save"
+      id: "nurseDashboard_screen"
     timeout: 10000
