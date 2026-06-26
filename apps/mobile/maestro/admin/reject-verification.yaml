@@ -35,7 +35,13 @@ appId: ${APP_ID}
       id: "verificationDetail_text_name"
     timeout: 10000
 
-# Tap reject
+# Scroll to and tap reject
+- scrollUntilVisible:
+    element:
+      id: "verificationDetail_button_reject"
+    direction: DOWN
+    timeout: 10000
+    speed: 40
 - tapOn:
     id: "verificationDetail_button_reject"
 

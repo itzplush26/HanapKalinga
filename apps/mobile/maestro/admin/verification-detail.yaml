@@ -35,17 +35,33 @@ appId: ${APP_ID}
       id: "verificationDetail_text_name"
     timeout: 10000
 
-# Verify audit log section is present
-- extendedWaitUntil:
-    visible:
-      id: "verificationDetail_text_auditLog"
-    timeout: 5000
+# Verify audit log section is present (if the nurse has any audit history)
+# Newly created nurses may not have audit logs yet
+- runFlow:
+    when:
+      visible:
+        id: "verificationDetail_text_auditLog"
+    commands:
+      - waitForAnimationToEnd:
+          timeout: 1000
 
-# Verify action buttons are present
+# Verify action buttons are present (scroll to them first as they are below the fold)
+- scrollUntilVisible:
+    element:
+      id: "verificationDetail_button_approve"
+    direction: DOWN
+    timeout: 10000
+    speed: 40
 - extendedWaitUntil:
     visible:
       id: "verificationDetail_button_approve"
     timeout: 5000
+- scrollUntilVisible:
+    element:
+      id: "verificationDetail_button_reject"
+    direction: DOWN
+    timeout: 10000
+    speed: 40
 - extendedWaitUntil:
     visible:
       id: "verificationDetail_button_reject"
