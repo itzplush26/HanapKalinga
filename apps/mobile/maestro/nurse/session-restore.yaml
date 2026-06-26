@@ -52,8 +52,10 @@ appId: ${APP_ID}
       id: "landing_button_login"
     timeout: 20000
 
-# Verify we landed on nurse dashboard
+# Verify we landed on nurse dashboard (Home tab — not Schedule/availability)
+# Session restore lands on the role's default dashboard screen,
+# NOT the availability/schedule tab.
 - extendedWaitUntil:
     visible:
-      id: "availability_button_save"
+      id: "nurseDashboard_screen"
     timeout: 15000
