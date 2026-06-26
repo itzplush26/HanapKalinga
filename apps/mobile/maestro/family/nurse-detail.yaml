@@ -42,7 +42,7 @@ appId: ${APP_ID}
 # Verify rate is displayed
 - extendedWaitUntil:
     visible:
-      id: "nurseDetail_text_rate"
+      id: "nurseDetail_text_hourlyRate"
     timeout: 5000
 
 # Verify request booking button is present
