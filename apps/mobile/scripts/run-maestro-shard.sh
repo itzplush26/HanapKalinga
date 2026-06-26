@@ -11,6 +11,7 @@ booking_id="$7"
 nurse_id="$8"
 verification_id="$9"
 debug_dir="${10}"
+decline_booking_id="${11}"
 
 case "$shard" in
   nurse)
@@ -123,6 +124,7 @@ for flow in "${flows[@]}"; do
     --env BOOKING_ID="$booking_id" \
     --env NURSE_ID="$nurse_id" \
     --env VERIFICATION_ID="$verification_id" \
+    --env DECLINE_BOOKING_ID="$decline_booking_id" \
     --env dateStr="$monday_date" \
     > "$output_file" 2>&1; then
     echo "$name|PASS|" >> "$results_file"

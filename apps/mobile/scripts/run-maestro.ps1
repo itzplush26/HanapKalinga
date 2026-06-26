@@ -157,6 +157,9 @@ function Get-CommonEnv {
   if ($SEED['VERIFICATION_ID']) {
     $argsList += "--env"; $argsList += "VERIFICATION_ID=$($SEED['VERIFICATION_ID'])"
   }
+  if ($SEED['DECLINE_BOOKING_ID']) {
+    $argsList += "--env"; $argsList += "DECLINE_BOOKING_ID=$($SEED['DECLINE_BOOKING_ID'])"
+  }
   return $argsList
 }
 
