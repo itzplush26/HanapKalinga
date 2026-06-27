@@ -6,12 +6,14 @@ import {
   ViewStyle,
   TextStyle,
   StyleProp,
+  StyleProp,
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { rounded } from '../../theme/rounded';
 import { typography } from '../../theme/typography';
 
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'link' | 'default' | 'outline';
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'link' | 'default' | 'outline';
 
 interface ButtonProps {
@@ -21,6 +23,8 @@ interface ButtonProps {
   disabled?: boolean;
   loading?: boolean;
   children: string;
+  style?: StyleProp<ViewStyle>;
+  testID?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }
@@ -46,6 +50,20 @@ export function Button({
   const variantTextStyle = getVariantTextStyle(variant, colors);
 
   return (
+      <TouchableOpacity
+        onPress={onPress}
+        disabled={isDisabled}
+        activeOpacity={0.7}
+        style={[
+          styles.base,
+          variantStyles[variant],
+          isDisabled && styles.disabled,
+          style,
+        ]}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: isDisabled }}
+        testID={testID}
+      >
       <TouchableOpacity
         onPress={onPress}
         disabled={isDisabled}
@@ -156,6 +174,14 @@ const variantStyles: Record<ButtonVariant, ViewStyle> = {
     borderWidth: 1,
     borderColor: colors.brand[200],
   },
+  default: {
+    backgroundColor: colors.brand[600],
+  },
+  outline: {
+    backgroundColor: colors.canvas,
+    borderWidth: 1,
+    borderColor: colors.brand[200],
+  },
 };
 
 const variantTextStyles: Record<ButtonVariant, TextStyle> = {
@@ -173,6 +199,12 @@ const variantTextStyles: Record<ButtonVariant, TextStyle> = {
     fontFamily: typography.fontFamily.body,
     fontSize: typography.size.body,
     textDecorationLine: 'underline',
+  },
+  default: {
+    color: colors.canvas,
+  },
+  outline: {
+    color: colors.brand[600],
   },
   default: {
     color: colors.canvas,
