@@ -22,33 +22,6 @@ env:
   NODE_VERSION: "22"
 
 jobs:
-  changes:
-    name: detect dependency changes
-    runs-on: ubuntu-latest
-    outputs:
-      deps_changed: ${{ steps.final.outputs.deps_changed }}
-    steps:
-      - uses: actions/checkout@v6.0.2
-      - name: Detect dependency file changes (PRs only)
-        if: github.event_name == 'pull_request'
-        id: filter
-        uses: dorny/paths-filter@v3.0.2
-        with:
-          filters: |
-            deps:
-              - 'package.json'
-              - 'package-lock.json'
-              - 'apps/*/package.json'
-              - 'packages/*/package.json'
-      - name: Set dependency change output
-        id: final
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "deps_changed=${{ steps.filter.outputs.deps }}" >> $GITHUB_OUTPUT
-          else
-            echo "deps_changed=true" >> $GITHUB_OUTPUT
-          fi
-
   phase1-lint:
     name: phase 1 - lint
     runs-on: ubuntu-latest
