@@ -39,11 +39,13 @@ appId: ${APP_ID}
       id: "nurseDetail_text_name"
     timeout: 10000
 
-# Verify rate is displayed
-- extendedWaitUntil:
-    visible:
+# Verify rate is displayed (scroll into view since it's below the fold)
+- scrollUntilVisible:
+    element:
       id: "nurseDetail_text_hourlyRate"
-    timeout: 5000
+    direction: DOWN
+    timeout: 10000
+    speed: 40
 
 # Verify request booking button is present
 - extendedWaitUntil:

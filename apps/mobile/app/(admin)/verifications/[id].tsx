@@ -48,19 +48,9 @@ export default function VerificationReviewScreen() {
       try {
         const prevStatus = data?.nurse?.verification_status ?? 'pending';
 
-        const { error: updateError }: any = await (supabase as any)
-          .from('nurses')
-          .update({
-            verification_status: newStatus,
-            rejection_reason: reason ?? null,
-          })
-          .eq('id', id);
-
-        if (updateError) {
-          Alert.alert('Error', updateError.message);
-          return;
-        }
-
+        // Insert audit log FIRST so we don't mutate nurse status if it fails.
+        // This prevents a partial state where the nurse is approved/rejected
+        // but no audit trail exists, which also cascades into test failures.
         const { error: auditError }: any = await (supabase as any)
           .from('verification_audit_logs')
           .insert({
@@ -75,6 +65,19 @@ export default function VerificationReviewScreen() {
 
         if (auditError) {
           Alert.alert('Error', auditError.message);
+          return;
+        }
+
+        const { error: updateError }: any = await (supabase as any)
+          .from('nurses')
+          .update({
+            verification_status: newStatus,
+            rejection_reason: reason ?? null,
+          })
+          .eq('id', id);
+
+        if (updateError) {
+          Alert.alert('Error', updateError.message);
           return;
         }
 
