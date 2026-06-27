@@ -12,7 +12,6 @@ import {
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
 import { AuthProvider } from '../src/contexts/AuthContext';
 import { ThemeProvider } from '../src/contexts/ThemeContext';
-import { ThemeProvider } from '../src/contexts/ThemeContext';
 
 SplashScreen.preventAutoHideAsync();
 
