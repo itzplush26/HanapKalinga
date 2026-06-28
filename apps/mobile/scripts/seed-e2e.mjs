@@ -188,11 +188,23 @@ async function main() {
   await createNurse(nurseId, { verification_status: "verified" });
   console.log(`  Created verified nurse: ${nurseEmail} (${nurseId})`);
 
-  // 4. Create pending nurse test account
-  const pendingNurseEmail = `${EMAIL_PREFIX}-nurse-pending-${TIMESTAMP}@example.com`;
-  const pendingNurseId = await createUser(pendingNurseEmail, "nurse", "E2E Pending Nurse");
-  await createNurse(pendingNurseId, { verification_status: "pending", profile_slug: `e2e-nurse-pending-${TIMESTAMP}` });
-  console.log(`  Created pending nurse: ${pendingNurseEmail} (${pendingNurseId})`);
+  // 4. Create pending nurse test accounts (one per admin verification action)
+  //     Each admin flow (approve, reject, detail) needs its own pending nurse
+  //     because they run sequentially and actions (approve/reject) mutate the status.
+  const pendingApproveEmail = `${EMAIL_PREFIX}-nurse-pending-approve-${TIMESTAMP}@example.com`;
+  const pendingApproveId = await createUser(pendingApproveEmail, "nurse", "E2E Pending Approve Nurse");
+  await createNurse(pendingApproveId, { verification_status: "pending", profile_slug: `e2e-nurse-pending-approve-${TIMESTAMP}` });
+  console.log(`  Created pending nurse (approve): ${pendingApproveEmail} (${pendingApproveId})`);
+
+  const pendingRejectEmail = `${EMAIL_PREFIX}-nurse-pending-reject-${TIMESTAMP}@example.com`;
+  const pendingRejectId = await createUser(pendingRejectEmail, "nurse", "E2E Pending Reject Nurse");
+  await createNurse(pendingRejectId, { verification_status: "pending", profile_slug: `e2e-nurse-pending-reject-${TIMESTAMP}` });
+  console.log(`  Created pending nurse (reject): ${pendingRejectEmail} (${pendingRejectId})`);
+
+  const pendingDetailEmail = `${EMAIL_PREFIX}-nurse-pending-detail-${TIMESTAMP}@example.com`;
+  const pendingDetailId = await createUser(pendingDetailEmail, "nurse", "E2E Pending Detail Nurse");
+  await createNurse(pendingDetailId, { verification_status: "pending", profile_slug: `e2e-nurse-pending-detail-${TIMESTAMP}` });
+  console.log(`  Created pending nurse (detail): ${pendingDetailEmail} (${pendingDetailId})`);
 
   // 5. Create sample data: a pending booking from family to verified nurse
   const booking = await createBooking(familyId, nurseId, "pending", {
@@ -230,10 +242,13 @@ async function main() {
   console.log(`ADMIN_EMAIL=${adminEmail}`);
   console.log(`FAMILY_EMAIL=${familyEmail}`);
   console.log(`NURSE_EMAIL=${nurseEmail}`);
-  console.log(`PENDING_NURSE_EMAIL=${pendingNurseEmail}`);
+  console.log(`PENDING_NURSE_EMAIL=${pendingApproveEmail}`);
   console.log(`PASSWORD=${PASSWORD}`);
   console.log(`NURSE_ID=${nurseId}`);
-  console.log(`VERIFICATION_ID=${pendingNurseId}`);
+  console.log(`VERIFICATION_ID=${pendingApproveId}`);
+  console.log(`VERIFICATION_ID_APPROVE=${pendingApproveId}`);
+  console.log(`VERIFICATION_ID_REJECT=${pendingRejectId}`);
+  console.log(`VERIFICATION_ID_DETAIL=${pendingDetailId}`);
   console.log(`BOOKING_ID=${booking.id}`);
   console.log(`DECLINE_BOOKING_ID=${declineBooking.id}`);
   console.log(`COMPLETED_BOOKING_ID=${completedBooking.id}`);
