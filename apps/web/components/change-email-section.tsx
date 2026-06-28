@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { Button } from "@/components/ui/button";
+import { ChevronDown } from "lucide-react";
 
 type EmailChangeRequestValues = z.infer<typeof emailChangeRequestSchema>;
 type EmailChangeVerifyValues = z.infer<typeof emailChangeVerifySchema>;
@@ -45,6 +46,7 @@ export function ChangeEmailSection() {
   const [isSending, setIsSending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const requestForm = useForm<EmailChangeRequestValues>({
     resolver: zodResolver(emailChangeRequestSchema),
@@ -173,12 +175,28 @@ export function ChangeEmailSection() {
   return (
     <Card>
       <CardHeader className="space-y-1 pb-2">
-        <h2 className="text-base font-semibold text-text-primary">Email address</h2>
-        <p className="text-sm text-text-secondary">
-          Change the email you use to sign in. We will send a 6-digit code to your new address.
-        </p>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-text-primary">Email address</h2>
+            <p className="text-sm text-text-secondary">{currentEmail ?? "Loading..."}</p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setExpanded((prev) => !prev)}
+            aria-expanded={expanded}
+          >
+            {expanded ? "Hide" : "Change"}
+            <ChevronDown className={`ml-1 h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
+          </Button>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      {expanded ? (
+        <CardContent className="space-y-4">
+          <p className="text-sm text-text-secondary">
+            Change the email you use to sign in. We will send a 6-digit code to your new address.
+          </p>
         <div className="space-y-1">
           <Label htmlFor="currentEmail">Current email</Label>
           <Input
@@ -287,7 +305,8 @@ export function ChangeEmailSection() {
             current inbox ({currentEmail ?? "current email"}).
           </p>
         ) : null}
-      </CardContent>
+        </CardContent>
+      ) : null}
     </Card>
   );
 }
