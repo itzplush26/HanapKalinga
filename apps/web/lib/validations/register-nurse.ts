@@ -80,27 +80,6 @@ export const completeNurseRegistrationSchema = nurseProfileFieldsSchema
       }
     }
 
-    if (containsProfanity(values.firstName)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Please keep your content appropriate.",
-        path: ["firstName"]
-      });
-    }
-    if (values.middleName && containsProfanity(values.middleName)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Please keep your content appropriate.",
-        path: ["middleName"]
-      });
-    }
-    if (containsProfanity(values.lastName)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Please keep your content appropriate.",
-        path: ["lastName"]
-      });
-    }
     if (containsProfanity(values.barangay)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
