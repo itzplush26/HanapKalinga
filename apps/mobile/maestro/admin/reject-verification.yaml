@@ -22,12 +22,12 @@ appId: ${APP_ID}
 # Scroll to and tap on verification request
 - scrollUntilVisible:
     element:
-      id: "verificationQueue_card_${VERIFICATION_ID}"
+      id: "verificationQueue_card_${VERIFICATION_ID_REJECT}"
     direction: DOWN
     timeout: 15000
     speed: 40
 - tapOn:
-    id: "verificationQueue_card_${VERIFICATION_ID}"
+    id: "verificationQueue_card_${VERIFICATION_ID_REJECT}"
 
 # Wait for detail screen
 - extendedWaitUntil:
@@ -77,7 +77,7 @@ appId: ${APP_ID}
 # Wait for and dismiss the success dialog
 - extendedWaitUntil:
     visible:
-      text: "Verification rejected completed"
+      text: "Verification rejected completed."
     timeout: 10000
 - tapOn:
     text: "OK"

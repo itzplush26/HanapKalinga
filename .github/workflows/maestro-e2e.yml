@@ -113,6 +113,9 @@ jobs:
       DECLINE_BOOKING_ID: ${{ steps.seed.outputs.DECLINE_BOOKING_ID }}
       NURSE_ID: ${{ steps.seed.outputs.NURSE_ID }}
       VERIFICATION_ID: ${{ steps.seed.outputs.VERIFICATION_ID }}
+      VERIFICATION_ID_APPROVE: ${{ steps.seed.outputs.VERIFICATION_ID_APPROVE }}
+      VERIFICATION_ID_REJECT: ${{ steps.seed.outputs.VERIFICATION_ID_REJECT }}
+      VERIFICATION_ID_DETAIL: ${{ steps.seed.outputs.VERIFICATION_ID_DETAIL }}
     steps:
       - uses: actions/checkout@v6
 
@@ -256,7 +259,7 @@ jobs:
             adb shell am force-stop com.hanapkalinga.mobile
             sleep 2
             
-            bash apps/mobile/scripts/run-maestro-shard.sh "${{ matrix.shard }}" "${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'staging' }}" "${{ needs.seed-e2e.outputs.FAMILY_EMAIL }}" "${{ needs.seed-e2e.outputs.NURSE_EMAIL }}" "${{ needs.seed-e2e.outputs.ADMIN_EMAIL }}" "${{ needs.seed-e2e.outputs.PASSWORD }}" "${{ needs.seed-e2e.outputs.BOOKING_ID }}" "${{ needs.seed-e2e.outputs.NURSE_ID }}" "${{ needs.seed-e2e.outputs.VERIFICATION_ID }}" "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}" "${{ needs.seed-e2e.outputs.DECLINE_BOOKING_ID }}"
+            bash apps/mobile/scripts/run-maestro-shard.sh "${{ matrix.shard }}" "${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'staging' }}" "${{ needs.seed-e2e.outputs.FAMILY_EMAIL }}" "${{ needs.seed-e2e.outputs.NURSE_EMAIL }}" "${{ needs.seed-e2e.outputs.ADMIN_EMAIL }}" "${{ needs.seed-e2e.outputs.PASSWORD }}" "${{ needs.seed-e2e.outputs.BOOKING_ID }}" "${{ needs.seed-e2e.outputs.NURSE_ID }}" "${{ needs.seed-e2e.outputs.VERIFICATION_ID }}" "${{ runner.temp }}/maestro-debug/${{ matrix.shard }}" "${{ needs.seed-e2e.outputs.DECLINE_BOOKING_ID }}" "${{ needs.seed-e2e.outputs.VERIFICATION_ID_APPROVE }}" "${{ needs.seed-e2e.outputs.VERIFICATION_ID_REJECT }}" "${{ needs.seed-e2e.outputs.VERIFICATION_ID_DETAIL }}"
 
       - name: Sanitize screenshot filenames (remove emoji characters)
         if: always()

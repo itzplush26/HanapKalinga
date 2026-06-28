@@ -22,12 +22,12 @@ appId: ${APP_ID}
 # Scroll to and tap on a specific verification request
 - scrollUntilVisible:
     element:
-      id: "verificationQueue_card_${VERIFICATION_ID}"
+      id: "verificationQueue_card_${VERIFICATION_ID_DETAIL}"
     direction: DOWN
     timeout: 15000
     speed: 40
 - tapOn:
-    id: "verificationQueue_card_${VERIFICATION_ID}"
+    id: "verificationQueue_card_${VERIFICATION_ID_DETAIL}"
 
 # Verify verification detail screen loaded
 - extendedWaitUntil:
