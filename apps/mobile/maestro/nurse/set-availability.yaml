@@ -1,0 +1,48 @@
+appId: ${APP_ID}
+---
+# Login as nurse user
+- runFlow:
+    file: ../shared/setup.yaml
+- runFlow:
+    file: ../shared/helpers.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# Wait for nurse dashboard to confirm login
+- extendedWaitUntil:
+    visible:
+      id: "nurseDashboard_screen"
+    timeout: 15000
+
+# Compute current Monday's date
+- runScript:
+    file: ../shared/compute-monday.js
+
+# Navigate to Schedule tab
+- extendedWaitUntil:
+    visible:
+      text: "Schedule"
+    timeout: 15000
+- tapOn:
+    text: "Schedule"
+
+# Wait for availability grid
+- extendedWaitUntil:
+    visible:
+      id: "availability_grid_mon"
+    timeout: 10000
+
+# Toggle a morning shift on Monday
+- tapOn:
+    id: "availability_toggle_${dateStr}_morning"
+
+# Tap save
+- tapOn:
+    id: "availability_button_save"
+
+# Verify save completed (button no longer in loading state)
+- extendedWaitUntil:
+    visible:
+      id: "availability_button_save"
+    timeout: 10000

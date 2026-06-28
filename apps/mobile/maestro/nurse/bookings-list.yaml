@@ -1,0 +1,24 @@
+appId: ${APP_ID}
+---
+# Login as nurse user
+- runFlow:
+    file: ../shared/setup.yaml
+- runFlow:
+    file: ../shared/helpers.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# Navigate to Bookings tab
+- extendedWaitUntil:
+    visible:
+      text: "Bookings"
+    timeout: 15000
+- tapOn:
+    text: "Bookings"
+
+# Verify bookings list screen loaded
+- extendedWaitUntil:
+    visible:
+      id: "nurseBookings_list_bookings"
+    timeout: 15000

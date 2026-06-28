@@ -1,0 +1,9 @@
+# shard: admin
+# total: 5
+approve-verification|FAIL|Tap on id: verificationQueue_card_${VERIFICATION_ID}... FAILED
+dashboard-metrics|PASS|
+reject-verification|FAIL|Tap on id: verificationQueue_card_${VERIFICATION_ID}... FAILED
+verification-detail|FAIL|Tap on id: verificationQueue_card_${VERIFICATION_ID}... FAILED
+verification-queue|PASS|
+# passed: 2
+# failed: 3

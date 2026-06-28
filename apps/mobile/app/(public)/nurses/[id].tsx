@@ -158,7 +158,7 @@ export default function NurseDetailScreen() {
           <View style={styles.largeAvatar}>
             <Text style={styles.largeAvatarText}>{initials}</Text>
           </View>
-          <Text style={styles.fullName}>{profile.full_name ?? 'Unknown'}</Text>
+          <Text style={styles.fullName} testID="nurseDetail_text_name">{profile.full_name ?? 'Unknown'}</Text>
           <TouchableOpacity onPress={handleMapLink} style={styles.locationRow} accessibilityRole="button" accessibilityLabel={`Open map for ${profile.city}`}>
             <MapPin size={16} color={colors.brand[600]} />
             <Text style={styles.cityText}>{profile.city ?? 'Unknown location'}</Text>
@@ -201,13 +201,13 @@ export default function NurseDetailScreen() {
           <View style={styles.rateGrid}>
             <Card variant="default" roundedSize="md" style={styles.rateCard}>
               <Text style={styles.rateLabel}>Hourly Rate</Text>
-              <Text style={styles.rateValue}>
+              <Text style={styles.rateValue} testID="nurseDetail_text_hourlyRate">
                 {nurse.hourly_rate ? `P${nurse.hourly_rate}/hr` : 'Not set'}
               </Text>
             </Card>
             <Card variant="default" roundedSize="md" style={styles.rateCard}>
               <Text style={styles.rateLabel}>Daily Rate (12hr)</Text>
-              <Text style={styles.rateValue}>
+              <Text style={styles.rateValue} testID="nurseDetail_text_dailyRate">
                 {nurse.daily_rate_12hr ? `P${nurse.daily_rate_12hr.toLocaleString('en-PH')}/day` : 'Not set'}
               </Text>
             </Card>
@@ -295,7 +295,7 @@ export default function NurseDetailScreen() {
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        <Button variant="primary" onPress={handleRequestBooking} style={styles.bookButton}>
+        <Button variant="primary" onPress={handleRequestBooking} style={styles.bookButton} testID="nurseDetail_button_requestBooking">
           Request Booking
         </Button>
       </View>

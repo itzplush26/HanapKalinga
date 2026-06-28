@@ -1,0 +1,11 @@
+# shard: nurse
+# total: 7
+accept-booking|FAIL|    Assert that id: login_button_submit is not visible... FAILED
+bookings-list|FAIL|    Assert that id: login_button_submit is not visible... FAILED
+decline-booking|FAIL|    Assert that id: login_button_submit is not visible... FAILED
+login-success|FAIL|Assert that id: login_button_submit is not visible... FAILED
+messages|FAIL|    Assert that id: login_button_submit is not visible... FAILED
+session-restore|FAIL|Assert that id: login_button_submit is not visible... FAILED
+set-availability|FAIL|    Assert that id: login_button_submit is not visible... FAILED
+# passed: 0
+# failed: 7

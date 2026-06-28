@@ -1,0 +1,40 @@
+appId: ${APP_ID}
+---
+# Login as family user
+- runFlow:
+    file: ../shared/setup.yaml
+- runFlow:
+    file: ../shared/helpers.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# Navigate to Bookings tab
+- extendedWaitUntil:
+    visible:
+      text: "Bookings"
+    timeout: 15000
+- tapOn:
+    text: "Bookings"
+
+# Wait for bookings list
+- extendedWaitUntil:
+    visible:
+      id: "familyBookings_list_bookings"
+    timeout: 15000
+
+# Tap on a specific booking card
+- tapOn:
+    id: "familyBookings_card_${BOOKING_ID}"
+
+# Verify booking detail screen loaded
+- extendedWaitUntil:
+    visible:
+      id: "bookingDetail_text_status"
+    timeout: 10000
+
+# Verify message and review buttons are present
+- extendedWaitUntil:
+    visible:
+      id: "bookingDetail_button_message"
+    timeout: 5000

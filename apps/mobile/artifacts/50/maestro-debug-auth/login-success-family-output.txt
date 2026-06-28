@@ -1,0 +1,1 @@
+apps/mobile/scripts/run-maestro-shard.sh: line 82: maestro: command not found

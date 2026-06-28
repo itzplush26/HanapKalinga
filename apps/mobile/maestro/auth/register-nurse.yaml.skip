@@ -1,0 +1,141 @@
+appId: ${APP_ID}
+env:
+  REGISTER_EMAIL: ${REGISTER_EMAIL_NURSE}
+  OTP_DIGIT_0: "0"
+  OTP_DIGIT_1: "0"
+  OTP_DIGIT_2: "0"
+  OTP_DIGIT_3: "0"
+  OTP_DIGIT_4: "0"
+  OTP_DIGIT_5: "0"
+  REGISTER_NAME: "Test Nurse User"
+  NURSE_HOURLY_RATE: "250"
+  NURSE_DAILY_RATE: "2000"
+---
+- runFlow:
+    file: ../shared/setup.yaml
+
+# Tap register as nurse button
+- tapOn:
+    id: "landing_button_register_nurse"
+
+# Enter email
+- tapOn:
+    id: "register_input_email"
+- inputText: ${REGISTER_EMAIL}
+
+# Wait for captcha to be ready (if captcha is configured)
+- runFlow:
+    when:
+      visible:
+        id: "register_captcha_widget"
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: "register_captcha_ready"
+          timeout: 30000
+
+- tapOn:
+    id: "register_button_sendOtp"
+
+# Wait for OTP screen
+- extendedWaitUntil:
+    visible:
+      id: "verifyOtp_input_0"
+    timeout: 15000
+
+# Enter 6-digit OTP
+- tapOn:
+    id: "verifyOtp_input_0"
+- inputText: ${OTP_DIGIT_0}
+- tapOn:
+    id: "verifyOtp_input_1"
+- inputText: ${OTP_DIGIT_1}
+- tapOn:
+    id: "verifyOtp_input_2"
+- inputText: ${OTP_DIGIT_2}
+- tapOn:
+    id: "verifyOtp_input_3"
+- inputText: ${OTP_DIGIT_3}
+- tapOn:
+    id: "verifyOtp_input_4"
+- inputText: ${OTP_DIGIT_4}
+- tapOn:
+    id: "verifyOtp_input_5"
+- inputText: ${OTP_DIGIT_5}
+
+# Tap verify
+- tapOn:
+    id: "verifyOtp_button_verify"
+
+# Wait for choose-role screen (nurse pre-selected via query param)
+- extendedWaitUntil:
+    visible:
+      id: "chooseRole_button_nurse"
+    timeout: 15000
+
+# Tap nurse option then Continue
+- tapOn:
+    id: "chooseRole_button_nurse"
+- tapOn:
+    id: "chooseRole_button_continue"
+
+# Wait for profile screen
+- extendedWaitUntil:
+    visible:
+      id: "profileNurse_input_name"
+    timeout: 10000
+
+# Fill in name
+- tapOn:
+    id: "profileNurse_input_name"
+- inputText: ${REGISTER_NAME}
+
+# Fill hourly rate
+- scrollUntilVisible:
+    element:
+      id: "profileNurse_input_hourlyRate"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: "profileNurse_input_hourlyRate"
+- inputText: ${NURSE_HOURLY_RATE}
+
+# Fill daily rate
+- tapOn:
+    id: "profileNurse_input_dailyRate"
+- inputText: ${NURSE_DAILY_RATE}
+
+# Scroll to Next button
+- scrollUntilVisible:
+    element:
+      id: "setPassword_input_password"
+    direction: DOWN
+    timeout: 10000
+
+# Tap Next (navigates to set-password)
+- tapOn:
+    id: "profile_button_next"
+
+# Wait for set-password screen
+- extendedWaitUntil:
+    visible:
+      id: "setPassword_input_password"
+    timeout: 10000
+
+# Enter password
+- tapOn:
+    id: "setPassword_input_password"
+- inputText: ${TEST_PASSWORD}
+- tapOn:
+    id: "setPassword_input_confirmPassword"
+- inputText: ${TEST_PASSWORD}
+
+# Submit
+- tapOn:
+    id: "setPassword_button_submit"
+
+# Verify redirect to nurse dashboard
+- extendedWaitUntil:
+    visible:
+      id: "availability_button_save"
+    timeout: 15000

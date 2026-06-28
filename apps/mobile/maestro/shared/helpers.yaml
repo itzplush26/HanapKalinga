@@ -1,0 +1,19 @@
+appId: ${APP_ID}
+---
+# Reusable subflow: loginAs
+# Required env: TEST_EMAIL, TEST_PASSWORD
+- runFlow:
+    when:
+      true: ${TEST_EMAIL != null && TEST_PASSWORD != null}
+    file: "../shared/login-actions.yaml"
+    env:
+      EMAIL: ${TEST_EMAIL}
+      PASSWORD: ${TEST_PASSWORD}
+
+# Reusable subflow: logout
+# Set env LOGOUT=true to trigger
+- runFlow:
+    when:
+      true: ${LOGOUT == "true"}
+    file: "../shared/logout-actions.yaml"
+

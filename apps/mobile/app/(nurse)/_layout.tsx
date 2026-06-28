@@ -1,16 +1,20 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Tabs, useRouter } from 'expo-router';
-import { House, Calendar, MessageSquare, Clock, User } from 'lucide-react-native';
+import { House, Calendar, MessageSquare, Clock, User, FileText } from 'lucide-react-native';
 import { useAuth } from '../../src/contexts/AuthContext';
-import { colors } from '../../src/theme/colors';
+import { useTheme } from '../../src/contexts/ThemeContext';
 import { typography } from '../../src/theme/typography';
 
 export default function NurseTabLayout() {
   const router = useRouter();
   const { user, profile, isLoading, getRedirectPath } = useAuth();
+  const { colors } = useTheme();
+  const hasChecked = useRef(false);
 
   useEffect(() => {
     if (isLoading) return;
+    if (hasChecked.current) return;
+    hasChecked.current = true;
     if (!user) {
       router.replace('/');
       return;
@@ -28,18 +32,18 @@ export default function NurseTabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.brand[600],
-        tabBarInactiveTintColor: colors.muted,
+        tabBarActiveTintColor: colors['nav-active'],
+        tabBarInactiveTintColor: colors['nav-inactive'],
         tabBarStyle: {
-          backgroundColor: colors.canvas,
+          backgroundColor: colors['nav-bg'],
           borderTopWidth: 1,
-          borderTopColor: colors.hairline,
+          borderTopColor: colors['nav-border'],
+          height: 64,
           paddingBottom: 4,
-          height: 60,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontFamily: typography.fontFamily.bodyMedium,
+          fontSize: 10,
+          fontFamily: typography.fontFamily.body,
         },
       }}
     >
@@ -47,36 +51,84 @@ export default function NurseTabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <House size={22} color={color} />,
-        }}
+          tabBarTestID: 'tab_home' as never,
+          tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
+            <House
+              size={22}
+              color={color}
+              strokeWidth={focused ? 2.25 : 2}
+              fill={focused ? color : 'none'}
+            />
+          ),
+        } as any}
       />
       <Tabs.Screen
-        name="bookings"
+        name="bookings/index"
         options={{
           title: 'Bookings',
-          tabBarIcon: ({ color }) => <Calendar size={22} color={color} />,
-        }}
+          tabBarTestID: 'tab_bookings' as never,
+          tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
+            <Calendar
+              size={22}
+              color={color}
+              strokeWidth={focused ? 2.25 : 2}
+              fill={focused ? color : 'none'}
+            />
+          ),
+        } as any}
+      />
+      <Tabs.Screen
+        name="care-requests"
+        options={{
+          title: 'Care Requests',
+          tabBarTestID: 'tab_care-requests' as never,
+          tabBarIcon: ({ color }: { color: string }) => <FileText size={22} color={color} />,
+        } as any}
       />
       <Tabs.Screen
         name="messages"
         options={{
           title: 'Messages',
-          tabBarIcon: ({ color }) => <MessageSquare size={22} color={color} />,
-        }}
+          tabBarTestID: 'tab_messages' as never,
+          tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
+            <MessageSquare
+              size={22}
+              color={color}
+              strokeWidth={focused ? 2.25 : 2}
+              fill={focused ? color : 'none'}
+            />
+          ),
+        } as any}
       />
       <Tabs.Screen
         name="availability"
         options={{
-          title: 'Availability',
-          tabBarIcon: ({ color }) => <Clock size={22} color={color} />,
-        }}
+          title: 'Schedule',
+          tabBarTestID: 'tab_schedule' as never,
+          tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
+            <Clock
+              size={22}
+              color={color}
+              strokeWidth={focused ? 2.25 : 2}
+              fill={focused ? color : 'none'}
+            />
+          ),
+        } as any}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => <User size={22} color={color} />,
-        }}
+          tabBarTestID: 'tab_profile' as never,
+          tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
+            <User
+              size={22}
+              color={color}
+              strokeWidth={focused ? 2.25 : 2}
+              fill={focused ? color : 'none'}
+            />
+          ),
+        } as any}
       />
     </Tabs>
   );

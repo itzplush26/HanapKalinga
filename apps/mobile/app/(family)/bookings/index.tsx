@@ -44,11 +44,14 @@ export default function FamilyBookingsScreen() {
           data={bookings}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <BookingCard
-              booking={item}
-              onPress={() => router.push(`/(family)/bookings/${item.id}`)}
-            />
+            <View testID={`familyBookings_card_${item.id}`}>
+              <BookingCard
+                booking={item}
+                onPress={() => router.push(`/(family)/bookings/${item.id}`)}
+              />
+            </View>
           )}
+          testID="familyBookings_list_bookings"
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={refetch} />
           }

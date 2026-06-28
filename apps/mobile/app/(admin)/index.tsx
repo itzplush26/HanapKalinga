@@ -45,19 +45,19 @@ export default function AdminDashboardScreen() {
             </>
           ) : (
             <>
-              <View style={[styles.metricCard, styles.metricCardAccent]}>
+              <View style={[styles.metricCard, styles.metricCardAccent]} testID="dashboard_metrics_pendingVerifications">
                 <Text style={styles.metricValue}>{data?.pendingVerifications ?? 0}</Text>
                 <Text style={styles.metricLabel}>Pending verifications</Text>
               </View>
-              <View style={[styles.metricCard, styles.metricCardAccent]}>
+              <View style={[styles.metricCard, styles.metricCardAccent]} testID="dashboard_metrics_underReview">
                 <Text style={styles.metricValue}>{data?.underReviewCount ?? 0}</Text>
                 <Text style={styles.metricLabel}>Under review</Text>
               </View>
-              <View style={[styles.metricCard, styles.metricCardAccent]}>
+              <View style={[styles.metricCard, styles.metricCardAccent]} testID="dashboard_metrics_totalBookings">
                 <Text style={styles.metricValue}>{data?.totalBookings ?? 0}</Text>
                 <Text style={styles.metricLabel}>Total bookings</Text>
               </View>
-              <View style={[styles.metricCard, styles.metricCardAccent]}>
+              <View style={[styles.metricCard, styles.metricCardAccent]} testID="dashboard_metrics_totalSignups">
                 <Text style={styles.metricValue}>{data?.totalSignups ?? 0}</Text>
                 <Text style={styles.metricLabel}>Total signups</Text>
               </View>

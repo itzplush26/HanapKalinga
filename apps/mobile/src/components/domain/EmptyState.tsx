@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../contexts/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import { Button } from '../ui/Button';
@@ -19,13 +19,19 @@ export function EmptyState({
   actionLabel,
   onAction,
 }: EmptyStateProps) {
+  const { colors } = useTheme();
+
   return (
     <View style={styles.container}>
       {icon && <View style={styles.iconContainer}>{icon}</View>}
-      <Text style={styles.title}>{title}</Text>
-      {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+      <Text style={[styles.title, { color: colors['text-primary'] }]}>{title}</Text>
+      {subtitle && (
+        <Text style={[styles.subtitle, { color: colors['text-secondary'] }]}>
+          {subtitle}
+        </Text>
+      )}
       {actionLabel && onAction && (
-        <Button variant="primary" onPress={onAction}>
+        <Button variant="default" onPress={onAction}>
           {actionLabel}
         </Button>
       )}
@@ -38,23 +44,21 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.xl,
-    gap: spacing.sm,
+    padding: spacing[8],
+    gap: spacing[3],
   },
   iconContainer: {
-    marginBottom: spacing.sm,
+    marginBottom: spacing[3],
   },
   title: {
-    fontSize: typography.size.titleMd,
+    fontSize: typography.size.lg,
     fontFamily: typography.fontFamily.bodySemiBold,
-    color: colors.ink,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: typography.size.body,
+    fontSize: typography.size.base,
     fontFamily: typography.fontFamily.body,
-    color: colors.muted,
     textAlign: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: spacing[3],
   },
 });

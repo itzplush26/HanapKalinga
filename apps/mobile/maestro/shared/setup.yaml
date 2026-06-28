@@ -1,0 +1,59 @@
+appId: ${APP_ID}
+env:
+  APP_ID: "com.hanapkalinga.mobile"
+  TEST_EMAIL: ${TEST_EMAIL}
+  TEST_PASSWORD: ${TEST_PASSWORD}
+---
+- launchApp:
+    appId: ${APP_ID}
+    stopApp: true
+    clearState: true
+    clearKeychain: true
+
+# Wait for app to be interactive (give time for font loading, auth init, etc)
+# This prevents tapping before the app is ready
+- waitForAnimationToEnd:
+    timeout: 10000
+
+# If a previous session was restored from SecureStore (clearState doesn't clear it),
+# log out first so the landing screen becomes visible.
+# If already on the landing screen, this block is skipped.
+
+# Handle family/nurse logout (they have a Profile tab)
+- runFlow:
+    when:
+      visible:
+        text: "Profile"
+    commands:
+      - tapOn:
+          text: "Profile"
+      - tapOn:
+          id: "profile_button_logout"
+          optional: true
+      - tapOn:
+          id: "logout_button_confirm"
+          optional: true
+      - waitForAnimationToEnd:
+          timeout: 5000
+
+# Handle admin logout (admin layout uses custom header, not tab_profile)
+- runFlow:
+    when:
+      visible:
+        id: "dashboard_metrics_pendingVerifications"
+    commands:
+      - tapOn:
+          id: "admin_button_logout"
+          optional: true
+      - tapOn:
+          text: "Log out"
+          optional: true
+      - waitForAnimationToEnd:
+          timeout: 5000
+
+# Wait for landing screen to appear with extended timeout
+# Increased to 90 seconds to accommodate slow CI environments
+- extendedWaitUntil:
+    visible:
+      id: "landing_button_login"
+    timeout: 90000

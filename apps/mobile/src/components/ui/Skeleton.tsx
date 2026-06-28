@@ -1,26 +1,18 @@
 import { useEffect, useRef } from 'react';
-import { Animated, StyleSheet } from 'react-native';
-import type { ViewStyle, StyleProp } from 'react-native';
-import { colors } from '../../theme/colors';
+import { View, Animated, StyleSheet, ViewStyle } from 'react-native';
+import { useTheme } from '../../contexts/ThemeContext';
 import { rounded } from '../../theme/rounded';
 
-type SkeletonVariant = 'text' | 'circle' | 'rectangle';
-
 interface SkeletonProps {
-  variant?: SkeletonVariant;
   width?: number;
   height?: number;
-  style?: StyleProp<ViewStyle>;
+  style?: ViewStyle;
+  variant?: 'text' | 'circle' | 'rectangle';
   testID?: string;
 }
 
-export function Skeleton({
-  variant = 'text',
-  width,
-  height,
-  style,
-  testID,
-}: SkeletonProps) {
+export function Skeleton({ width, height = 20, style, variant, testID }: SkeletonProps) {
+  const { colors } = useTheme();
   const opacity = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
@@ -36,7 +28,7 @@ export function Skeleton({
           duration: 800,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     );
     animation.start();
     return () => animation.stop();
@@ -47,10 +39,13 @@ export function Skeleton({
       testID={testID}
       style={[
         styles.base,
-        variantStyles[variant],
-        width ? { width } : undefined,
-        height ? { height } : undefined,
-        { opacity },
+        {
+          width,
+          height,
+          backgroundColor: colors['surface-alt'],
+          opacity,
+          borderRadius: variant === 'circle' ? 9999 : variant === 'text' ? 4 : rounded.md,
+        },
         style,
       ]}
     />
@@ -59,24 +54,6 @@ export function Skeleton({
 
 const styles = StyleSheet.create({
   base: {
-    backgroundColor: colors.surface.strong,
-  },
-});
-
-const variantStyles: Record<SkeletonVariant, ViewStyle> = {
-  text: {
-    height: 14,
-    borderRadius: rounded.xs,
-    width: '100%',
-  },
-  circle: {
-    width: 44,
-    height: 44,
-    borderRadius: rounded.full,
-  },
-  rectangle: {
-    width: '100%',
-    height: 100,
     borderRadius: rounded.md,
   },
-};
+});

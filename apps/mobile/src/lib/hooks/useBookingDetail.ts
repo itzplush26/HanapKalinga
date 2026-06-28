@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../supabase';
+import { getApiUrl } from '@hanapkalinga/shared/api';
 import type { Booking, Message, Review } from '@hanapkalinga/shared/types';
 
 interface BookingProfile {
@@ -27,6 +28,9 @@ export function useBookingDetail(bookingId: string | undefined) {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const apiUrl = getApiUrl();
 
   const fetchDetail = useCallback(async () => {
     if (!bookingId) {
@@ -72,9 +76,97 @@ export function useBookingDetail(bookingId: string | undefined) {
     }
   }, [bookingId]);
 
+  const cancelMutation = useCallback(async (reason: string, cancelledBy: 'family' | 'nurse') => {
+    if (!bookingId) return { error: 'No booking ID' };
+    setActionLoading(true);
+    try {
+      const res = await fetch(`${apiUrl}/api/bookings/${bookingId}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason, cancelledBy }),
+      });
+      const json = await res.json();
+      if (!res.ok) return { error: json.error ?? 'Failed to cancel booking' };
+      await fetchDetail();
+      return { error: null };
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : 'Failed to cancel booking' };
+    } finally {
+      setActionLoading(false);
+    }
+  }, [bookingId, apiUrl, fetchDetail]);
+
+  const markCompleteMutation = useCallback(async () => {
+    if (!bookingId) return { error: 'No booking ID' };
+    setActionLoading(true);
+    try {
+      const res = await fetch(`${apiUrl}/api/bookings/${bookingId}/mark-complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const json = await res.json();
+      if (!res.ok) return { error: json.error ?? 'Failed to mark complete' };
+      await fetchDetail();
+      return { error: null };
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : 'Failed to mark complete' };
+    } finally {
+      setActionLoading(false);
+    }
+  }, [bookingId, apiUrl, fetchDetail]);
+
+  const confirmCompletionMutation = useCallback(async () => {
+    if (!bookingId) return { error: 'No booking ID' };
+    setActionLoading(true);
+    try {
+      const res = await fetch(`${apiUrl}/api/bookings/${bookingId}/confirm-completion`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const json = await res.json();
+      if (!res.ok) return { error: json.error ?? 'Failed to confirm completion' };
+      await fetchDetail();
+      return { error: null };
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : 'Failed to confirm completion' };
+    } finally {
+      setActionLoading(false);
+    }
+  }, [bookingId, apiUrl, fetchDetail]);
+
+  const disputeMutation = useCallback(async (description: string) => {
+    if (!bookingId) return { error: 'No booking ID' };
+    setActionLoading(true);
+    try {
+      const res = await fetch(`${apiUrl}/api/bookings/${bookingId}/dispute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description }),
+      });
+      const json = await res.json();
+      if (!res.ok) return { error: json.error ?? 'Failed to dispute booking' };
+      await fetchDetail();
+      return { error: null };
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : 'Failed to dispute booking' };
+    } finally {
+      setActionLoading(false);
+    }
+  }, [bookingId, apiUrl, fetchDetail]);
+
   useEffect(() => {
     fetchDetail();
   }, [fetchDetail]);
 
-  return { ...data, loading, error, refetch: fetchDetail };
+  return {
+    ...data,
+    loading,
+    error,
+    actionLoading,
+    refetch: fetchDetail,
+    cancel: cancelMutation,
+    markComplete: markCompleteMutation,
+    confirmCompletion: confirmCompletionMutation,
+    dispute: disputeMutation,
+  };
 }

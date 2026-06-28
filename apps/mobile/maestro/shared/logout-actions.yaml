@@ -1,0 +1,20 @@
+appId: ${APP_ID}
+---
+# Navigate to profile tab (works for family/nurse layouts)
+- runFlow:
+    when:
+      visible: 
+        id: "tab_profile"
+    file: "../shared/navigate-to-tab.yaml"
+    env:
+      TAB_NAME: "profile"
+
+# Tap logout button
+- tapOn:
+    id: "profile_button_logout"
+    optional: true
+
+# Confirm logout if prompted
+- tapOn:
+    id: "logout_button_confirm"
+    optional: true

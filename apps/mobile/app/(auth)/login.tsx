@@ -1,26 +1,30 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { loginSchema } from '@hanapkalinga/shared/validations';
 import type { UserRole } from '@hanapkalinga/shared/types';
 import { supabase } from '../../src/lib/supabase';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { useTheme } from '../../src/contexts/ThemeContext';
 import { ScreenWrapper } from '../../src/components/ScreenWrapper';
 import { Input } from '../../src/components/ui/Input';
 import { Button } from '../../src/components/ui/Button';
 import { TextLink } from '../../src/components/ui/TextLink';
-import { colors } from '../../src/theme/colors';
-import { typography } from '../../src/theme/typography';
+import { TurnstileWidget, useTurnstileRequired } from '../../src/components/TurnstileWidget';
 import { spacing } from '../../src/theme/spacing';
+import { typography } from '../../src/theme/typography';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { getRedirectPath } = useAuth();
+  const { colors } = useTheme();
+  const turnstileRequired = useTurnstileRequired();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const handleLogin = async () => {
     setError('');
@@ -37,15 +41,31 @@ export default function LoginScreen() {
       return;
     }
 
+    if (turnstileRequired && !captchaToken) {
+      setError('Please complete the verification challenge.');
+      return;
+    }
+
     setLoading(true);
     try {
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
+        options: captchaToken ? { captchaToken } : undefined,
       });
 
       if (authError) {
-        setError('Invalid email or password');
+        const lowered = authError.message.toLowerCase();
+        if (lowered.includes('captcha') || lowered.includes('turnstile')) {
+          setError('Verification failed. Please try again.');
+          setCaptchaToken(null);
+        } else if (__DEV__) {
+          // Show the real error in dev for debugging (e.g., "Email not confirmed")
+          console.warn('[Login] Auth error:', authError.message);
+          setError(authError.message);
+        } else {
+          setError('Invalid email or password');
+        }
         return;
       }
 
@@ -71,13 +91,14 @@ export default function LoginScreen() {
 
   return (
     <ScreenWrapper scroll>
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Welcome back</Text>
-          <Text style={styles.subtitle}>Sign in to your account</Text>
+          <Text style={[styles.title, { color: colors['text-primary'] }]}>
+            Welcome back
+          </Text>
+          <Text style={[styles.subtitle, { color: colors['text-muted'] }]}>
+            Sign in to your account
+          </Text>
         </View>
 
         <View style={styles.form}>
@@ -90,6 +111,7 @@ export default function LoginScreen() {
             autoCapitalize="none"
             autoComplete="email"
             error={fieldErrors.email}
+            testID="login_input_email"
           />
 
           <Input
@@ -99,11 +121,31 @@ export default function LoginScreen() {
             placeholder="Enter your password"
             secureTextEntry
             error={fieldErrors.password}
+            testID="login_input_password"
           />
 
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          {error ? (
+            <Text style={[styles.errorText, { color: colors.error }]} testID="login_text_error">
+              {error}
+            </Text>
+          ) : null}
 
-          <Button onPress={handleLogin} loading={loading} style={styles.submit}>
+          {turnstileRequired ? (
+            <TurnstileWidget
+              onToken={setCaptchaToken}
+              onExpire={() => setCaptchaToken(null)}
+              onError={() => setCaptchaToken(null)}
+              testIDPrefix="login_captcha"
+            />
+          ) : null}
+
+          <Button
+            onPress={handleLogin}
+            loading={loading}
+            disabled={turnstileRequired && !captchaToken}
+            style={styles.submit}
+            testID="login_button_submit"
+          >
             Sign In
           </Button>
 
@@ -111,18 +153,21 @@ export default function LoginScreen() {
             onPress={() => router.push('/(auth)/forgot-password')}
             style={styles.forgotPassword}
             underline
+            testID="login_link_forgotPassword"
           >
             Forgot password?
           </TextLink>
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Don't have an account? </Text>
+          <Text style={[styles.footerText, { color: colors['text-secondary'] }]}>
+            Don&apos;t have an account?{' '}
+          </Text>
           <TextLink onPress={() => router.push('/(auth)/register')}>
             Create an account
           </TextLink>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </ScreenWrapper>
   );
 }
@@ -130,38 +175,35 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing[5],
     justifyContent: 'center',
   },
   header: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing[8],
   },
   title: {
-    fontSize: typography.size.displayMd,
-    fontFamily: typography.fontFamily.display,
-    color: colors.ink,
-    marginBottom: spacing.xs,
+    fontSize: typography.size['2xl'],
+    fontFamily: typography.fontFamily.bodySemiBold,
+    marginBottom: spacing[2],
   },
   subtitle: {
-    fontSize: typography.size.body,
+    fontSize: typography.size.base,
     fontFamily: typography.fontFamily.body,
-    color: colors.muted,
   },
   form: {
-    gap: spacing.md,
-    marginBottom: spacing.lg,
+    gap: spacing[4],
+    marginBottom: spacing[6],
   },
   submit: {
-    marginTop: spacing.sm,
+    marginTop: spacing[3],
   },
   forgotPassword: {
     textAlign: 'center',
-    marginTop: spacing.sm,
+    marginTop: spacing[3],
   },
   errorText: {
-    fontSize: typography.size.caption,
+    fontSize: typography.size.sm,
     fontFamily: typography.fontFamily.body,
-    color: colors.semantic.error,
     textAlign: 'center',
   },
   footer: {
@@ -170,8 +212,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   footerText: {
-    fontSize: typography.size.body,
+    fontSize: typography.size.base,
     fontFamily: typography.fontFamily.body,
-    color: colors.body,
   },
 });

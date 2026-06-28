@@ -1,7 +1,7 @@
 import { useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
-import { LogOut, LayoutDashboard, ShieldCheck, Stethoscope, Users, CalendarDays } from 'lucide-react-native';
+import { LogOut, LayoutDashboard, ShieldCheck, Stethoscope, Users, CalendarDays, Flag } from 'lucide-react-native';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { colors } from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
@@ -14,6 +14,7 @@ const TABS = [
   { name: 'nurses', label: 'Nurses', icon: Stethoscope },
   { name: 'families', label: 'Families', icon: Users },
   { name: 'bookings', label: 'Bookings', icon: CalendarDays },
+  { name: 'reports', label: 'Reports', icon: Flag },
 ] as const;
 
 function AdminHeader() {
@@ -60,6 +61,7 @@ function AdminHeader() {
         <TouchableOpacity
           onPress={handleLogout}
           style={styles.logoutButton}
+          testID="admin_button_logout"
           accessibilityRole="button"
           accessibilityLabel="Log out"
         >
@@ -82,6 +84,7 @@ function AdminHeader() {
               key={tab.name}
               onPress={() => handleTabPress(tab.name)}
               style={[styles.tab, isActive && styles.tabActive]}
+              testID={`tab_${tab.name}`}
               accessibilityRole="button"
               accessibilityLabel={`${tab.label} tab`}
               accessibilityState={{ selected: isActive }}
@@ -129,10 +132,10 @@ export default function AdminLayout() {
       }}
     >
       <Stack.Screen name="index" />
-      <Stack.Screen name="verifications" />
+      <Stack.Screen name="verifications/index" />
       <Stack.Screen name="nurses" />
       <Stack.Screen name="families" />
-      <Stack.Screen name="bookings" />
+      <Stack.Screen name="bookings/index" />
     </Stack>
   );
 }

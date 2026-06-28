@@ -8,6 +8,10 @@ node_modules/
 dist/
 web-build/
 expo-env.d.ts
+.env.maestro
+
+# Artifacts
+artifacts/
 
 # Native
 .kotlin/
@@ -31,7 +35,9 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
+.env.maestro
 
 # typescript
 *.tsbuildinfo

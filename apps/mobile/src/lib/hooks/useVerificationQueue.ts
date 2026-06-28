@@ -36,7 +36,7 @@ function buildQuery(filter: VerificationFilter, page: number) {
       provider_type,
       verification_status,
       submitted_at,
-      profile:profiles!inner(
+      profile:profiles!nurses_id_fkey(
         full_name,
         city
       )

@@ -1,5 +1,5 @@
 import { TouchableOpacity, Text, StyleSheet, ViewStyle } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useTheme } from '../../contexts/ThemeContext';
 import { spacing } from '../../theme/spacing';
 import { rounded } from '../../theme/rounded';
 import { typography } from '../../theme/typography';
@@ -9,6 +9,7 @@ interface ChipProps {
   onPress?: () => void;
   label: string;
   style?: ViewStyle;
+  testID?: string;
 }
 
 export function Chip({
@@ -16,21 +17,38 @@ export function Chip({
   onPress,
   label,
   style,
+  testID,
 }: ChipProps) {
+  const { colors } = useTheme();
+
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.7}
       style={[
         styles.base,
-        selected ? styles.selected : styles.unselected,
+        selected
+          ? {
+              backgroundColor: colors['primary-light'],
+              borderColor: colors.primary,
+            }
+          : {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            },
         style,
       ]}
       accessibilityRole="button"
       accessibilityState={{ selected }}
       accessibilityLabel={label}
+      testID={testID}
     >
-      <Text style={[styles.text, selected && styles.textSelected]}>
+      <Text
+        style={[
+          styles.text,
+          { color: selected ? colors.primary : colors['text-secondary'] },
+        ]}
+      >
         {label}
       </Text>
     </TouchableOpacity>
@@ -39,26 +57,15 @@ export function Chip({
 
 const styles = StyleSheet.create({
   base: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xxs,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[1],
     borderRadius: rounded.pill,
     minHeight: 32,
     justifyContent: 'center',
-  },
-  selected: {
-    backgroundColor: colors.brand[600],
-  },
-  unselected: {
-    backgroundColor: colors.canvas,
     borderWidth: 1,
-    borderColor: colors.brand[200],
   },
   text: {
-    fontSize: typography.size.caption,
+    fontSize: typography.size.xs,
     fontFamily: typography.fontFamily.bodyMedium,
-    color: colors.body,
-  },
-  textSelected: {
-    color: colors.canvas,
   },
 });

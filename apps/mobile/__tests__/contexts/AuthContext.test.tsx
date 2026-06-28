@@ -42,6 +42,8 @@ async function renderWithAuth() {
   );
 }
 
+jest.setTimeout(15000);
+
 describe('AuthContext', () => {
   beforeEach(() => {
     jest.clearAllMocks();

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Platform, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Platform, StyleSheet, Modal, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker from '@expo/ui/community/datetime-picker';
 import { CalendarDays, ArrowLeft } from 'lucide-react-native';
 import { useAuth } from '../../../src/contexts/AuthContext';
 import { ScreenWrapper } from '../../../src/components/ScreenWrapper';
@@ -71,6 +71,7 @@ export default function NewBookingScreen() {
   const [additionalNotes, setAdditionalNotes] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   useEffect(() => {
     if (nurseId) {
@@ -152,14 +153,7 @@ export default function NewBookingScreen() {
       return;
     }
 
-    Alert.alert(
-      'Booking Requested',
-      'Your booking request has been sent to the nurse.',
-      [
-        { text: 'View Booking', onPress: () => router.push('/(family)/bookings') },
-        { text: 'OK', onPress: () => router.back() },
-      ]
-    );
+    setShowSuccessModal(true);
   };
 
   if (!nurseId) {
@@ -228,6 +222,7 @@ export default function NewBookingScreen() {
             style={styles.datePicker}
             accessibilityRole="button"
             accessibilityLabel="Select date"
+            testID="bookingNew_picker_date"
           >
             <CalendarDays size={18} color={colors.brand[600]} />
             <Text style={styles.dateText}>
@@ -264,6 +259,7 @@ export default function NewBookingScreen() {
                 ]}
                 accessibilityRole="button"
                 accessibilityState={{ selected: patientCondition === c.value }}
+                testID={`bookingNew_input_condition_${c.value}`}
               >
                 <Text
                   style={[
@@ -287,6 +283,7 @@ export default function NewBookingScreen() {
                 label={s.label}
                 selected={shift === s.value}
                 onPress={() => setShift(s.value)}
+                testID={`bookingNew_picker_shift_${s.value}`}
               />
             ))}
           </View>
@@ -301,6 +298,7 @@ export default function NewBookingScreen() {
                 label={skill}
                 selected={requiredSkills.includes(skill)}
                 onPress={() => toggleSkill(skill)}
+                testID={`bookingNew_chip_skill_${skill.replace(/\s+/g, '_')}`}
               />
             ))}
           </View>
@@ -315,6 +313,7 @@ export default function NewBookingScreen() {
                 label={b.label}
                 selected={budgetRange === b.value}
                 onPress={() => setBudgetRange(b.value)}
+                testID={`bookingNew_input_budget_${b.value}`}
               />
             ))}
           </View>
@@ -329,9 +328,38 @@ export default function NewBookingScreen() {
           numberOfLines={3}
         />
 
-        <Button variant="primary" loading={submitting} onPress={handleSubmit}>
+        <Button variant="primary" loading={submitting} onPress={handleSubmit} testID="bookingNew_button_submit">
           Submit Request
         </Button>
+
+        <Modal visible={showSuccessModal} transparent animationType="fade" onRequestClose={() => setShowSuccessModal(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle} testID="bookingNew_text_success">Booking Requested</Text>
+              <Text style={styles.modalMessage}>Your booking request has been sent to the nurse.</Text>
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={() => {
+                    setShowSuccessModal(false);
+                    router.push('/(family)/bookings');
+                  }}
+                >
+                  <Text style={styles.modalButtonText}>View Booking</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.modalButtonSecondary}
+                  onPress={() => {
+                    setShowSuccessModal(false);
+                    router.back();
+                  }}
+                >
+                  <Text style={styles.modalButtonSecondaryText}>OK</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </ScreenWrapper>
   );
@@ -472,5 +500,55 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.xs,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: colors.canvas,
+    borderRadius: 12,
+    padding: spacing.lg,
+    width: '80%',
+    maxWidth: 320,
+    gap: spacing.md,
+  },
+  modalTitle: {
+    fontSize: typography.size.titleMd,
+    fontFamily: typography.fontFamily.display,
+    color: colors.ink,
+  },
+  modalMessage: {
+    fontSize: typography.size.body,
+    fontFamily: typography.fontFamily.body,
+    color: colors.body,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  modalButton: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.brand[600],
+    borderRadius: 8,
+  },
+  modalButtonText: {
+    fontSize: typography.size.button,
+    fontFamily: typography.fontFamily.bodySemiBold,
+    color: colors.canvas,
+  },
+  modalButtonSecondary: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  modalButtonSecondaryText: {
+    fontSize: typography.size.button,
+    fontFamily: typography.fontFamily.bodySemiBold,
+    color: colors.muted,
   },
 });

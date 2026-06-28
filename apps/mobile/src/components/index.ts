@@ -8,3 +8,6 @@ export { BookingDetailCard } from './BookingDetailCard';
 export { BookingReviewForm } from './BookingReviewForm';
 export { MessageThread } from './message-thread';
 export { NotificationsPanel } from './notifications-panel';
+export { CancelBookingModal } from './CancelBookingModal';
+export { CareRequestCard } from './CareRequestCard';
+export { ReportUserMenu } from './ReportUserMenu';

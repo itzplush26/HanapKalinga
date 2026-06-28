@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react-native';
 import { useAuth } from '../../../src/contexts/AuthContext';
 import { useBookingDetail } from '../../../src/lib/hooks/useBookingDetail';
 import { supabase } from '../../../src/lib/supabase';
+import { getApiUrl } from '@hanapkalinga/shared/api';
 import { ScreenWrapper } from '../../../src/components/ScreenWrapper';
 import { Button } from '../../../src/components/ui/Button';
 import { Badge } from '../../../src/components/ui/Badge';
@@ -13,23 +14,29 @@ import { Skeleton } from '../../../src/components/ui/Skeleton';
 import { Separator } from '../../../src/components/ui/Separator';
 import { BookingDetailCard } from '../../../src/components/BookingDetailCard';
 import { MessageThread } from '../../../src/components/message-thread';
+import { CancelBookingModal } from '../../../src/components/CancelBookingModal';
+import { ReportUserMenu } from '../../../src/components/ReportUserMenu';
 import { getShiftLabel, getStatusColor, formatDate, getInitials } from '../../../src/lib/helpers';
 import { colors } from '../../../src/theme/colors';
 import { spacing } from '../../../src/theme/spacing';
 import { rounded } from '../../../src/theme/rounded';
 import { typography } from '../../../src/theme/typography';
 
+const API_URL = getApiUrl();
+
 export default function NurseBookingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
-  const { booking, family, nurse, messages, review, loading, error, refetch } = useBookingDetail(id);
-  const [actionLoading, setActionLoading] = useState(false);
+  const {
+    booking, family, nurse, messages, review,
+    loading, error, actionLoading, refetch,
+    cancel, markComplete,
+  } = useBookingDetail(id);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   const handleAccept = async () => {
     if (!booking) return;
-    setActionLoading(true);
-
     const { error: updateError } = await (supabase as any)
       .from('bookings')
       .update({ status: 'accepted' })
@@ -45,8 +52,6 @@ export default function NurseBookingDetailScreen() {
       });
       refetch();
     }
-
-    setActionLoading(false);
   };
 
   const handleDecline = () => {
@@ -60,7 +65,6 @@ export default function NurseBookingDetailScreen() {
           text: 'Decline',
           style: 'destructive',
           onPress: async () => {
-            setActionLoading(true);
             const { error: updateError } = await (supabase as any)
               .from('bookings')
               .update({ status: 'declined' })
@@ -76,11 +80,83 @@ export default function NurseBookingDetailScreen() {
               });
               refetch();
             }
-            setActionLoading(false);
           },
         },
       ]
     );
+  };
+
+  const handleCancelConfirm = async (reason: string) => {
+    const result = await cancel(reason, 'nurse');
+    if (result.error) {
+      Alert.alert('Error', result.error);
+    } else {
+      setShowCancelModal(false);
+    }
+  };
+
+  const handleMarkComplete = () => {
+    Alert.alert(
+      'Mark Shift Complete',
+      'Confirm that you have completed this shift?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Mark Complete',
+          onPress: async () => {
+            const result = await markComplete();
+            if (result.error) {
+              Alert.alert('Error', result.error);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleReportUser = async (category: string, description: string) => {
+    if (!booking || !user) return;
+    const targetId = booking.family_id;
+    try {
+      const res = await fetch(`${API_URL}/api/incident-reports`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reportedUserId: targetId,
+          bookingId: booking.id,
+          category,
+          description,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        Alert.alert('Error', json.error ?? 'Failed to submit report');
+      } else {
+        Alert.alert('Report Submitted', 'Thank you. An admin will review your report.');
+      }
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to submit report');
+    }
+  };
+
+  const handleBlockUser = async () => {
+    if (!booking || !user) return;
+    const targetId = booking.family_id;
+    try {
+      const res = await fetch(`${API_URL}/api/user-blocks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ blockedId: targetId }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        Alert.alert('Error', json.error ?? 'Failed to block user');
+      } else {
+        Alert.alert('User Blocked', 'This user has been blocked from contacting you.');
+      }
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to block user');
+    }
   };
 
   if (loading) {
@@ -107,18 +183,29 @@ export default function NurseBookingDetailScreen() {
   }
 
   const statusColor = getStatusColor(booking.status);
+  const canCancel = booking.status === 'pending' || booking.status === 'accepted';
+  const canMarkComplete = booking.status === 'accepted' && booking.requested_date
+    && booking.requested_date <= new Date().toISOString().split('T')[0];
 
   return (
     <ScreenWrapper>
       <ScrollView contentContainerStyle={styles.container}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <ArrowLeft size={24} color={colors.ink} />
-        </TouchableOpacity>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <ArrowLeft size={24} color={colors.ink} />
+          </TouchableOpacity>
+          {family && (
+            <ReportUserMenu
+              onReport={handleReportUser}
+              onBlock={handleBlockUser}
+            />
+          )}
+        </View>
 
         <View style={styles.header}>
           <View style={styles.headerInfo}>
@@ -154,6 +241,7 @@ export default function NurseBookingDetailScreen() {
               loading={actionLoading}
               onPress={handleAccept}
               style={styles.actionButton}
+              testID="nurseBookingDetail_button_accept"
             >
               Accept
             </Button>
@@ -162,8 +250,32 @@ export default function NurseBookingDetailScreen() {
               loading={actionLoading}
               onPress={handleDecline}
               style={styles.declineButton}
+              testID="nurseBookingDetail_button_decline"
             >
               Decline
+            </Button>
+          </View>
+        )}
+
+        {canCancel && (
+          <View>
+            <Button
+              variant="secondary"
+              onPress={() => setShowCancelModal(true)}
+            >
+              Cancel Booking
+            </Button>
+          </View>
+        )}
+
+        {canMarkComplete && (
+          <View>
+            <Button
+              variant="primary"
+              onPress={handleMarkComplete}
+              loading={actionLoading}
+            >
+              Mark Shift Complete
             </Button>
           </View>
         )}
@@ -183,6 +295,13 @@ export default function NurseBookingDetailScreen() {
           </View>
         )}
       </ScrollView>
+
+      <CancelBookingModal
+        visible={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={handleCancelConfirm}
+        loading={actionLoading}
+      />
     </ScreenWrapper>
   );
 }
@@ -203,6 +322,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.xl,
     gap: spacing.md,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   backButton: {
     width: 44,

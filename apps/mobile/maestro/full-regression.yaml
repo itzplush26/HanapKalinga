@@ -1,0 +1,173 @@
+appId: ${APP_ID}
+env:
+  APP_ID: "com.hanapkalinga.mobile"
+  # Set these via --env when running maestro
+  TEST_EMAIL: ${TEST_EMAIL}
+  TEST_PASSWORD: ${TEST_PASSWORD}
+  TEST_EMAIL_PREFIX: ${TEST_EMAIL_PREFIX}
+  # OTP for registration flows
+  OTP_DIGIT_0: "0"
+  OTP_DIGIT_1: "0"
+  OTP_DIGIT_2: "0"
+  OTP_DIGIT_3: "0"
+  OTP_DIGIT_4: "0"
+  OTP_DIGIT_5: "0"
+---
+# =============================================
+# Phase 3 Task 11: Auth Flows
+# =============================================
+
+# 11a. Login failure — invalid credentials
+- runFlow:
+    file: auth/login-failure.yaml
+
+# 11b. Forgot password flow
+- runFlow:
+    file: auth/forgot-password.yaml
+
+# 11c. Register new family user
+- runFlow:
+    file: auth/register-family.yaml
+
+# 11d. Register new nurse user
+- runFlow:
+    file: auth/register-nurse.yaml
+
+# 11e. Login success with seeded user
+- runFlow:
+    file: auth/login-success.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# 11f. Session restore (login, kill, relaunch)
+- runFlow:
+    file: auth/session-restore.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# =============================================
+# Phase 3 Task 12: Family Flows
+# =============================================
+
+# 12a. Browse nurses list
+- runFlow:
+    file: family/browse-nurses.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# 12b. View nurse detail
+- runFlow:
+    file: family/nurse-detail.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+      NURSE_ID: ${NURSE_ID}
+
+# 12c. Request a booking
+- runFlow:
+    file: family/request-booking.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+      NURSE_ID: ${NURSE_ID}
+
+# 12d. View family bookings list
+- runFlow:
+    file: family/bookings-list.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# 12e. View booking detail
+- runFlow:
+    file: family/booking-detail.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+      BOOKING_ID: ${BOOKING_ID}
+
+# =============================================
+# Phase 3 Task 13: Nurse Flows
+# =============================================
+
+# 13a. Set availability
+- runFlow:
+    file: nurse/set-availability.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# 13b. Accept a booking
+- runFlow:
+    file: nurse/accept-booking.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+      BOOKING_ID: ${BOOKING_ID}
+
+# 13c. Decline a booking
+- runFlow:
+    file: nurse/decline-booking.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+      BOOKING_ID: ${BOOKING_ID}
+
+# 13d. View nurse bookings list
+- runFlow:
+    file: nurse/bookings-list.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# 13e. View messages
+- runFlow:
+    file: nurse/messages.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# =============================================
+# Phase 3 Task 14: Admin Flows
+# =============================================
+
+# 14a. Dashboard metrics
+- runFlow:
+    file: admin/dashboard-metrics.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# 14b. Verification queue
+- runFlow:
+    file: admin/verification-queue.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# 14c. Verification detail
+- runFlow:
+    file: admin/verification-detail.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+      VERIFICATION_ID_DETAIL: ${VERIFICATION_ID_DETAIL}
+
+# 14d. Approve verification
+- runFlow:
+    file: admin/approve-verification.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+      VERIFICATION_ID_APPROVE: ${VERIFICATION_ID_APPROVE}
+
+# 14e. Reject verification
+- runFlow:
+    file: admin/reject-verification.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+      VERIFICATION_ID_REJECT: ${VERIFICATION_ID_REJECT}

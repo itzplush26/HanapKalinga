@@ -1,0 +1,41 @@
+appId: ${APP_ID}
+---
+# Navigate to login from landing
+- tapOn:
+    id: "landing_button_login"
+
+# Enter credentials
+- tapOn:
+    id: "login_input_email"
+- inputText: ${EMAIL}
+- tapOn:
+    id: "login_input_password"
+- inputText: ${PASSWORD}
+
+# Dismiss keyboard before submit
+- hideKeyboard
+
+# Wait for captcha to be ready (if captcha is configured).
+# The Turnstile widget renders a "login_captcha_ready" sentinel element
+# when the captcha token is set. With Cloudflare test keys, this auto-passes
+# within a few seconds. If captcha is not configured, the widget element
+# is absent and this block is skipped.
+- runFlow:
+    when:
+      visible:
+        id: "login_captcha_widget"
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: "login_captcha_ready"
+          timeout: 30000
+
+# Submit
+- tapOn:
+    id: "login_button_submit"
+
+# Wait for redirect to dashboard
+- extendedWaitUntil:
+    notVisible:
+      id: "login_button_submit"
+    timeout: 15000

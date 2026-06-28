@@ -1,0 +1,45 @@
+Running on Pixel_6
+ > Flow request-booking
+Run ../shared/setup.yaml...
+  Launch app "${APP_ID}" with clear state and clear keychain... COMPLETED
+  Wait for animation to end within 10000 ms... COMPLETED
+  Run flow when "Profile" is visible...
+  Run flow when "Profile" is visible... SKIPPED
+  Run flow when id: dashboard_metrics_pendingVerifications is visible...
+  Run flow when id: dashboard_metrics_pendingVerifications is visible... SKIPPED
+  Assert that id: landing_button_login is visible... COMPLETED
+Run ../shared/setup.yaml... COMPLETED
+Run ../shared/helpers.yaml...
+  Run ../shared/login-actions.yaml when ${TEST_EMAIL != null && TEST_PASSWORD != null} is true...
+    Tap on id: landing_button_login... COMPLETED
+    Tap on id: login_input_email... COMPLETED
+    Input text ${EMAIL}... COMPLETED
+    Tap on id: login_input_password... COMPLETED
+    Input text ${PASSWORD}... COMPLETED
+    Hide Keyboard... COMPLETED
+    Run flow when id: login_captcha_widget is visible...
+      Assert that id: login_captcha_ready is visible... COMPLETED
+    Run flow when id: login_captcha_widget is visible... COMPLETED
+    Tap on id: login_button_submit... COMPLETED
+    Assert that id: login_button_submit is not visible... COMPLETED
+  Run ../shared/login-actions.yaml when true is true... COMPLETED
+  Run ../shared/logout-actions.yaml when ${LOGOUT == "true"} is true...
+  Run ../shared/logout-actions.yaml when false is true... SKIPPED
+Run ../shared/helpers.yaml... COMPLETED
+Assert that "Browse" is visible... COMPLETED
+Tap on "Browse"... COMPLETED
+Assert that id: browse_input_search is visible... COMPLETED
+Assert that id: browse_list_nurses is visible... COMPLETED
+Tap on id: browse_card_nurse_${NURSE_ID}... COMPLETED
+Assert that id: nurseDetail_text_name is visible... COMPLETED
+Tap on id: nurseDetail_button_requestBooking... COMPLETED
+Assert that id: bookingNew_picker_date is visible... COMPLETED
+Tap on id: bookingNew_input_condition_bedridden... COMPLETED
+Tap on id: bookingNew_picker_shift_morning... COMPLETED
+Scrolling DOWN until id: bookingNew_chip_skill_Wound_Care is visible with speed 40, visibility percentage 100%, timeout 5000 ms, with centering disabled... COMPLETED
+Tap on id: bookingNew_chip_skill_Wound_Care... COMPLETED
+Scrolling DOWN until id: bookingNew_input_budget_under_1000 is visible with speed 40, visibility percentage 100%, timeout 5000 ms, with centering disabled... COMPLETED
+Tap on id: bookingNew_input_budget_under_1000... COMPLETED
+Scrolling DOWN until id: bookingNew_button_submit is visible with speed 40, visibility percentage 100%, timeout 5000 ms, with centering disabled... COMPLETED
+Tap on id: bookingNew_button_submit... COMPLETED
+Assert that id: bookingNew_text_success is visible... COMPLETED

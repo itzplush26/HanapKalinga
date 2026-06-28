@@ -40,14 +40,15 @@ export default function VerificationQueueScreen() {
     (tab: { value: VerificationFilter; label: string }) => {
       const isActive = filter === tab.value;
       return (
-        <TouchableOpacity
-          key={tab.value}
-          onPress={() => setFilter(tab.value)}
-          style={[styles.filterTab, isActive && styles.filterTabActive]}
-          accessibilityRole="button"
-          accessibilityLabel={`Filter: ${tab.label}`}
-          accessibilityState={{ selected: isActive }}
-        >
+          <TouchableOpacity
+            key={tab.value}
+            onPress={() => setFilter(tab.value)}
+            style={[styles.filterTab, isActive && styles.filterTabActive]}
+            accessibilityRole="button"
+            accessibilityLabel={`Filter: ${tab.label}`}
+            accessibilityState={{ selected: isActive }}
+            testID={`verificationQueue_filter_${tab.value}`}
+          >
           <Text
             style={[
               styles.filterTabLabel,
@@ -75,6 +76,7 @@ export default function VerificationQueueScreen() {
           style={styles.applicantCard}
           accessibilityRole="button"
           accessibilityLabel={`Review ${item.full_name ?? 'applicant'}`}
+          testID={`verificationQueue_card_${item.id}`}
         >
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{initials || '?'}</Text>
@@ -124,7 +126,7 @@ export default function VerificationQueueScreen() {
   );
 
   return (
-    <ScreenWrapper>
+      <ScreenWrapper>
       <View style={styles.container}>
         <FlatList
           ListHeaderComponent={
@@ -135,6 +137,7 @@ export default function VerificationQueueScreen() {
           data={loading && data.length === 0 ? [] : data}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
+          testID="verificationQueue_list_requests"
           ListEmptyComponent={
             loading ? (
               renderSkeletons()

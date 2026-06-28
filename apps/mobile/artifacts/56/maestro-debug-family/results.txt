@@ -1,0 +1,9 @@
+# shard: family
+# total: 5
+booking-detail|PASS|
+bookings-list|PASS|
+browse-nurses|PASS|
+nurse-detail|FAIL|Assert that id: nurseDetail_text_rate is visible... FAILED
+request-booking|PASS|
+# passed: 4
+# failed: 1

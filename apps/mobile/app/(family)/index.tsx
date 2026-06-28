@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Heart, ArrowRight } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { useTheme } from '../../src/contexts/ThemeContext';
 import { useFamilyBookings } from '../../src/lib/hooks/useFamilyBookings';
 import { ScreenWrapper } from '../../src/components/ScreenWrapper';
 import { Button } from '../../src/components/ui/Button';
@@ -12,7 +13,6 @@ import { Card } from '../../src/components/ui/Card';
 import { Skeleton } from '../../src/components/ui/Skeleton';
 import { BookingCard } from '../../src/components/BookingCard';
 import { NotificationsPanel } from '../../src/components/notifications-panel';
-import { colors } from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
 import { rounded } from '../../src/theme/rounded';
 import { typography } from '../../src/theme/typography';
@@ -22,6 +22,7 @@ const WELCOME_BANNER_KEY = '@hanapkalinga/welcome_banner_dismissed';
 export default function FamilyDashboardScreen() {
   const router = useRouter();
   const { user, profile } = useAuth();
+  const { colors } = useTheme();
   const { bookings, loading } = useFamilyBookings(user?.id);
 
   const [showWelcome, setShowWelcome] = useState(false);
@@ -40,17 +41,17 @@ export default function FamilyDashboardScreen() {
   const recentBookings = bookings.slice(0, 3);
 
   return (
-    <ScreenWrapper scroll>
+    <ScreenWrapper scroll testID="familyDashboard_screen">
       <View style={styles.container}>
         {showWelcome && (
-          <View style={styles.welcomeBanner}>
+          <View style={[styles.welcomeBanner, { backgroundColor: colors.primary }]}>
             <View style={styles.welcomeContent}>
-              <Heart size={24} color={colors.canvas} />
+              <Heart size={24} color={colors['on-primary']} />
               <View style={styles.welcomeText}>
-                <Text style={styles.welcomeTitle}>
+                <Text style={[styles.welcomeTitle, { color: colors['on-primary'] }]}>
                   Welcome{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}!
                 </Text>
-                <Text style={styles.welcomeSubtitle}>
+                <Text style={[styles.welcomeSubtitle, { color: colors['on-primary'] }]}>
                   Find the right care for your loved ones.
                 </Text>
               </View>
@@ -61,14 +62,18 @@ export default function FamilyDashboardScreen() {
               accessibilityRole="button"
               accessibilityLabel="Dismiss welcome banner"
             >
-              <Text style={styles.dismissText}>Dismiss</Text>
+              <Text style={{ color: colors['on-primary'], textDecorationLine: 'underline', fontSize: 14, fontFamily: typography.fontFamily.bodyMedium }}>
+                Dismiss
+              </Text>
             </TouchableOpacity>
           </View>
         )}
 
-        <Card variant="signature" roundedSize="lg" style={styles.promoCard}>
-          <Text style={styles.promoTitle}>Find a nurse or caregiver</Text>
-          <Text style={styles.promoSubtitle}>
+        <Card style={styles.promoCard}>
+          <Text style={[styles.promoTitle, { color: colors['text-primary'] }]}>
+            Find a nurse or caregiver
+          </Text>
+          <Text style={[styles.promoSubtitle, { color: colors['text-secondary'] }]}>
             Browse verified professionals near you
           </Text>
           <TouchableOpacity
@@ -76,15 +81,20 @@ export default function FamilyDashboardScreen() {
             style={styles.promoButton}
             accessibilityRole="button"
             accessibilityLabel="Browse nurses"
+            testID="familyDashboard_button_browse"
           >
-            <Text style={styles.promoButtonText}>Browse now</Text>
-            <ArrowRight size={18} color={colors.canvas} />
+            <Text style={[styles.promoButtonText, { color: colors.primary }]}>
+              Browse now
+            </Text>
+            <ArrowRight size={18} color={colors.primary} />
           </TouchableOpacity>
         </Card>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent bookings</Text>
+            <Text style={[styles.sectionTitle, { color: colors['text-primary'] }]}>
+              Recent bookings
+            </Text>
             {bookings.length > 3 && (
               <TextLink onPress={() => router.push('/(family)/bookings')}>
                 View all
@@ -93,8 +103,8 @@ export default function FamilyDashboardScreen() {
           </View>
           {loading ? (
             <View style={styles.skeletonRow}>
-              <Skeleton variant="rectangle" height={80} />
-              <Skeleton variant="rectangle" height={80} />
+              <Skeleton height={80} />
+              <Skeleton height={80} />
             </View>
           ) : recentBookings.length > 0 ? (
             <FlatList
@@ -109,8 +119,8 @@ export default function FamilyDashboardScreen() {
               scrollEnabled={false}
             />
           ) : (
-            <Card variant="cream" roundedSize="md">
-              <Text style={styles.emptyText}>
+            <Card>
+              <Text style={[styles.emptyText, { color: colors['text-muted'] }]}>
                 No bookings yet. Find a nurse to get started.
               </Text>
             </Card>
@@ -118,15 +128,18 @@ export default function FamilyDashboardScreen() {
         </View>
 
         <Button
-          variant="primary"
+          variant="default"
           onPress={() => router.push('/(family)/browse')}
+          testID="familyDashboard_button_requestBooking"
         >
           Request a booking
         </Button>
 
         {user && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Notifications</Text>
+            <Text style={[styles.sectionTitle, { color: colors['text-primary'] }]}>
+              Notifications
+            </Text>
             <NotificationsPanel userId={user.id} maxItems={5} showMarkAllRead={false} />
           </View>
         )}
@@ -137,74 +150,62 @@ export default function FamilyDashboardScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: spacing.md,
-    gap: spacing.md,
+    padding: spacing[4],
+    gap: spacing[4],
   },
   welcomeBanner: {
-    backgroundColor: colors.brand[600],
     borderRadius: rounded.lg,
-    padding: spacing.md,
+    padding: spacing[4],
   },
   welcomeContent: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: spacing[3],
     alignItems: 'center',
   },
   welcomeText: {
     flex: 1,
   },
   welcomeTitle: {
-    fontSize: typography.size.titleMd,
-    fontFamily: typography.fontFamily.display,
-    color: colors.canvas,
+    fontSize: typography.size.lg,
+    fontFamily: typography.fontFamily.bodySemiBold,
   },
   welcomeSubtitle: {
-    fontSize: typography.size.body,
+    fontSize: typography.size.base,
     fontFamily: typography.fontFamily.body,
-    color: 'rgba(255,255,255,0.85)',
     marginTop: 2,
   },
   dismissButton: {
     alignSelf: 'flex-end',
-    marginTop: spacing.xs,
+    marginTop: spacing[2],
     minHeight: 44,
     justifyContent: 'center',
   },
-  dismissText: {
-    fontSize: typography.size.body,
-    fontFamily: typography.fontFamily.bodyMedium,
-    color: 'rgba(255,255,255,0.8)',
-    textDecorationLine: 'underline',
-  },
   promoCard: {
-    padding: spacing.lg,
+    padding: spacing[6],
   },
   promoTitle: {
-    fontSize: typography.size.titleLg,
-    fontFamily: typography.fontFamily.display,
-    color: colors.canvas,
+    fontSize: typography.size.xl,
+    fontFamily: typography.fontFamily.bodySemiBold,
   },
   promoSubtitle: {
-    fontSize: typography.size.body,
+    fontSize: typography.size.base,
     fontFamily: typography.fontFamily.body,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: spacing.xxs,
+    marginTop: spacing[1],
   },
   promoButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.md,
+    gap: spacing[2],
+    marginTop: spacing[4],
     minHeight: 44,
   },
   promoButtonText: {
-    fontSize: typography.size.button,
+    fontSize: 15,
     fontFamily: typography.fontFamily.bodySemiBold,
-    color: colors.canvas,
     textDecorationLine: 'underline',
   },
   section: {
-    gap: spacing.sm,
+    gap: spacing[3],
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -212,17 +213,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sectionTitle: {
-    fontSize: typography.size.titleMd,
-    fontFamily: typography.fontFamily.display,
-    color: colors.ink,
+    fontSize: typography.size.lg,
+    fontFamily: typography.fontFamily.bodySemiBold,
   },
   skeletonRow: {
-    gap: spacing.sm,
+    gap: spacing[3],
   },
   emptyText: {
-    fontSize: typography.size.body,
+    fontSize: typography.size.base,
     fontFamily: typography.fontFamily.body,
-    color: colors.muted,
     textAlign: 'center',
   },
 });

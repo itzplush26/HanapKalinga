@@ -1,0 +1,37 @@
+appId: ${APP_ID}
+---
+- extendedWaitUntil:
+    visible:
+      id: "landing_button_login"
+    timeout: 60000
+- tapOn:
+    id: "landing_button_login"
+- tapOn:
+    id: "login_input_email"
+- inputText: ${TEST_EMAIL}
+- tapOn:
+    id: "login_input_password"
+- inputText: ${TEST_PASSWORD}
+- hideKeyboard
+# Wait for captcha to be ready (if captcha is configured)
+- runFlow:
+    when:
+      visible:
+        id: "login_captcha_widget"
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: "login_captcha_ready"
+          timeout: 30000
+- tapOn:
+    id: "login_button_submit"
+- extendedWaitUntil:
+    notVisible:
+      id: "login_button_submit"
+    timeout: 30000
+
+# Verify we actually landed on a dashboard (confirm login succeeded)
+- extendedWaitUntil:
+    visible:
+      id: "familyDashboard_button_browse"
+    timeout: 15000

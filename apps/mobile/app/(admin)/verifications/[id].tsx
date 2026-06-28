@@ -48,19 +48,9 @@ export default function VerificationReviewScreen() {
       try {
         const prevStatus = data?.nurse?.verification_status ?? 'pending';
 
-        const { error: updateError }: any = await (supabase as any)
-          .from('nurses')
-          .update({
-            verification_status: newStatus,
-            rejection_reason: reason ?? null,
-          })
-          .eq('id', id);
-
-        if (updateError) {
-          Alert.alert('Error', updateError.message);
-          return;
-        }
-
+        // Insert audit log FIRST so we don't mutate nurse status if it fails.
+        // This prevents a partial state where the nurse is approved/rejected
+        // but no audit trail exists, which also cascades into test failures.
         const { error: auditError }: any = await (supabase as any)
           .from('verification_audit_logs')
           .insert({
@@ -75,6 +65,19 @@ export default function VerificationReviewScreen() {
 
         if (auditError) {
           Alert.alert('Error', auditError.message);
+          return;
+        }
+
+        const { error: updateError }: any = await (supabase as any)
+          .from('nurses')
+          .update({
+            verification_status: newStatus,
+            rejection_reason: reason ?? null,
+          })
+          .eq('id', id);
+
+        if (updateError) {
+          Alert.alert('Error', updateError.message);
           return;
         }
 
@@ -214,7 +217,7 @@ export default function VerificationReviewScreen() {
               </Text>
             </View>
             <View style={styles.applicantDetails}>
-              <Text style={styles.applicantName}>
+              <Text style={styles.applicantName} testID="verificationDetail_text_name">
                 {profile?.full_name ?? 'Applicant'}
               </Text>
               <Badge color={statusColor} label={nurse.verification_status.replace(/_/g, ' ')} />
@@ -303,7 +306,7 @@ export default function VerificationReviewScreen() {
         </Card>
 
         {data.auditLogs.length > 0 && (
-          <Card variant="default" title="Audit log" style={{ marginTop: spacing.md }}>
+          <Card variant="default" title="Audit log" style={{ marginTop: spacing.md }} testID="verificationDetail_text_auditLog">
             {data.auditLogs.map((log, index) => (
               <View key={log.id}>
                 {index > 0 && <Separator />}
@@ -343,6 +346,7 @@ export default function VerificationReviewScreen() {
               onPress={confirmApprove}
               loading={actionLoading === 'approved'}
               disabled={actionLoading !== null}
+              testID="verificationDetail_button_approve"
             >
               Approve
             </Button>
@@ -356,6 +360,7 @@ export default function VerificationReviewScreen() {
               loading={actionLoading === 'rejected'}
               disabled={actionLoading !== null}
               style={styles.rejectButton}
+              testID="verificationDetail_button_reject"
             >
               Reject
             </Button>
@@ -370,6 +375,7 @@ export default function VerificationReviewScreen() {
                   onChangeText={setRejectionReason}
                   multiline
                   accessibilityLabel="Rejection reason"
+                  testID="verificationDetail_input_rejectionReason"
                 />
                 <TextInput
                   style={styles.textArea}
@@ -391,7 +397,7 @@ export default function VerificationReviewScreen() {
                   >
                     Cancel
                   </Button>
-                  <Button variant="primary" onPress={confirmReject}>
+                  <Button variant="primary" onPress={confirmReject} testID="verificationDetail_button_confirmReject">
                     Confirm Reject
                   </Button>
                 </View>

@@ -1,0 +1,40 @@
+appId: ${APP_ID}
+---
+- runFlow:
+    file: ../shared/setup.yaml
+
+# Navigate to login from landing
+- tapOn:
+    id: "landing_button_login"
+
+# Enter wrong credentials
+- tapOn:
+    id: "login_input_email"
+- inputText: "nonexistent@test.com"
+- tapOn:
+    id: "login_input_password"
+- inputText: "WrongPass123!"
+
+# Dismiss keyboard before captcha/submit
+- hideKeyboard
+
+# Wait for captcha to be ready (if captcha is configured)
+- runFlow:
+    when:
+      visible:
+        id: "login_captcha_widget"
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: "login_captcha_ready"
+          timeout: 30000
+
+# Submit
+- tapOn:
+    id: "login_button_submit"
+
+# Wait for error message to appear
+- extendedWaitUntil:
+    visible:
+      id: "login_text_error"
+    timeout: 15000

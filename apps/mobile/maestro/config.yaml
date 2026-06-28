@@ -1,0 +1,9 @@
+flows:
+  paths:
+    - auth/
+    - family/
+    - nurse/
+    - admin/
+  env:
+    ENV: "local"
+    APP_ID: "com.hanapkalinga.mobile"

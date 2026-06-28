@@ -1,0 +1,35 @@
+appId: ${APP_ID}
+---
+# Login as nurse user
+- runFlow:
+    file: ../shared/setup.yaml
+- runFlow:
+    file: ../shared/helpers.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# Navigate to Messages tab
+- extendedWaitUntil:
+    visible:
+      text: "Messages"
+    timeout: 15000
+- tapOn:
+    text: "Messages"
+
+# Verify messages screen loaded.
+# Conversations only appear when booking-related messages exist.
+# If no conversations exist, the empty state ("No messages yet") is valid.
+- extendedWaitUntil:
+    visible:
+      id: "messages_list_conversations"
+    timeout: 10000
+    optional: true
+- runFlow:
+    when:
+      notVisible:
+        id: "messages_list_conversations"
+    commands:
+      # No conversation list — accept the empty state instead
+      - assertVisible:
+          text: "No messages yet"

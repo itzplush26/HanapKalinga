@@ -1,7 +1,7 @@
 const path = require('path');
 
 module.exports = {
-  preset: 'react-native',
+  preset: '@react-native/jest-preset',
   testEnvironment: path.resolve(__dirname, 'jest/ReactNativeEnv.js'),
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',

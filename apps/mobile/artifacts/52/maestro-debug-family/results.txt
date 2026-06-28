@@ -1,0 +1,9 @@
+# shard: family
+# total: 5
+booking-detail|FAIL|Tap on id: tab_bookings... FAILED
+bookings-list|FAIL|Tap on id: tab_bookings... FAILED
+browse-nurses|FAIL|Tap on id: tab_browse... FAILED
+nurse-detail|FAIL|Tap on id: tab_browse... FAILED
+request-booking|FAIL|Tap on id: tab_browse... FAILED
+# passed: 0
+# failed: 5

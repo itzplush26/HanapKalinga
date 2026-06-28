@@ -172,6 +172,7 @@ export default function AvailabilityScreen() {
                         isCurrent && styles.dayHeaderCurrent,
                         isPast && styles.dayPast,
                       ]}
+                      testID={`availability_grid_${label.toLowerCase()}`}
                     >
                       <Text style={[styles.dayLabel, isCurrent && styles.dayLabelCurrent]}>
                         {label}
@@ -213,6 +214,7 @@ export default function AvailabilityScreen() {
                         accessibilityRole="button"
                         accessibilityState={{ selected: isOpen, disabled: past }}
                         accessibilityLabel={`${DAY_LABELS[i]} ${shift} ${isOpen ? 'open' : 'closed'}`}
+                        testID={`availability_toggle_${dateStr}_${shift}`}
                       >
                         <Text style={[styles.cellText, isOpen && !past && styles.cellTextOpen]}>
                           {isOpen ? '✓' : '—'}
@@ -232,6 +234,7 @@ export default function AvailabilityScreen() {
           disabled={!hasChanges}
           onPress={handleSave}
           style={styles.saveButton}
+          testID="availability_button_save"
         >
           Save
         </Button>

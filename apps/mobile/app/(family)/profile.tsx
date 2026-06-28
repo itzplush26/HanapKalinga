@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Modal, TouchableOpacity, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { ScreenWrapper } from '../../src/components/ScreenWrapper';
 import { Input } from '../../src/components/ui/Input';
 import { Button } from '../../src/components/ui/Button';
+import { Card } from '../../src/components/ui/Card';
 import { RegionCitySelects } from '../../src/components/domain/RegionCitySelects';
+import { ProfilePhotoUploader } from '../../src/components/ProfilePhotoUploader';
+import { ThemeToggle } from '../../src/components/ThemeToggle';
 import { colors } from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
 import { typography } from '../../src/theme/typography';
@@ -12,7 +16,8 @@ import { supabase } from '../../src/lib/supabase';
 import { familyProfileSchema } from '@hanapkalinga/shared/validations';
 
 export default function FamilyProfileScreen() {
-  const { user, profile, refreshProfile } = useAuth();
+  const router = useRouter();
+  const { user, profile, refreshProfile, signOut } = useAuth();
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -20,10 +25,12 @@ export default function FamilyProfileScreen() {
   const [city, setCity] = useState('');
   const [barangay, setBarangay] = useState('');
   const [address, setAddress] = useState('');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [patientName, setPatientName] = useState('');
 
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -33,6 +40,7 @@ export default function FamilyProfileScreen() {
       setCity(profile.city ?? '');
       setBarangay(profile.barangay ?? '');
       setAddress(profile.address ?? '');
+      setPhotoUrl(profile.profile_photo_url ?? null);
       setLoading(false);
 
       if (user) {
@@ -127,6 +135,12 @@ export default function FamilyProfileScreen() {
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Family Profile</Text>
 
+        <ProfilePhotoUploader
+          photoUrl={photoUrl}
+          displayName={fullName || 'Family'}
+          onPhotoChange={(url) => setPhotoUrl(url)}
+        />
+
         <Input
           label="Full name"
           value={fullName}
@@ -170,9 +184,49 @@ export default function FamilyProfileScreen() {
           placeholder="Name of person needing care"
         />
 
+        <Card title="Appearance" roundedSize="md">
+          <ThemeToggle />
+        </Card>
+
         <Button variant="primary" loading={saving} onPress={handleSave}>
           Save
         </Button>
+
+        <Button
+          variant="outline"
+          testID="profile_button_logout"
+          onPress={() => setShowSignOutModal(true)}
+        >
+          Sign out
+        </Button>
+
+        <Modal visible={showSignOutModal} transparent animationType="fade" onRequestClose={() => setShowSignOutModal(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Sign out</Text>
+              <Text style={styles.modalMessage}>Are you sure you want to sign out?</Text>
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.modalCancelButton}
+                  onPress={() => setShowSignOutModal(false)}
+                >
+                  <Text style={styles.modalCancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  testID="logout_button_confirm"
+                  style={styles.modalConfirmButton}
+                  onPress={async () => {
+                    setShowSignOutModal(false);
+                    await signOut();
+                    router.replace('/');
+                  }}
+                >
+                  <Text style={styles.modalConfirmText}>Sign out</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </ScreenWrapper>
   );
@@ -199,5 +253,55 @@ const styles = StyleSheet.create({
     fontSize: typography.size.body,
     fontFamily: typography.fontFamily.body,
     color: colors.muted,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: colors.canvas,
+    borderRadius: 12,
+    padding: spacing.lg,
+    width: '80%',
+    maxWidth: 320,
+    gap: spacing.md,
+  },
+  modalTitle: {
+    fontSize: typography.size.titleMd,
+    fontFamily: typography.fontFamily.display,
+    color: colors.ink,
+  },
+  modalMessage: {
+    fontSize: typography.size.body,
+    fontFamily: typography.fontFamily.body,
+    color: colors.body,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  modalCancelButton: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  modalCancelText: {
+    fontSize: typography.size.button,
+    fontFamily: typography.fontFamily.bodySemiBold,
+    color: colors.muted,
+  },
+  modalConfirmButton: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.semantic.error,
+    borderRadius: 8,
+  },
+  modalConfirmText: {
+    fontSize: typography.size.button,
+    fontFamily: typography.fontFamily.bodySemiBold,
+    color: colors.canvas,
   },
 });

@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   RefreshControl,
+  TextInput,
   StyleSheet,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
@@ -25,6 +26,7 @@ export default function BrowseNursesScreen() {
   const router = useRouter();
   const [filters, setFilters] = useState<NurseFilters>({});
   const [showFilters, setShowFilters] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { data, loading, loadingMore, error, refetch, loadMore, hasMore } = useNurses(filters);
 
   const handleNursePress = useCallback(
@@ -40,7 +42,9 @@ export default function BrowseNursesScreen() {
 
   const renderItem = useCallback(
     ({ item }: { item: NurseListItem }) => (
-      <NurseCard nurse={item} onPress={() => handleNursePress(item)} />
+      <View testID={`browse_card_nurse_${item.id}`}>
+        <NurseCard nurse={item} onPress={() => handleNursePress(item)} />
+      </View>
     ),
     [handleNursePress]
   );
@@ -100,6 +104,7 @@ export default function BrowseNursesScreen() {
               accessibilityLabel="Open filters"
               accessibilityRole="button"
               style={styles.filterButton}
+              testID="browse_button_filter"
             >
               <SlidersHorizontal size={22} color={colors.brand[600]} />
               {Object.keys(filters).length > 0 && (
@@ -108,6 +113,15 @@ export default function BrowseNursesScreen() {
             </TouchableOpacity>
           ),
         }}
+      />
+
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search nurses..."
+        placeholderTextColor={colors.muted}
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        testID="browse_input_search"
       />
 
       {loading ? (
@@ -134,6 +148,7 @@ export default function BrowseNursesScreen() {
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
+          testID="browse_list_nurses"
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
           ListFooterComponent={renderFooter}
@@ -159,6 +174,20 @@ export default function BrowseNursesScreen() {
 }
 
 const styles = StyleSheet.create({
+  searchInput: {
+    marginHorizontal: spacing.md,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.hairline,
+    borderRadius: 8,
+    fontSize: typography.size.body,
+    fontFamily: typography.fontFamily.body,
+    color: colors.ink,
+    backgroundColor: colors.canvas,
+  },
   filterButton: {
     padding: spacing.xs,
     position: 'relative',

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, TextInput as RNTextInput, ScrollView, Alert, StyleSheet } from 'react-native';
+import { View, Text, TextInput as RNTextInput, ScrollView, Modal, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { User, AlertTriangle } from 'lucide-react-native';
 import { useAuth } from '../../src/contexts/AuthContext';
@@ -14,6 +14,8 @@ import { Separator } from '../../src/components/ui/Separator';
 import { RegionCitySelects } from '../../src/components/domain/RegionCitySelects';
 import { DocumentUploader } from '../../src/components/domain/DocumentUploader';
 import { PROVIDER_SPECIALIZATIONS } from '@hanapkalinga/shared/constants';
+import { ProfilePhotoUploader } from '../../src/components/ProfilePhotoUploader';
+import { ThemeToggle } from '../../src/components/ThemeToggle';
 import { colors } from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
 import { rounded } from '../../src/theme/rounded';
@@ -22,10 +24,11 @@ import type { Nurse, Profile } from '@hanapkalinga/shared/types';
 
 export default function NurseProfileScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -35,6 +38,7 @@ export default function NurseProfileScreen() {
   const [address, setAddress] = useState('');
   const [prcLicense, setPrcLicense] = useState('');
   const [specializations, setSpecializations] = useState<string[]>([]);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [yearsExperience, setYearsExperience] = useState('');
   const [bio, setBio] = useState('');
   const [hourlyRate, setHourlyRate] = useState('');
@@ -67,6 +71,7 @@ export default function NurseProfileScreen() {
       setCity(p.city ?? '');
       setBarangay(p.barangay ?? '');
       setAddress(p.address ?? '');
+      setPhotoUrl(p.profile_photo_url ?? null);
 
       const { data: nurseData, error: nurseError } = await supabase
         .from('nurses')
@@ -234,6 +239,16 @@ export default function NurseProfileScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.pageTitle}>Edit Profile</Text>
 
+        <Card title="Profile Photo" roundedSize="md">
+          <ProfilePhotoUploader
+            photoUrl={photoUrl}
+            displayName={fullName || 'Nurse'}
+            onPhotoChange={(url) => setPhotoUrl(url)}
+          />
+        </Card>
+
+        <Separator />
+
         <Card title="Personal Information" roundedSize="md">
           <View style={styles.formFields}>
             <Input label="Full name" value={fullName} onChangeText={setFullName} placeholder="Enter full name" />
@@ -339,6 +354,12 @@ export default function NurseProfileScreen() {
           </View>
         </Card>
 
+        <Separator />
+
+        <Card title="Appearance" roundedSize="md">
+          <ThemeToggle />
+        </Card>
+
         {error && (
           <View style={styles.errorRow}>
             <AlertTriangle size={14} color={colors.semantic.error} />
@@ -349,6 +370,42 @@ export default function NurseProfileScreen() {
         <Button variant="primary" loading={saving} onPress={handleSave}>
           Save
         </Button>
+
+        <Button
+          variant="outline"
+          testID="profile_button_logout"
+          onPress={() => setShowSignOutModal(true)}
+        >
+          Sign out
+        </Button>
+
+        <Modal visible={showSignOutModal} transparent animationType="fade" onRequestClose={() => setShowSignOutModal(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Sign out</Text>
+              <Text style={styles.modalMessage}>Are you sure you want to sign out?</Text>
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.modalCancelButton}
+                  onPress={() => setShowSignOutModal(false)}
+                >
+                  <Text style={styles.modalCancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  testID="logout_button_confirm"
+                  style={styles.modalConfirmButton}
+                  onPress={async () => {
+                    setShowSignOutModal(false);
+                    await signOut();
+                    router.replace('/');
+                  }}
+                >
+                  <Text style={styles.modalConfirmText}>Sign out</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </ScreenWrapper>
   );
@@ -416,5 +473,55 @@ const styles = StyleSheet.create({
     fontSize: typography.size.caption,
     fontFamily: typography.fontFamily.body,
     color: colors.semantic.error,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: colors.canvas,
+    borderRadius: 12,
+    padding: spacing.lg,
+    width: '80%',
+    maxWidth: 320,
+    gap: spacing.md,
+  },
+  modalTitle: {
+    fontSize: typography.size.titleMd,
+    fontFamily: typography.fontFamily.display,
+    color: colors.ink,
+  },
+  modalMessage: {
+    fontSize: typography.size.body,
+    fontFamily: typography.fontFamily.body,
+    color: colors.body,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  modalCancelButton: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  modalCancelText: {
+    fontSize: typography.size.button,
+    fontFamily: typography.fontFamily.bodySemiBold,
+    color: colors.muted,
+  },
+  modalConfirmButton: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.semantic.error,
+    borderRadius: 8,
+  },
+  modalConfirmText: {
+    fontSize: typography.size.button,
+    fontFamily: typography.fontFamily.bodySemiBold,
+    color: colors.canvas,
   },
 });

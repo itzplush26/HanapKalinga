@@ -1,0 +1,9 @@
+# shard: admin
+# total: 5
+approve-verification|FAIL|Scrolling DOWN until id: verificationQueue_card_${VERIFICATION_ID} is visible with speed 40, visibility percentage 100%, timeout 15000 ms, with centering disabled... COMPLETED
+dashboard-metrics|PASS|
+reject-verification|FAIL|Scrolling DOWN until id: verificationQueue_card_${VERIFICATION_ID} is visible with speed 40, visibility percentage 100%, timeout 15000 ms, with centering disabled... FAILED
+verification-detail|FAIL|Scrolling DOWN until id: verificationQueue_card_${VERIFICATION_ID} is visible with speed 40, visibility percentage 100%, timeout 15000 ms, with centering disabled... FAILED
+verification-queue|PASS|
+# passed: 2
+# failed: 3

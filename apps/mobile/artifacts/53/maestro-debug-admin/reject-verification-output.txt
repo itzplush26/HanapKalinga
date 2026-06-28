@@ -1,0 +1,46 @@
+Running on Pixel_6
+ > Flow reject-verification
+Run ../shared/setup.yaml...
+  Launch app "${APP_ID}" with clear state and clear keychain... COMPLETED
+  Wait for animation to end within 10000 ms... COMPLETED
+  Run flow when "Profile" is visible...
+  Run flow when "Profile" is visible... SKIPPED
+  Run flow when id: dashboard_metrics_pendingVerifications is visible...
+  Run flow when id: dashboard_metrics_pendingVerifications is visible... SKIPPED
+  Assert that id: landing_button_login is visible... COMPLETED
+Run ../shared/setup.yaml... COMPLETED
+Run ../shared/helpers.yaml...
+  Run ../shared/login-actions.yaml when ${TEST_EMAIL != null && TEST_PASSWORD != null} is true...
+    Tap on id: landing_button_login... COMPLETED
+    Tap on id: login_input_email... COMPLETED
+    Input text ${EMAIL}... COMPLETED
+    Tap on id: login_input_password... COMPLETED
+    Input text ${PASSWORD}... COMPLETED
+    Hide Keyboard... COMPLETED
+    Run flow when id: login_captcha_widget is visible...
+      Assert that id: login_captcha_ready is visible... COMPLETED
+    Run flow when id: login_captcha_widget is visible... COMPLETED
+    Tap on id: login_button_submit... COMPLETED
+    Assert that id: login_button_submit is not visible... COMPLETED
+  Run ../shared/login-actions.yaml when true is true... COMPLETED
+  Run ../shared/logout-actions.yaml when ${LOGOUT == "true"} is true...
+  Run ../shared/logout-actions.yaml when false is true... SKIPPED
+Run ../shared/helpers.yaml... COMPLETED
+Tap on id: tab_verifications... COMPLETED
+Assert that id: verificationQueue_list_requests is visible... COMPLETED
+Scrolling DOWN until id: verificationQueue_card_${VERIFICATION_ID} is visible with speed 40, visibility percentage 100%, timeout 15000 ms, with centering disabled... FAILED
+
+No visible element found: id: verificationQueue_card_8cfffd23-5b10-435f-9017-6ce5e0e43cd7
+
+Could not find a visible element matching selector: id: verificationQueue_card_8cfffd23-5b10-435f-9017-6ce5e0e43cd7
+Tip: Try adjusting the following settings to improve detection:
+- `timeout`: current = 15000ms → Increase if you need more time to find the element
+- `speed`: current = 40 (0-100 scale) → Increase for faster scrolling if element is far away
+- `waitToSettleTimeoutMs`: current = Not defined → Set this value (e.g., 500ms) if your UI updates frequently between scrolls
+- `visibilityPercentage`: current = 100% → Lower this value if you want to detect partially visible elements
+- `centerElement`: current = false → Enable if you want the element to be centered after finding it
+
+
+==== Debug output (logs & screenshots) ====
+
+/home/runner/.maestro/tests/2026-06-26_033020

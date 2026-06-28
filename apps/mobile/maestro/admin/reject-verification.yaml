@@ -1,0 +1,90 @@
+appId: ${APP_ID}
+---
+# Login as admin user
+- runFlow:
+    file: ../shared/setup.yaml
+- runFlow:
+    file: ../shared/helpers.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# Navigate to Verifications tab
+- tapOn:
+    id: "tab_verifications"
+
+# Wait for queue
+- extendedWaitUntil:
+    visible:
+      id: "verificationQueue_list_requests"
+    timeout: 15000
+
+# Scroll to and tap on verification request
+- scrollUntilVisible:
+    element:
+      id: "verificationQueue_card_${VERIFICATION_ID_REJECT}"
+    direction: DOWN
+    timeout: 15000
+    speed: 40
+- tapOn:
+    id: "verificationQueue_card_${VERIFICATION_ID_REJECT}"
+
+# Wait for detail screen
+- extendedWaitUntil:
+    visible:
+      id: "verificationDetail_text_name"
+    timeout: 10000
+
+# Scroll to and tap reject (shows rejection input section)
+- scrollUntilVisible:
+    element:
+      id: "verificationDetail_button_reject"
+    direction: DOWN
+    timeout: 10000
+    speed: 40
+- tapOn:
+    id: "verificationDetail_button_reject"
+
+# Enter rejection reason
+- scrollUntilVisible:
+    element:
+      id: "verificationDetail_input_rejectionReason"
+    direction: DOWN
+    timeout: 10000
+    speed: 40
+- tapOn:
+    id: "verificationDetail_input_rejectionReason"
+- inputText: "Incomplete documentation"
+- hideKeyboard
+
+# Tap confirm reject
+- scrollUntilVisible:
+    element:
+      id: "verificationDetail_button_confirmReject"
+    direction: DOWN
+    timeout: 10000
+    speed: 40
+- tapOn:
+    id: "verificationDetail_button_confirmReject"
+
+# Confirm the reject action in the native dialog
+- extendedWaitUntil:
+    visible:
+      text: "Are you sure? This will notify the applicant."
+    timeout: 5000
+- tapOn:
+    text: "Reject"
+
+# Wait for and dismiss the success dialog
+- extendedWaitUntil:
+    visible:
+      text: "Verification rejected completed."
+    timeout: 10000
+- tapOn:
+    text: "OK"
+
+# Verify the status has been updated on the detail screen
+- extendedWaitUntil:
+    visible:
+      text: "rejected"
+    timeout: 10000

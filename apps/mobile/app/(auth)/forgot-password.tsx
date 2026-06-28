@@ -7,16 +7,19 @@ import { ScreenWrapper } from '../../src/components/ScreenWrapper';
 import { Input } from '../../src/components/ui/Input';
 import { Button } from '../../src/components/ui/Button';
 import { TextLink } from '../../src/components/ui/TextLink';
+import { TurnstileWidget, useTurnstileRequired } from '../../src/components/TurnstileWidget';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { spacing } from '../../src/theme/spacing';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
+  const turnstileRequired = useTurnstileRequired();
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const handleSendResetLink = async () => {
     setError('');
@@ -27,15 +30,29 @@ export default function ForgotPasswordScreen() {
       return;
     }
 
+    if (turnstileRequired && !captchaToken) {
+      setError('Please complete the verification challenge.');
+      return;
+    }
+
     setLoading(true);
     try {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         email.trim(),
-        { redirectTo: 'hanapkalinga://(auth)/update-password' }
+        {
+          redirectTo: 'hanapkalinga://(auth)/update-password',
+          ...(captchaToken ? { captchaToken } : {}),
+        },
       );
 
       if (resetError) {
-        setError(resetError.message);
+        const lowered = resetError.message.toLowerCase();
+        if (lowered.includes('captcha') || lowered.includes('turnstile')) {
+          setError('Verification failed. Please try again.');
+          setCaptchaToken(null);
+        } else {
+          setError(resetError.message);
+        }
         return;
       }
 
@@ -83,11 +100,27 @@ export default function ForgotPasswordScreen() {
           keyboardType="email-address"
           autoCapitalize="none"
           autoComplete="email"
+          testID="forgotPassword_input_email"
         />
 
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        {error ? <Text style={styles.errorText} testID="forgotPassword_text_error">{error}</Text> : null}
 
-        <Button onPress={handleSendResetLink} loading={loading} style={styles.button}>
+        {turnstileRequired ? (
+          <TurnstileWidget
+            onToken={setCaptchaToken}
+            onExpire={() => setCaptchaToken(null)}
+            onError={() => setCaptchaToken(null)}
+            testIDPrefix="forgotPassword_captcha"
+          />
+        ) : null}
+
+        <Button
+          onPress={handleSendResetLink}
+          loading={loading}
+          disabled={turnstileRequired && !captchaToken}
+          style={styles.button}
+          testID="forgotPassword_button_submit"
+        >
           Send Reset Link
         </Button>
 

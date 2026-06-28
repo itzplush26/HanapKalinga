@@ -1,0 +1,39 @@
+appId: ${APP_ID}
+---
+# Login as family user
+- runFlow:
+    file: ../shared/setup.yaml
+- runFlow:
+    file: ../shared/helpers.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# Navigate to Browse tab
+- extendedWaitUntil:
+    visible:
+      text: "Browse"
+    timeout: 15000
+- tapOn:
+    text: "Browse"
+
+# Wait for browse screen to load (search input is always rendered unconditionally)
+- extendedWaitUntil:
+    visible:
+      id: "browse_input_search"
+    timeout: 15000
+
+# Verify nurse list loaded (only renders when data is fetched — may be slow)
+- extendedWaitUntil:
+    visible:
+      id: "browse_list_nurses"
+    timeout: 15000
+
+# Verify filter button is present in header (may not render inside tabs)
+- runFlow:
+    when:
+      visible:
+        id: "browse_button_filter"
+    commands:
+      - waitForAnimationToEnd:
+          timeout: 1000

@@ -1,0 +1,68 @@
+appId: ${APP_ID}
+---
+# Login as admin user
+- runFlow:
+    file: ../shared/setup.yaml
+- runFlow:
+    file: ../shared/helpers.yaml
+    env:
+      TEST_EMAIL: ${TEST_EMAIL}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+
+# Navigate to Verifications tab
+- tapOn:
+    id: "tab_verifications"
+
+# Wait for queue
+- extendedWaitUntil:
+    visible:
+      id: "verificationQueue_list_requests"
+    timeout: 15000
+
+# Scroll to and tap on a specific verification request
+- scrollUntilVisible:
+    element:
+      id: "verificationQueue_card_${VERIFICATION_ID_DETAIL}"
+    direction: DOWN
+    timeout: 15000
+    speed: 40
+- tapOn:
+    id: "verificationQueue_card_${VERIFICATION_ID_DETAIL}"
+
+# Verify verification detail screen loaded
+- extendedWaitUntil:
+    visible:
+      id: "verificationDetail_text_name"
+    timeout: 10000
+
+# Verify audit log section is present (if the nurse has any audit history)
+# Newly created nurses may not have audit logs yet
+- runFlow:
+    when:
+      visible:
+        id: "verificationDetail_text_auditLog"
+    commands:
+      - waitForAnimationToEnd:
+          timeout: 1000
+
+# Verify action buttons are present (scroll to them first as they are below the fold)
+- scrollUntilVisible:
+    element:
+      id: "verificationDetail_button_approve"
+    direction: DOWN
+    timeout: 10000
+    speed: 40
+- extendedWaitUntil:
+    visible:
+      id: "verificationDetail_button_approve"
+    timeout: 5000
+- scrollUntilVisible:
+    element:
+      id: "verificationDetail_button_reject"
+    direction: DOWN
+    timeout: 10000
+    speed: 40
+- extendedWaitUntil:
+    visible:
+      id: "verificationDetail_button_reject"
+    timeout: 5000

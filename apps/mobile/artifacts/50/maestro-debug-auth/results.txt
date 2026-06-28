@@ -1,0 +1,11 @@
+# shard: auth
+# total: 7
+forgot-password|FAIL|
+login-failure|FAIL|
+login-success-family|FAIL|
+login-success|FAIL|
+register-family|FAIL|
+register-nurse|FAIL|
+session-restore|FAIL|
+# passed: 0
+# failed: 7
