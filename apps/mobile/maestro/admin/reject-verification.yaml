@@ -55,6 +55,7 @@ appId: ${APP_ID}
 - tapOn:
     id: "verificationDetail_input_rejectionReason"
 - inputText: "Incomplete documentation"
+- hideKeyboard
 
 # Tap confirm reject
 - scrollUntilVisible:
