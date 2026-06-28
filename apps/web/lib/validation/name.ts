@@ -15,6 +15,14 @@ function hasInvalidNamePunctuation(value: string): boolean {
   return false;
 }
 
+function isPlaceholderLikeName(value: string): boolean {
+  const normalized = value.toLowerCase();
+  if (/(.)\1\1/.test(normalized)) return true;
+  if (/^(ah+|ha+|he+|hi+|ho+|uh+|hmm+|mm+)$/.test(normalized)) return true;
+  if (/^(asdf|qwerty|test|random)$/.test(normalized)) return true;
+  return false;
+}
+
 function requiredNameSchema(fieldLabel: string, minLength: number, maxLength: number) {
   return z
     .string()
@@ -32,6 +40,9 @@ function requiredNameSchema(fieldLabel: string, minLength: number, maxLength: nu
       message: lettersOnlyMessage(fieldLabel)
     })
     .refine((value) => !containsProfanity(value), {
+      message: PROFANITY_MESSAGE
+    })
+    .refine((value) => !isPlaceholderLikeName(value), {
       message: PROFANITY_MESSAGE
     });
 }
@@ -53,6 +64,9 @@ function optionalNameSchema(fieldLabel: string, minLength: number, maxLength: nu
       message: lettersOnlyMessage(fieldLabel)
     })
     .refine((value) => !value || !containsProfanity(value), {
+      message: PROFANITY_MESSAGE
+    })
+    .refine((value) => !value || !isPlaceholderLikeName(value), {
       message: PROFANITY_MESSAGE
     })
     .optional();
@@ -92,6 +106,10 @@ export function validateServerName(
     return { ok: false, message: "Name contains inappropriate content." };
   }
 
+  if (isPlaceholderLikeName(normalized)) {
+    return { ok: false, message: "Invalid name format provided." };
+  }
+
   return { ok: true, value: normalized };
 }
 
@@ -117,6 +135,24 @@ if (process.env.NODE_ENV !== "production") {
     ["Juan", "firstName", true],
     ["123456", "lastName", false],
     ["tangina", "firstName", false],
+    ["t@ngina", "firstName", false],
+    ["g@go", "firstName", false],
+    ["0gag", "firstName", false],
+    ["ogag", "firstName", false],
+    ["panget", "firstName", false],
+    ["bwisit", "firstName", false],
+    ["siraulo", "firstName", false],
+    ["inutil", "firstName", false],
+    ["pu7a", "firstName", false],
+    ["b0b0", "firstName", false],
+    ["t@ng1na", "firstName", false],
+    ["Ahhh", "firstName", false],
+    ["Tangina", "firstName", false],
+    ["Philip", "firstName", true],
+    ["Filipina", "firstName", true],
+    ["Loko", "firstName", false],
+    ["Animal", "firstName", false],
+    ["pangit", "firstName", false],
     ["De La Cruz", "lastName", true],
     ["O'Brien", "lastName", true],
     ["Juan-Carlos", "firstName", true],
