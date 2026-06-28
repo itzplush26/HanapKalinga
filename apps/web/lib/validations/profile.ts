@@ -2,6 +2,7 @@ import { z } from "zod";
 import { isCityInRegion } from "@/lib/data/ph-locations";
 import { DAILY_RATE_BAND_IDS, HOURLY_RATE_BAND_IDS } from "@/lib/data/rates";
 import { containsProfanity, sanitizeText } from "@/lib/validation/sanitize";
+import { firstNameSchema, lastNameSchema, middleNameSchema, patientNameSchema } from "@/lib/validation/name";
 import { philippineMobileSchema } from "@/lib/validation/phone";
 import { isValidPrcLicenseNo, PRC_LICENSE_ERROR } from "@/lib/validation/prc-license";
 import { FAMILY_NAME_SUFFIXES, PROVIDER_NAME_SUFFIXES } from "@/lib/validation/name-suffix";
@@ -40,22 +41,23 @@ function validateCityInRegion(
 
 export const familyProfileSchema = z
   .object({
-    firstName: requiredText(1, "First name is required."),
-    middleName: optionalText(),
-    lastName: requiredText(1, "Last name is required."),
+    firstName: firstNameSchema,
+    middleName: middleNameSchema,
+    lastName: lastNameSchema,
     nameSuffix: z.union([z.literal(""), z.enum(FAMILY_NAME_SUFFIXES)]).optional(),
     phone: philippineMobileSchema.optional(),
     region: z.string().min(2, "Region is required."),
     city: z.string().min(2, "City is required."),
     barangay: requiredText(2, "Barangay is required."),
-    address: requiredText(5, "Home address is required.")
+    address: requiredText(5, "Home address is required."),
+    patientName: patientNameSchema
   })
   .superRefine(validateCityInRegion);
 
 export const nurseProfileFieldsSchema = z.object({
-  firstName: requiredText(1, "First name is required."),
-  middleName: optionalText(),
-  lastName: requiredText(1, "Last name is required."),
+  firstName: firstNameSchema,
+  middleName: middleNameSchema,
+  lastName: lastNameSchema,
   nameSuffix: z.union([z.literal(""), z.enum(PROVIDER_NAME_SUFFIXES)]).optional(),
   providerType: z.enum(["nurse", "caregiver"]),
   region: z.string().min(2, "Region is required."),
@@ -125,9 +127,9 @@ export const nurseProfileSchema = nurseProfileFieldsSchema
 
 export const nurseProfileEditSchema = z
   .object({
-    firstName: requiredText(1, "First name is required."),
-    middleName: optionalText(),
-    lastName: requiredText(1, "Last name is required."),
+    firstName: firstNameSchema,
+    middleName: middleNameSchema,
+    lastName: lastNameSchema,
     nameSuffix: z.union([z.literal(""), z.enum(PROVIDER_NAME_SUFFIXES)]).optional(),
     phone: philippineMobileSchema.optional(),
     region: z.string().min(2, "Region is required."),

@@ -166,14 +166,14 @@ export default function FamilyProfilePage() {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor="firstName">First name</Label>
-              <Input id="firstName" {...form.register("firstName")} />
+              <Input id="firstName" className={form.formState.errors.firstName ? "border-rose-500 focus:ring-rose-500" : undefined} {...form.register("firstName")} />
               {form.formState.errors.firstName ? (
                 <p className="text-xs text-rose-600">{form.formState.errors.firstName.message}</p>
               ) : null}
             </div>
             <div className="space-y-1">
               <Label htmlFor="middleName">Middle name (optional)</Label>
-              <Input id="middleName" {...form.register("middleName")} />
+              <Input id="middleName" className={form.formState.errors.middleName ? "border-rose-500 focus:ring-rose-500" : undefined} {...form.register("middleName")} />
               {form.formState.errors.middleName ? (
                 <p className="text-xs text-rose-600">{form.formState.errors.middleName.message}</p>
               ) : null}
@@ -181,7 +181,7 @@ export default function FamilyProfilePage() {
           </div>
           <div className="space-y-1">
             <Label htmlFor="lastName">Last name</Label>
-            <Input id="lastName" {...form.register("lastName")} />
+            <Input id="lastName" className={form.formState.errors.lastName ? "border-rose-500 focus:ring-rose-500" : undefined} {...form.register("lastName")} />
             {form.formState.errors.lastName ? (
               <p className="text-xs text-rose-600">{form.formState.errors.lastName.message}</p>
             ) : null}

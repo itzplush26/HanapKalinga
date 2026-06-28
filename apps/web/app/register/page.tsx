@@ -41,7 +41,6 @@ import {
   saveSignupUserId,
   SIGNUP_TOTAL_STEPS
 } from "@/lib/signup-stage";
-import { buildFormattedFullName, toTitleCase } from "@/lib/validation/format-name";
 import { normalizePrcLicenseInput } from "@/lib/validation/prc-license";
 import { FAMILY_NAME_SUFFIXES, PROVIDER_NAME_SUFFIXES } from "@/lib/validation/name-suffix";
 
@@ -363,48 +362,20 @@ export default function RegisterPage() {
         barangay: string;
         address: string;
       };
-      const acceptedAt = getTermsAcceptedAtForUser(userId) ?? new Date().toISOString();
-      const normalizedFirstName = toTitleCase(familyValues.firstName);
-      const normalizedMiddleName = toTitleCase(familyValues.middleName);
-      const normalizedLastName = toTitleCase(familyValues.lastName);
-      const normalizedNameSuffix = familyValues.nameSuffix?.trim() || null;
 
-      const { error: profileError } = await supabase.from("profiles").upsert({
-        id: userId,
-        role: "family",
-        full_name: buildFormattedFullName({
-          firstName: normalizedFirstName,
-          middleName: normalizedMiddleName,
-          lastName: normalizedLastName,
-          suffix: normalizedNameSuffix
-        }),
-        first_name: normalizedFirstName,
-        middle_name: normalizedMiddleName || null,
-        last_name: normalizedLastName,
-        name_suffix: normalizedNameSuffix,
-        phone: familyValues.phone?.trim() || null,
-        region: familyValues.region,
-        city: familyValues.city,
-        barangay: familyValues.barangay,
-        address: familyValues.address,
-        terms_accepted_at: acceptedAt
+      const completeResponse = await fetch("/api/register/family", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...familyValues,
+          termsAcceptedAt: getTermsAcceptedAtForUser(userId) ?? undefined
+        })
       });
 
-      if (profileError) {
-        console.error("signup.family_profiles.error", profileError);
-        setStatus(mapSupabaseError(profileError, "generic"));
-        setIsSubmitting(false);
-        return;
-      }
-
-      const { error: familyError } = await supabase.from("families").upsert({
-        id: userId,
-        address: familyValues.address
-      });
-
-      if (familyError) {
-        console.error("signup.families.error", familyError);
-        setStatus(mapSupabaseError(familyError, "generic"));
+      const completePayload = (await completeResponse.json()) as { error?: string };
+      if (!completeResponse.ok) {
+        console.error("signup.family_finalize.error", completePayload.error);
+        setStatus(completePayload.error ?? "Could not complete registration. Please try again.");
         setIsSubmitting(false);
         return;
       }
@@ -786,10 +757,20 @@ export default function RegisterPage() {
                   {...familyForm.register("firstName")}
                   className={familyForm.formState.errors.firstName ? "border-rose-500 focus:ring-rose-500" : undefined}
                 />
+                {familyForm.formState.errors.firstName ? (
+                  <p className="text-xs text-rose-600">{familyForm.formState.errors.firstName.message}</p>
+                ) : null}
               </div>
               <div className="space-y-1">
                 {optionalLabel("Middle name (optional)")}
-                <Input placeholder="Middle name" {...familyForm.register("middleName")} />
+                <Input
+                  placeholder="Middle name"
+                  {...familyForm.register("middleName")}
+                  className={familyForm.formState.errors.middleName ? "border-rose-500 focus:ring-rose-500" : undefined}
+                />
+                {familyForm.formState.errors.middleName ? (
+                  <p className="text-xs text-rose-600">{familyForm.formState.errors.middleName.message}</p>
+                ) : null}
               </div>
             </div>
             <div className="space-y-1">
@@ -799,6 +780,9 @@ export default function RegisterPage() {
                 {...familyForm.register("lastName")}
                 className={familyForm.formState.errors.lastName ? "border-rose-500 focus:ring-rose-500" : undefined}
               />
+              {familyForm.formState.errors.lastName ? (
+                <p className="text-xs text-rose-600">{familyForm.formState.errors.lastName.message}</p>
+              ) : null}
             </div>
             <div className="space-y-1">
               {optionalLabel("Suffix (optional)")}

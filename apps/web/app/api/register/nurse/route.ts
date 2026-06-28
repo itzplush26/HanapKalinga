@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient, isSupabaseServiceRoleConfigured } from "@/lib/supabase/service";
 import { completeNurseRegistrationSchema } from "@/lib/validations/register-nurse";
+import { validateServerRegistrationNames } from "@/lib/validation/name";
 import { validateDocumentPathsForUser } from "@/lib/register/validate-document-paths";
 import {
   resolveDailyRateBandValues,
@@ -22,7 +23,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    const parsed = completeNurseRegistrationSchema.safeParse(await request.json());
+    const body = await request.json();
+    const nameCheck = validateServerRegistrationNames({
+      firstName: body.firstName,
+      middleName: body.middleName,
+      lastName: body.lastName
+    });
+
+    if (!nameCheck.ok) {
+      return NextResponse.json({ error: nameCheck.message }, { status: 400 });
+    }
+
+    const parsed = completeNurseRegistrationSchema.safeParse(body);
     if (!parsed.success) {
       const firstError = parsed.error.issues[0]?.message ?? "Invalid registration data.";
       return NextResponse.json({ error: firstError }, { status: 400 });
