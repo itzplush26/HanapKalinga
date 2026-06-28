@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AlertCircle, Copy, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -63,6 +64,13 @@ interface VerificationReviewPanelProps {
   auditLogs: AuditLogEntry[];
 }
 
+interface ActionErrorState {
+  heading: string;
+  message: string;
+  timestamp: string;
+  action: "approve" | "reject" | "request_resubmission" | "mark_under_review" | "resend_status_email";
+}
+
 export function VerificationReviewPanel({
   nurseId,
   fullName,
@@ -104,6 +112,9 @@ export function VerificationReviewPanel({
   const [prcLicenseExpiry, setPrcLicenseExpiry] = useState(initialPrcExpiry?.slice(0, 10) ?? "");
   const [tesdaCertExpiry, setTesdaCertExpiry] = useState(initialTesdaExpiry?.slice(0, 10) ?? "");
   const [nbiExpiry, setNbiExpiry] = useState(initialNbiExpiry?.slice(0, 10) ?? "");
+  const [actionError, setActionError] = useState<ActionErrorState | null>(null);
+  const [resendingStatusEmail, setResendingStatusEmail] = useState(false);
+  const [resendStatusMessage, setResendStatusMessage] = useState<string | null>(null);
 
   const nurseDocuments = useMemo(
     () => ({
@@ -149,10 +160,83 @@ export function VerificationReviewPanel({
     profiles: { city, region, profile_photo_url: profilePhotoUrl }
   });
 
+  function setPersistentActionError(
+    action: ActionErrorState["action"],
+    message: string,
+    heading = "Action failed"
+  ) {
+    const timestamp = new Date().toISOString();
+    const errorRecord: ActionErrorState = {
+      action,
+      heading,
+      message,
+      timestamp
+    };
+    setActionError(errorRecord);
+    console.error("admin.verification.action_error", errorRecord);
+  }
+
+  async function copyActionError() {
+    if (!actionError) return;
+    const details = [
+      actionError.heading,
+      `Action: ${actionError.action}`,
+      `Timestamp: ${new Date(actionError.timestamp).toLocaleString()}`,
+      `Message: ${actionError.message}`
+    ].join("\n");
+
+    try {
+      await navigator.clipboard.writeText(details);
+      showToast("Error details copied.", "success");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Clipboard copy failed.";
+      showToast(`Could not copy error details: ${message}`, "error", { durationMs: 8000 });
+      console.error("admin.verification.copy_error_failed", {
+        timestamp: new Date().toISOString(),
+        message
+      });
+    }
+  }
+
+  async function resendStatusEmail() {
+    setResendingStatusEmail(true);
+    setResendStatusMessage(null);
+    setActionError(null);
+
+    try {
+      const response = await fetch("/api/admin/resend-verification-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nurseId })
+      });
+
+      const payload = (await response.json()) as { error?: string; message?: string };
+      if (!response.ok) {
+        const message = payload.error ?? "Failed to resend status email.";
+        setPersistentActionError("resend_status_email", message);
+        showToast(message, "error", { durationMs: 8000 });
+        return;
+      }
+
+      const message = payload.message ?? "Verification status email resent successfully.";
+      setResendStatusMessage(message);
+      showToast(message, "success");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unexpected error while resending status email.";
+      setPersistentActionError("resend_status_email", message);
+      showToast(message, "error", { durationMs: 8000 });
+    } finally {
+      setResendingStatusEmail(false);
+    }
+  }
+
   async function submitAction(
     action: "approve" | "reject" | "request_resubmission" | "mark_under_review"
   ) {
     setLoading(true);
+    setActionError(null);
+    setResendStatusMessage(null);
     try {
       const response = await fetch("/api/admin/verification", {
         method: "POST",
@@ -182,41 +266,49 @@ export function VerificationReviewPanel({
 
       const payload = (await response.json()) as {
         error?: string;
+        result?: "success" | "partial_success";
+        message?: string;
         emailSent?: boolean;
         emailError?: string;
+        emailStage?: "template" | "delivery" | "missing_recipient";
       };
 
       if (!response.ok) {
-        showToast(payload.error ?? "Action failed.", "error");
+        const message = payload.error ?? "Action failed.";
+        setPersistentActionError(action, message);
+        showToast(message, "error", { durationMs: 8000 });
         return;
       }
 
-      if (action === "approve") {
-        showToast(
-          payload.emailSent
-            ? "Nurse verified successfully. Email notification sent."
-            : `Nurse verified successfully. Email failed: ${payload.emailError ?? "delivery failed."}`,
-          payload.emailSent ? "success" : "error"
-        );
+      const partialSuccess = payload.result === "partial_success";
+
+      if (partialSuccess) {
+        const partialMessage =
+          payload.message ??
+          "Verification status updated successfully, but the notification email could not be sent. Please notify the nurse manually or try resending from the nurse detail page.";
+        showToast(partialMessage, "error", { durationMs: 8000 });
+      } else if (action === "approve") {
+        showToast("Nurse verified successfully. Email notification sent.", "success");
       } else if (action === "reject") {
-        showToast(
-          payload.emailSent
-            ? "Verification rejected. Nurse has been notified."
-            : `Verification rejected. In-app notification saved, but email failed: ${payload.emailError ?? "delivery failed."}`,
-          payload.emailSent ? "success" : "error"
-        );
+        showToast("Verification rejected. Nurse has been notified.", "success");
+      } else if (action === "mark_under_review") {
+        showToast("Nurse marked under review. Email notification sent.", "success");
       } else {
-        const emailNote = payload.emailSent
-          ? " Email notification sent."
-          : ` In-app notification saved, but email failed: ${payload.emailError ?? "delivery failed."}`;
-        showToast(`Verification updated successfully.${emailNote}`, payload.emailSent ? "success" : "error");
+        showToast("Resubmission requested. Nurse has been notified.", "success");
       }
 
       setConfirmAction(null);
+      if (partialSuccess) {
+        router.refresh();
+        return;
+      }
+
       router.push("/admin/verifications");
       router.refresh();
-    } catch {
-      showToast("Unexpected error while updating verification.", "error");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unexpected error while updating verification.";
+      setPersistentActionError(action, message);
+      showToast(message, "error", { durationMs: 8000 });
     } finally {
       setLoading(false);
     }
@@ -228,6 +320,7 @@ export function VerificationReviewPanel({
     documentsReady &&
     Boolean(nbiExpiry) &&
     (isCaregiver ? Boolean(tesdaCertExpiry) : Boolean(prcLicenseExpiry));
+  const canResendStatusEmail = status === "verified" || status === "under_review";
 
   return (
     <>
@@ -315,6 +408,98 @@ export function VerificationReviewPanel({
               </div>
               {!documentsReady && verifyTooltip ? (
                 <p className="text-xs text-rose-700">{verifyTooltip}</p>
+              ) : null}
+              {actionError ? (
+                <div className="space-y-3 rounded-xl border border-rose-200 bg-rose-50 p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="mt-0.5 h-4 w-4 text-rose-700" />
+                      <div>
+                        <p className="text-sm font-semibold text-rose-900">{actionError.heading}</p>
+                        <p className="mt-1 whitespace-pre-wrap text-sm text-rose-800">{actionError.message}</p>
+                        <p className="mt-2 text-xs text-rose-700">
+                          {new Date(actionError.timestamp).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => setActionError(null)}
+                      aria-label="Dismiss action error"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => void copyActionError()}>
+                      <Copy className="mr-1 h-4 w-4" />
+                      Copy error
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => setActionError(null)}>
+                      Dismiss
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {canResendStatusEmail ? (
+            <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5">
+              <h3 className="text-sm font-semibold text-slate-900">Status email</h3>
+              <p className="text-xs text-slate-600">
+                Send the latest verification status email again to the applicant.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void resendStatusEmail()}
+                disabled={resendingStatusEmail}
+              >
+                {resendingStatusEmail ? "Sending..." : "Resend status email"}
+              </Button>
+              {resendStatusMessage ? (
+                <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                  {resendStatusMessage}
+                </p>
+              ) : null}
+              {!canReview && actionError ? (
+                <div className="space-y-3 rounded-xl border border-rose-200 bg-rose-50 p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="mt-0.5 h-4 w-4 text-rose-700" />
+                      <div>
+                        <p className="text-sm font-semibold text-rose-900">{actionError.heading}</p>
+                        <p className="mt-1 whitespace-pre-wrap text-sm text-rose-800">{actionError.message}</p>
+                        <p className="mt-2 text-xs text-rose-700">
+                          {new Date(actionError.timestamp).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => setActionError(null)}
+                      aria-label="Dismiss action error"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => void copyActionError()}>
+                      <Copy className="mr-1 h-4 w-4" />
+                      Copy error
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => setActionError(null)}>
+                      Dismiss
+                    </Button>
+                  </div>
+                </div>
               ) : null}
             </div>
           ) : null}

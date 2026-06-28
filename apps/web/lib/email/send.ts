@@ -8,6 +8,8 @@ export interface SendEmailInput {
   text?: string;
 }
 
+const DEFAULT_RESEND_FROM_EMAIL = "HanapKalinga <onboarding@resend.dev>";
+
 function getResendClient(): Resend | null {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return null;
@@ -15,7 +17,8 @@ function getResendClient(): Resend | null {
 }
 
 export function getFromEmail(): string {
-  return process.env.RESEND_FROM_EMAIL ?? "no-reply@hanapkalinga.com";
+  const from = process.env.RESEND_FROM_EMAIL?.trim();
+  return from && from.length > 0 ? from : DEFAULT_RESEND_FROM_EMAIL;
 }
 
 export function isResendConfigured(): boolean {

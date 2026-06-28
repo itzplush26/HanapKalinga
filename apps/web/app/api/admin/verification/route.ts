@@ -3,30 +3,11 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendEmail } from "@/lib/email/send";
-import {
-  buildVerificationApprovedEmailHtml,
-  buildVerificationApprovedEmailText,
-  VERIFICATION_APPROVED_SUBJECT
-} from "@/lib/email/verification-approved-email";
 import { hasRequiredDocuments } from "@/lib/admin/verification-documents";
 import { isProviderRole } from "@/lib/provider-role";
 import { revalidatePublicNursePages } from "@/lib/nurses/revalidate-public";
 import { ensureNurseProfileSlug } from "@/lib/nurse/ensure-profile-slug";
-import {
-  buildVerificationRejectedEmailHtml,
-  buildVerificationRejectedEmailText,
-  VERIFICATION_REJECTED_SUBJECT
-} from "@/lib/email/templates/verification-rejected";
-import {
-  buildVerificationResubmissionEmailHtml,
-  buildVerificationResubmissionEmailText,
-  VERIFICATION_RESUBMISSION_SUBJECT
-} from "@/lib/email/templates/verification-resubmission-required";
-import {
-  buildVerificationUnderReviewEmailHtml,
-  buildVerificationUnderReviewEmailText,
-  VERIFICATION_UNDER_REVIEW_SUBJECT
-} from "@/lib/email/templates/verification-under-review";
+import { buildVerificationStatusEmailPayload } from "@/lib/email/verification-status-email";
 import {
   actionToStatus,
   getVerificationNotificationContent,
@@ -200,86 +181,104 @@ export async function POST(request: Request) {
     const { data: authUser } = await service.auth.admin.getUserById(nurseId);
     const recipientEmail = authUser.user?.email ?? null;
 
+    const actionTimestamp = new Date().toISOString();
     let emailSent = false;
     let emailError: string | undefined;
+    let emailStage: "template" | "delivery" | "missing_recipient" | undefined;
 
     if (!recipientEmail) {
+      emailStage = "missing_recipient";
       emailError = "No email address found for this applicant.";
+      console.error("admin.verification.email_failed", {
+        action,
+        timestamp: actionTimestamp,
+        stage: "missing_recipient",
+        nurseId,
+        error: emailError
+      });
     } else {
       const firstName = profile?.full_name?.trim().split(/\s+/)[0] ?? "there";
-      let emailPayload: { subject: string; html: string; text?: string };
+      let emailPayload:
+        | {
+            subject: string;
+            html: string;
+            text: string;
+          }
+        | undefined;
 
-      if (newStatus === "verified") {
-        emailPayload = {
-          subject: VERIFICATION_APPROVED_SUBJECT,
-          html: buildVerificationApprovedEmailHtml(firstName),
-          text: buildVerificationApprovedEmailText(firstName)
-        };
-      } else if (newStatus === "under_review") {
-        emailPayload = {
-          subject: VERIFICATION_UNDER_REVIEW_SUBJECT,
-          html: buildVerificationUnderReviewEmailHtml(firstName),
-          text: buildVerificationUnderReviewEmailText(firstName)
-        };
-      } else if (newStatus === "resubmission_required" && trimmedReason) {
-        emailPayload = {
-          subject: VERIFICATION_RESUBMISSION_SUBJECT,
-          html: buildVerificationResubmissionEmailHtml({
-            firstName,
-            reason: trimmedReason,
-            details: trimmedNotes
-          }),
-          text: buildVerificationResubmissionEmailText({
-            firstName,
-            reason: trimmedReason,
-            details: trimmedNotes
-          })
-        };
-      } else if (action === "reject" && trimmedReason) {
-        emailPayload = {
-          subject: VERIFICATION_REJECTED_SUBJECT,
-          html: buildVerificationRejectedEmailHtml({
-            firstName,
-            reason: trimmedReason,
-            details: trimmedNotes
-          }),
-          text: buildVerificationRejectedEmailText({
-            firstName,
-            reason: trimmedReason,
-            details: trimmedNotes
-          })
-        };
-      } else {
-        emailPayload = {
-          subject: `[HanapKalinga] ${notification.title}`,
-          html: `<p>${notification.body}</p>`,
-          text: notification.body
-        };
+      try {
+        emailPayload = buildVerificationStatusEmailPayload({
+          status: newStatus,
+          firstName,
+          notificationTitle: notification.title,
+          notificationBody: notification.body,
+          reason: trimmedReason,
+          details: trimmedNotes
+        });
+      } catch (templateError) {
+        emailStage = "template";
+        emailError =
+          templateError instanceof Error
+            ? templateError.message
+            : "Failed to render verification email template.";
+
+        console.error("admin.verification.email_failed", {
+          action,
+          timestamp: actionTimestamp,
+          stage: "template",
+          nurseId,
+          error: emailError
+        });
       }
 
-      const emailResult = await sendEmail({
-        to: recipientEmail,
-        ...emailPayload
-      });
+      if (emailPayload) {
+        try {
+          const emailResult = await sendEmail({
+            to: recipientEmail,
+            ...emailPayload
+          });
 
-      emailSent = emailResult.sent;
-      emailError = emailResult.error;
-
-      if (!emailResult.sent) {
-        console.error("admin.verification.email_failed", {
-          nurseId,
-          action,
-          recipientEmail,
-          error: emailResult.error
-        });
+          emailSent = emailResult.sent;
+          emailError = emailResult.error;
+          if (!emailResult.sent) {
+            emailStage = "delivery";
+            console.error("admin.verification.email_failed", {
+              action,
+              timestamp: actionTimestamp,
+              stage: "delivery",
+              nurseId,
+              error: emailResult.error ?? "Unknown email provider error."
+            });
+          }
+        } catch (deliveryError) {
+          emailStage = "delivery";
+          emailError =
+            deliveryError instanceof Error ? deliveryError.message : "Failed to deliver verification email.";
+          console.error("admin.verification.email_failed", {
+            action,
+            timestamp: actionTimestamp,
+            stage: "delivery",
+            nurseId,
+            error: emailError
+          });
+        }
       }
     }
 
+    const result = emailSent ? "success" : "partial_success";
+    const message =
+      result === "success"
+        ? "Verification action completed and notification email sent."
+        : "Verification status updated successfully, but the notification email could not be sent. Please notify the nurse manually or try resending from the nurse detail page.";
+
     return NextResponse.json({
       ok: true,
+      result,
+      message,
       newStatus,
       emailSent,
-      emailError
+      emailError,
+      emailStage
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected server error.";
