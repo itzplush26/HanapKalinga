@@ -157,6 +157,15 @@ function Get-CommonEnv {
   if ($SEED['VERIFICATION_ID']) {
     $argsList += "--env"; $argsList += "VERIFICATION_ID=$($SEED['VERIFICATION_ID'])"
   }
+  if ($SEED['VERIFICATION_ID_APPROVE']) {
+    $argsList += "--env"; $argsList += "VERIFICATION_ID_APPROVE=$($SEED['VERIFICATION_ID_APPROVE'])"
+  }
+  if ($SEED['VERIFICATION_ID_REJECT']) {
+    $argsList += "--env"; $argsList += "VERIFICATION_ID_REJECT=$($SEED['VERIFICATION_ID_REJECT'])"
+  }
+  if ($SEED['VERIFICATION_ID_DETAIL']) {
+    $argsList += "--env"; $argsList += "VERIFICATION_ID_DETAIL=$($SEED['VERIFICATION_ID_DETAIL'])"
+  }
   if ($SEED['DECLINE_BOOKING_ID']) {
     $argsList += "--env"; $argsList += "DECLINE_BOOKING_ID=$($SEED['DECLINE_BOOKING_ID'])"
   }
