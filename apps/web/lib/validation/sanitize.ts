@@ -74,7 +74,7 @@ function canonicalizeBlockedWord(word: string): string {
 
 function buildProfanityRegex(word: string): RegExp | null {
   const canonical = canonicalizeBlockedWord(word);
-  if (!canonical) return null;
+  if (!canonical || canonical.length < 3) return null;
 
   const sequence = canonical
     .split("")
@@ -84,9 +84,14 @@ function buildProfanityRegex(word: string): RegExp | null {
   return new RegExp(`(?<![a-z0-9])(${sequence})(?![a-z0-9])`, "giu");
 }
 
+// ponytail: substring .includes() needs length >= 4; shorter tokens only match via boundary regex
+const MIN_SUBSTRING_MATCH_LENGTH = 4;
+
 const BLOCKED_CANONICAL_WORDS = Array.from(
   new Set(
-    BLOCKED_WORDS.map((word) => canonicalizeBlockedWord(word)).filter((word) => word.length > 0)
+    BLOCKED_WORDS.map((word) => canonicalizeBlockedWord(word)).filter(
+      (word) => word.length >= MIN_SUBSTRING_MATCH_LENGTH
+    )
   )
 );
 const PROFANITY_REGEXES = BLOCKED_WORDS.map((word) => buildProfanityRegex(word)).filter(
@@ -118,16 +123,38 @@ export function containsProfanity(value: string): boolean {
   }
 
   for (const blocked of BLOCKED_CANONICAL_WORDS) {
-    if (!blocked) continue;
     if (normalizedCompact.includes(blocked)) return true;
     if (normalizedCompactCollapsed.includes(blocked)) return true;
     if (originalCompact.includes(blocked)) return true;
+  }
 
-    const boundary = new RegExp(`\\b${escapeRegex(blocked)}\\b`, "i");
+  for (const word of BLOCKED_WORDS) {
+    const canonical = canonicalizeBlockedWord(word);
+    if (!canonical || canonical.length >= MIN_SUBSTRING_MATCH_LENGTH) continue;
+
+    const boundary = new RegExp(`\\b${escapeRegex(canonical)}\\b`, "i");
     if (boundary.test(originalNormalized)) return true;
   }
 
   return false;
+}
+
+// ponytail: self-check for profanity false positives; upgrade path: dedicated test file if rules grow
+if (process.env.NODE_ENV !== "production") {
+  const checks: Array<[string, boolean]> = [
+    ["672 Ricardo st. Tondo manila", false],
+    ["123 Main Street, Quezon City", false],
+    ["putang ina mo", true],
+    ["tangina", true],
+    ["asshole", true],
+    ["Classroom 5B", false]
+  ];
+
+  for (const [value, shouldMatch] of checks) {
+    if (containsProfanity(value) !== shouldMatch) {
+      throw new Error(`profanity self-check failed for: ${value}`);
+    }
+  }
 }
 
 export function maskProfanity(value: string): string {

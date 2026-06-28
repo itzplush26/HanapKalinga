@@ -12,7 +12,6 @@ export const BLOCKED_WORDS = [
   "shitty",
   "bullshit",
   "ass",
-  "a**",
   "asshole",
   "arsehole",
   "arse",
