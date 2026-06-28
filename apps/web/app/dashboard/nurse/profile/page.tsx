@@ -38,7 +38,6 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { ensureNurseProfile } from "@/lib/nurse/ensure-profile";
 import { mapSupabaseError } from "@/lib/user-errors";
 import { buildFormattedFullName, toTitleCase } from "@/lib/validation/format-name";
-import { normalizePrcLicenseInput } from "@/lib/validation/prc-license";
 import { PROVIDER_NAME_SUFFIXES } from "@/lib/validation/name-suffix";
 import {
   mergeSpecializations,
@@ -56,6 +55,7 @@ export default function NurseProfilePage() {
   const [providerType, setProviderType] = useState<"nurse" | "caregiver">("nurse");
   const [initialCredentialUrl, setInitialCredentialUrl] = useState("");
   const [initialNbiUrl, setInitialNbiUrl] = useState("");
+  const [initialPrcLicenseNo, setInitialPrcLicenseNo] = useState("");
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
   const [documentExpiry, setDocumentExpiry] = useState<DocumentExpiryItem[]>([]);
 
@@ -127,6 +127,7 @@ export default function NurseProfilePage() {
         setDocumentExpiry(getDocumentExpiryItems(nurse ?? {}));
         setInitialCredentialUrl(credentialUrl);
         setInitialNbiUrl(nurse?.nbi_document_url ?? "");
+        setInitialPrcLicenseNo(nurse?.prc_license_no ?? "");
         setProfilePhotoUrl(
           resolveProfilePhotoUrl(profile?.profile_photo_url ?? nurse?.profile_photo_url ?? null)
         );
@@ -247,7 +248,7 @@ export default function NurseProfilePage() {
       {
         id: user.id,
         provider_type: providerType,
-        prc_license_no: providerType === "nurse" ? values.prcLicenseNo || null : null,
+        prc_license_no: providerType === "nurse" ? initialPrcLicenseNo || null : null,
         tesda_certificate_no: providerType === "caregiver" ? values.tesdaCertificateNo || null : null,
         specializations,
         years_experience: values.yearsExperience,
@@ -468,16 +469,18 @@ export default function NurseProfilePage() {
                     placeholder="7-digit number"
                     inputMode="numeric"
                     maxLength={7}
-                    className={form.formState.errors.prcLicenseNo ? "border-rose-500 focus:ring-rose-500" : undefined}
                     {...form.register("prcLicenseNo")}
-                    onInput={(event) => {
-                      event.currentTarget.value = normalizePrcLicenseInput(event.currentTarget.value);
-                    }}
+                    readOnly
+                    className={`bg-slate-50 text-slate-600 ${
+                      form.formState.errors.prcLicenseNo ? "border-rose-500 focus:ring-rose-500" : ""
+                    }`}
                   />
                   {form.formState.errors.prcLicenseNo ? (
                     <p className="text-xs text-rose-600">{form.formState.errors.prcLicenseNo.message}</p>
                   ) : (
-                    <p className="text-xs text-slate-500">Enter the 7-digit number from your PRC ID.</p>
+                    <p className="text-xs text-slate-500">
+                      PRC license number is read-only. Contact support if this needs correction.
+                    </p>
                   )}
                 </>
               ) : (
