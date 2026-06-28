@@ -7,15 +7,26 @@ export type ToastVariant = "success" | "error";
 interface ToastState {
   message: string;
   variant: ToastVariant;
+  durationMs: number;
 }
 
 export function useToast() {
   const [toast, setToast] = useState<ToastState | null>(null);
 
-  const showToast = useCallback((message: string, variant: ToastVariant = "success") => {
-    setToast({ message, variant });
-    window.setTimeout(() => setToast(null), 4000);
-  }, []);
+  const showToast = useCallback(
+    (
+      message: string,
+      variant: ToastVariant = "success",
+      options?: {
+        durationMs?: number;
+      }
+    ) => {
+      const durationMs = options?.durationMs ?? 4000;
+      setToast({ message, variant, durationMs });
+      window.setTimeout(() => setToast(null), durationMs);
+    },
+    []
+  );
 
   const Toast = toast ? (
     <div
