@@ -116,7 +116,7 @@ export function NurseCareRequestApplyPage({ request, alreadyApplied }: NurseCare
           )}
 
           <Button asChild variant="outline">
-            <Link href="/dashboard/nurse/care-requests">Back to open requests</Link>
+            <Link href="/dashboard/nurse/bookings?tab=find-work">Back to open requests</Link>
           </Button>
         </div>
       </main>

@@ -16,7 +16,7 @@ export function careRequestPostedEmail(data: CareRequestPostedData) {
     ${emailParagraph(`<strong>${escapeHtml(data.title)}</strong><br/>
     Care type: ${escapeHtml(data.careType)}<br/>
     Budget: ${escapeHtml(data.budgetLabel)}`)}
-    ${emailButton(appUrl(`/dashboard/nurse/care-requests`), "View care requests")}
+    ${emailButton(appUrl(`/dashboard/nurse/bookings?tab=find-work`), "View care requests")}
   `);
 
   return { subject: "New care request on HanapKalinga", html };

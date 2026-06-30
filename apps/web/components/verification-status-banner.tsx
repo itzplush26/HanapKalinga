@@ -92,26 +92,13 @@ export function VerificationStatusBanner({
   const key = status as VerificationStatus;
   const showProgress = variant === "dashboard" && (key === "pending" || key === "under_review");
 
-  if (variant === "profile") {
-    if (key === "verified") {
-      return (
-        <div className="inline-flex items-center gap-2 rounded-full bg-success px-3 py-1.5 text-sm font-medium text-white">
-          <Check className="h-4 w-4" />
-          Verified
-        </div>
-      );
-    }
-
-    if (key === "pending" || key === "under_review") {
-      return (
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/35 bg-primary/15 px-3 py-1.5 text-sm font-medium text-primary">
-          <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
-          Verification Pending
-        </div>
-      );
-    }
-
-    return null;
+  if (variant === "profile" && key === "verified") {
+    return (
+      <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+        <Check className="h-3.5 w-3.5" aria-hidden />
+        Verified
+      </div>
+    );
   }
 
   if (variant === "dashboard" && key === "verified") {
