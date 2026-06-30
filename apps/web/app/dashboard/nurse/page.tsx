@@ -101,9 +101,6 @@ export default async function NurseDashboardPage() {
             <Button asChild variant="outline">
               <Link href="/dashboard/nurse/availability">Set availability</Link>
             </Button>
-            <Button asChild variant="outline" className="col-span-2">
-              <Link href="/dashboard/nurse/care-requests">Find work</Link>
-            </Button>
           </div>
         </div>
       </main>
