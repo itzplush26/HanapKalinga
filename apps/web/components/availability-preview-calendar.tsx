@@ -21,7 +21,7 @@ export function AvailabilityPreviewCalendar({
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4">
       <h3 className="text-sm font-semibold text-navy-900">Next {days} days preview</h3>
-      <div className="mt-3 grid grid-cols-7 gap-2">
+      <div className="mt-3 grid grid-cols-7 gap-3">
         {dates.map((date) => {
           const available = isDateAvailable(weeklyPattern, exceptions, date);
           const dayNum = date.slice(8, 10);

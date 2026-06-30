@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Input } from "@/components/ui/input";
+import { DatePickerField } from "@/components/date-picker-field";
 
 interface AvailableDateInputProps {
   value: string;
@@ -48,12 +48,11 @@ export function AvailableDateInput({
           through chat.
         </p>
       )}
-      <Input
-        type="date"
+      <DatePickerField
         min={today}
         max={maxDateKey}
         value={value}
-        onChange={(event) => handleChange(event.target.value)}
+        onChange={handleChange}
       />
       {hasAvailabilitySet && availableDates.length > 0 ? (
         <p className="text-xs text-slate-500">

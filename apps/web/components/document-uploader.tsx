@@ -8,6 +8,7 @@ import { uploadDocumentViaApi, uploadPhotoViaApi } from "@/lib/storage/upload-cl
 import { MAX_DOCUMENT_SIZE_BYTES, MAX_DOCUMENT_SIZE_LABEL } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { PhotoCropModal } from "@/components/photo-crop-modal";
+import { truncateFileNameMiddle } from "@/lib/file-name";
 
 type UploadState = "idle" | "uploading" | "uploaded" | "failed";
 type UploadVariant = "document" | "photo";
@@ -158,7 +159,14 @@ export function DocumentUploader({
             </Button>
           </div>
         </div>
-        {fileName ? <p className="mt-2 text-xs text-slate-500">{fileName}</p> : null}
+        {fileName ? (
+          <p
+            className="mt-2 w-full overflow-hidden text-ellipsis whitespace-nowrap text-xs text-slate-500"
+            title={fileName}
+          >
+            {truncateFileNameMiddle(fileName)}
+          </p>
+        ) : null}
         {status === "failed" && errorMessage ? (
           <p className="mt-2 text-xs text-rose-600" role="alert">
             {errorMessage}

@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { validateDocumentFile } from "@/lib/upload-nurse-document";
 import { MAX_DOCUMENT_SIZE_LABEL } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
+import { truncateFileNameMiddle } from "@/lib/file-name";
 
 interface DeferredDocumentPickerProps {
   label: string;
@@ -62,7 +63,14 @@ export function DeferredDocumentPicker({
           </Button>
         </div>
       </div>
-      {file ? <p className="mt-2 text-xs text-slate-600">{file.name}</p> : null}
+      {file ? (
+        <p
+          className="mt-2 w-full overflow-hidden text-ellipsis whitespace-nowrap text-xs text-slate-600"
+          title={file.name}
+        >
+          {truncateFileNameMiddle(file.name)}
+        </p>
+      ) : null}
       {errorMessage ? (
         <p className="mt-2 text-xs text-rose-600" role="alert">
           {errorMessage}
