@@ -3,7 +3,7 @@ import { SUPPORT_EMAIL } from "@/lib/constants";
 export const PRIVACY_LAST_UPDATED = "June 18, 2026";
 
 export const PRIVACY_SUMMARY =
-  "We collect account and professional information to operate the marketplace, verify credentials, and connect families with providers. We use essential cookies only for core functionality, do not sell your data, and handle information in line with the Philippine Data Privacy Act.";
+  "We collect account and professional information to operate the marketplace, verify credentials, and connect families with providers. We use essential cookies only for core functionality, We do not sell your data, and handle information in line with the Philippine Data Privacy Act.";
 
 interface PrivacyContentProps {
   showLastUpdated?: boolean;
