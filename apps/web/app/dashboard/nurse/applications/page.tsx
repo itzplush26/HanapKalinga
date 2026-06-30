@@ -28,7 +28,10 @@ export default async function NurseApplicationsPage() {
           })}
           {!applications?.length ? (
             <p className="text-sm text-slate-600">
-              No applications yet. <Link href="/dashboard/nurse/care-requests" className="text-brand-600 underline">Browse care requests</Link>
+              No applications yet.{" "}
+              <Link href="/dashboard/nurse/bookings?tab=find-work" className="text-brand-600 underline">
+                Browse care requests
+              </Link>
             </p>
           ) : null}
         </div>

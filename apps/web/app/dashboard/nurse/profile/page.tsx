@@ -334,16 +334,16 @@ export default function NurseProfilePage() {
       <PageHeader title="User Profile" showBack={false} />
       <main className="px-5 py-6">
         <div className="mx-auto flex max-w-md flex-col gap-5">
-          <VerificationStatusBanner
-            status={verificationStatus}
-            rejectionReason={rejectionReason}
-            variant="profile"
-          />
-
           <ProfilePhotoUploader
             photoUrl={profilePhotoUrl}
             displayName={displayName}
             onPhotoChange={handleProfilePhotoChange}
+          />
+
+          <VerificationStatusBanner
+            status={verificationStatus}
+            rejectionReason={rejectionReason}
+            variant="profile"
           />
 
           <ThemeToggle />
