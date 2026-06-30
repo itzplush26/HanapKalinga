@@ -2,7 +2,12 @@ import { z } from "zod";
 import { isCityInRegion } from "@/lib/data/ph-locations";
 import { nurseProfileFieldsSchema } from "@/lib/validations/profile";
 import { containsProfanity } from "@/lib/validation/sanitize";
-import { isValidPrcLicenseNo, PRC_LICENSE_ERROR } from "@/lib/validation/prc-license";
+import {
+  isValidPrcLicenseNo,
+  isValidTesdaCertificateNo,
+  PRC_LICENSE_ERROR,
+  TESDA_CERTIFICATE_ERROR
+} from "@/lib/validation/prc-license";
 import { PROVIDER_NAME_SUFFIXES } from "@/lib/validation/name-suffix";
 
 export const completeNurseRegistrationSchema = nurseProfileFieldsSchema
@@ -57,10 +62,17 @@ export const completeNurseRegistrationSchema = nurseProfileFieldsSchema
     }
 
     if (values.providerType === "caregiver") {
-      if (!values.tesdaCertificateNo?.trim()) {
+      const tesdaNo = values.tesdaCertificateNo?.trim() ?? "";
+      if (!tesdaNo) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "TESDA certificate number is required.",
+          path: ["tesdaCertificateNo"]
+        });
+      } else if (!isValidTesdaCertificateNo(tesdaNo)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: TESDA_CERTIFICATE_ERROR,
           path: ["tesdaCertificateNo"]
         });
       }

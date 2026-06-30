@@ -42,7 +42,7 @@ import {
   SIGNUP_TOTAL_STEPS
 } from "@/lib/signup-stage";
 import { normalizePrcLicenseInput } from "@/lib/validation/prc-license";
-import { FAMILY_NAME_SUFFIXES, PROVIDER_NAME_SUFFIXES } from "@/lib/validation/name-suffix";
+import { NAME_SUFFIX_OPTION_GROUPS } from "@/lib/validation/name-suffix";
 
 const SIGNUP_STAGE_KEYS = getSignupStageKeys();
 
@@ -788,10 +788,14 @@ export default function RegisterPage() {
               {optionalLabel("Suffix (optional)")}
               <Select {...familyForm.register("nameSuffix")}>
                 <option value="">None</option>
-                {FAMILY_NAME_SUFFIXES.map((suffix) => (
-                  <option key={suffix} value={suffix}>
-                    {suffix}
-                  </option>
+                {NAME_SUFFIX_OPTION_GROUPS.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.options.map((suffix) => (
+                      <option key={suffix} value={suffix}>
+                        {suffix}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </Select>
             </div>
@@ -894,10 +898,14 @@ export default function RegisterPage() {
               {optionalLabel("Suffix (optional)")}
               <Select {...nurseForm.register("nameSuffix")}>
                 <option value="">None</option>
-                {PROVIDER_NAME_SUFFIXES.map((suffix) => (
-                  <option key={suffix} value={suffix}>
-                    {suffix}
-                  </option>
+                {NAME_SUFFIX_OPTION_GROUPS.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.options.map((suffix) => (
+                      <option key={suffix} value={suffix}>
+                        {suffix}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </Select>
             </div>

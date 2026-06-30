@@ -48,6 +48,13 @@
 
 main {
   min-height: 100vh;
+  min-height: 100dvh;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  body {
+    background-attachment: scroll;
+  }
 }
 
 @layer utilities {

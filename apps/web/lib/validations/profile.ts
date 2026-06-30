@@ -4,7 +4,12 @@ import { DAILY_RATE_BAND_IDS, HOURLY_RATE_BAND_IDS } from "@/lib/data/rates";
 import { containsProfanity, sanitizeText } from "@/lib/validation/sanitize";
 import { firstNameSchema, lastNameSchema, middleNameSchema, patientNameSchema } from "@/lib/validation/name";
 import { philippineMobileSchema } from "@/lib/validation/phone";
-import { isValidPrcLicenseNo, PRC_LICENSE_ERROR } from "@/lib/validation/prc-license";
+import {
+  isValidPrcLicenseNo,
+  isValidTesdaCertificateNo,
+  PRC_LICENSE_ERROR,
+  TESDA_CERTIFICATE_ERROR
+} from "@/lib/validation/prc-license";
 import { FAMILY_NAME_SUFFIXES, PROVIDER_NAME_SUFFIXES } from "@/lib/validation/name-suffix";
 
 const APPROPRIATE_MESSAGE = "Please keep your content appropriate.";
@@ -96,6 +101,16 @@ export const nurseProfileFormSchema = nurseProfileFieldsSchema
         message: "TESDA certificate number is required.",
         path: ["tesdaCertificateNo"]
       });
+    } else if (
+      values.providerType === "caregiver" &&
+      values.tesdaCertificateNo?.trim() &&
+      !isValidTesdaCertificateNo(values.tesdaCertificateNo)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: TESDA_CERTIFICATE_ERROR,
+        path: ["tesdaCertificateNo"]
+      });
     }
   });
 
@@ -157,6 +172,14 @@ export const nurseProfileEditSchema = z
         code: z.ZodIssueCode.custom,
         message: PRC_LICENSE_ERROR,
         path: ["prcLicenseNo"]
+      });
+    }
+    const tesdaNo = values.tesdaCertificateNo?.trim() ?? "";
+    if (tesdaNo && !isValidTesdaCertificateNo(tesdaNo)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: TESDA_CERTIFICATE_ERROR,
+        path: ["tesdaCertificateNo"]
       });
     }
   });

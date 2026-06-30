@@ -7,8 +7,8 @@ import { WeeklyAvailabilityGrid } from "@/components/weekly-availability-grid";
 import { AvailabilityPreviewCalendar } from "@/components/availability-preview-calendar";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DatePickerField } from "@/components/date-picker-field";
 import {
   applyQuickSetPreset,
   buildWeeklyPatternMap,
@@ -269,11 +269,12 @@ export default function NurseAvailabilityPage() {
                 <div className="flex flex-wrap items-end gap-3">
                   <div className="flex flex-col gap-1">
                     <label className="text-xs text-slate-600">Date</label>
-                    <Input
-                      type="date"
+                    <DatePickerField
                       min={todayManila}
+                      max={endDate}
                       value={exceptionDate}
-                      onChange={(e) => setExceptionDate(e.target.value)}
+                      onChange={setExceptionDate}
+                      placeholder="Select override date"
                       className="w-40"
                     />
                   </div>

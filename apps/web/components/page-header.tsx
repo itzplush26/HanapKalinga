@@ -16,7 +16,7 @@ export function PageHeader({ title, showBack = true, className }: PageHeaderProp
   return (
     <header
       className={cn(
-        "relative flex min-h-11 items-center justify-center border-b border-border bg-surface/95 px-12 py-2 backdrop-blur",
+        "sticky top-0 z-30 relative flex min-h-11 items-center justify-center border-b border-border bg-surface/95 px-12 py-2 backdrop-blur",
         className
       )}
     >

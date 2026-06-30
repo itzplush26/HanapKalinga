@@ -38,7 +38,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { ensureNurseProfile } from "@/lib/nurse/ensure-profile";
 import { mapSupabaseError } from "@/lib/user-errors";
 import { buildFormattedFullName, toTitleCase } from "@/lib/validation/format-name";
-import { PROVIDER_NAME_SUFFIXES } from "@/lib/validation/name-suffix";
+import { NAME_SUFFIX_OPTION_GROUPS } from "@/lib/validation/name-suffix";
 import {
   mergeSpecializations,
   SpecializationsPicker,
@@ -403,10 +403,14 @@ export default function NurseProfilePage() {
               <Label htmlFor="nameSuffix">Suffix (optional)</Label>
               <Select id="nameSuffix" {...form.register("nameSuffix")}>
                 <option value="">None</option>
-                {PROVIDER_NAME_SUFFIXES.map((suffix) => (
-                  <option key={suffix} value={suffix}>
-                    {suffix}
-                  </option>
+                {NAME_SUFFIX_OPTION_GROUPS.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.options.map((suffix) => (
+                      <option key={suffix} value={suffix}>
+                        {suffix}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </Select>
             </div>
