@@ -92,7 +92,7 @@ export function VerificationStatusBanner({
   const key = status as VerificationStatus;
   const showProgress = variant === "dashboard" && (key === "pending" || key === "under_review");
 
-  if (variant === "profile" && key === "verified") {
+  if (variant === "profile" && (key === "verified" || key === "renewal_under_review")) {
     return (
       <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
         <Check className="h-3.5 w-3.5" aria-hidden />
@@ -136,6 +136,9 @@ export function VerificationStatusBanner({
         )}
         {key === "under_review" && (
           <p>An administrator is currently reviewing your verification documents.</p>
+        )}
+        {key === "renewal_under_review" && (
+          <p>Your renewed document is under review. Your verified status remains active.</p>
         )}
         {key === "rejected" && (
           <>

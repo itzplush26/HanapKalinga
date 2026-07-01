@@ -22,7 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const { data: nurses } = await service
       .from("nurses")
       .select("id, profile_slug, updated_at, verified_at")
-      .eq("verification_status", "verified");
+      .in("verification_status", ["verified", "renewal_under_review"]);
 
     nursePages =
       nurses?.map((nurse) => {

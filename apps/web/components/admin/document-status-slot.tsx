@@ -32,6 +32,8 @@ export function DocumentStatusSlot({ slot, compact = false }: DocumentStatusSlot
       <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
     ) : slot.state === "missing" ? (
       <Circle className="h-4 w-4 shrink-0 text-rose-600" />
+    ) : slot.state === "expiring_soon" ? (
+      <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
     ) : slot.state === "expired" ? (
       <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
     ) : (
@@ -43,6 +45,8 @@ export function DocumentStatusSlot({ slot, compact = false }: DocumentStatusSlot
       ? "Uploaded"
       : slot.state === "missing"
         ? "Not uploaded"
+        : slot.state === "expiring_soon"
+          ? `Expiring soon ${slot.expiryDate ? new Date(`${slot.expiryDate}T00:00:00`).toLocaleDateString("en-PH") : ""}`
         : slot.state === "expired"
           ? `Expired ${slot.expiryDate ? new Date(`${slot.expiryDate}T00:00:00`).toLocaleDateString("en-PH") : ""}`
           : "N/A";
@@ -53,6 +57,7 @@ export function DocumentStatusSlot({ slot, compact = false }: DocumentStatusSlot
         "rounded-xl border px-3 py-2",
         slot.state === "uploaded" && "border-emerald-200 bg-emerald-50",
         slot.state === "missing" && "border-rose-200 bg-rose-50",
+        slot.state === "expiring_soon" && "border-amber-200 bg-amber-50",
         slot.state === "expired" && "border-amber-200 bg-amber-50",
         slot.state === "na" && "border-slate-200 bg-slate-50"
       )}
@@ -62,6 +67,9 @@ export function DocumentStatusSlot({ slot, compact = false }: DocumentStatusSlot
         <div className="min-w-0 flex-1">
           <p className={cn("font-medium text-slate-900", compact ? "text-xs" : "text-sm")}>{slot.label}</p>
           <p className="text-xs text-slate-600">{statusText}</p>
+          {slot.state === "expiring_soon" ? (
+            <p className="mt-1 text-xs text-amber-800">Document expires soon — renewal upload is recommended.</p>
+          ) : null}
           {slot.state === "expired" ? (
             <p className="mt-1 text-xs text-amber-800">Document expired — ask the nurse to re-upload.</p>
           ) : null}

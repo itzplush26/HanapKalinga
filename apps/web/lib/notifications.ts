@@ -1,8 +1,10 @@
 export type NotificationType =
   | "verification_approved"
   | "verification_rejected"
+  | "verification_renewal_rejected"
   | "verification_resubmission_required"
   | "verification_under_review"
+  | "verification_renewal_under_review"
   | "verification_pending"
   | "booking_accepted"
   | "booking_declined"
@@ -16,6 +18,7 @@ export type NotificationType =
 const CRITICAL_NOTIFICATION_TYPES = new Set<NotificationType>([
   "verification_approved",
   "verification_rejected",
+  "verification_renewal_rejected",
   "verification_resubmission_required",
   "booking_accepted",
   "booking_declined",

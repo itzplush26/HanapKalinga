@@ -13,7 +13,7 @@ import { PENDING_VERIFICATION_STATUSES } from "@/lib/admin/verification-queries"
 import { ProviderTypeBadge } from "@/components/provider-type-badge";
 import { resolveProfileDisplayName } from "@/lib/profile-display";
 import { resolveProfilePhotoUrl } from "@/lib/storage/media-url";
-import { hasIncompleteDocuments } from "@/lib/admin/verification-documents";
+import { getDocumentSlots, hasIncompleteDocuments } from "@/lib/admin/verification-documents";
 import { isProfileComplete } from "@/lib/admin/nurse-profile-completeness";
 import type { VerificationStatus } from "@/lib/verification";
 
@@ -46,12 +46,20 @@ export interface VerificationQueueNurse {
   } | null;
 }
 
-type QueueTab = "all" | "pending" | "under_review" | "verified" | "rejected" | "incomplete";
+type QueueTab =
+  | "all"
+  | "pending"
+  | "under_review"
+  | "renewals"
+  | "verified"
+  | "rejected"
+  | "incomplete";
 
 const TAB_LABELS: Record<QueueTab, string> = {
   all: "All",
   pending: "Pending",
   under_review: "Under review",
+  renewals: "Renewals",
   verified: "Verified",
   rejected: "Rejected",
   incomplete: "Incomplete"
@@ -64,9 +72,10 @@ function parseInitialTab(value?: string): QueueTab {
     value === "verified" ||
     value === "rejected" ||
     value === "incomplete" ||
-    value === "under_review"
+    value === "under_review" ||
+    value === "renewals"
   ) {
-    return value === "under_review" ? "under_review" : value;
+    return value;
   }
   return "pending";
 }
@@ -103,6 +112,7 @@ export function VerificationQueue({ initialNurses, initialTab }: VerificationQue
         )
       ).length,
       under_review: nurses.filter((nurse) => nurse.verification_status === "under_review").length,
+      renewals: nurses.filter((nurse) => nurse.verification_status === "renewal_under_review").length,
       verified: nurses.filter((nurse) => nurse.verification_status === "verified").length,
       rejected: nurses.filter((nurse) =>
         ["rejected", "resubmission_required"].includes(nurse.verification_status)
@@ -126,6 +136,8 @@ export function VerificationQueue({ initialNurses, initialTab }: VerificationQue
               )
             : activeTab === "under_review"
               ? nurse.verification_status === "under_review"
+            : activeTab === "renewals"
+              ? nurse.verification_status === "renewal_under_review"
             : activeTab === "verified"
               ? nurse.verification_status === "verified"
               : activeTab === "rejected"
@@ -257,6 +269,22 @@ export function VerificationQueue({ initialNurses, initialTab }: VerificationQue
           const profileComplete = isProfileComplete(nurse);
           const showCheckbox =
             nurse.verification_status === "pending" || hasIncompleteDocuments(nurse);
+          const renewalDocuments = getDocumentSlots(nurse).filter(
+            (slot) => slot.state === "expiring_soon" || slot.state === "expired"
+          );
+          const earliestRenewalDate =
+            renewalDocuments
+              .map((slot) => slot.expiryDate)
+              .filter((date): date is string => Boolean(date))
+              .sort()[0] ?? null;
+          const submittedBeforeExpiryDays =
+            nurse.submitted_at && earliestRenewalDate
+              ? Math.floor(
+                  (new Date(`${earliestRenewalDate}T00:00:00`).getTime() -
+                    new Date(nurse.submitted_at).getTime()) /
+                    (1000 * 60 * 60 * 24)
+                )
+              : null;
 
           return (
             <div
@@ -338,6 +366,35 @@ export function VerificationQueue({ initialNurses, initialTab }: VerificationQue
                   </div>
 
                   <VerificationDocumentStatus nurse={nurse} compact />
+
+                  {nurse.verification_status === "renewal_under_review" ? (
+                    <div className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-900">
+                      <p className="font-medium">
+                        This nurse is currently verified. Renewal submitted for:{" "}
+                        {renewalDocuments.length > 0
+                          ? renewalDocuments.map((slot) => slot.label).join(", ")
+                          : "Document update"}
+                        .
+                      </p>
+                      {submittedBeforeExpiryDays != null ? (
+                        <p className="mt-1">
+                          Renewal was submitted{" "}
+                          {submittedBeforeExpiryDays >= 0
+                            ? `${submittedBeforeExpiryDays} day(s) before expiry`
+                            : `${Math.abs(submittedBeforeExpiryDays)} day(s) after expiry`}
+                          .
+                        </p>
+                      ) : null}
+                      <div className="mt-2 flex gap-2">
+                        <Button asChild size="sm" variant="outline">
+                          <Link href={`/admin/verifications/${nurse.id}`}>Approve renewal</Link>
+                        </Button>
+                        <Button asChild size="sm" variant="outline">
+                          <Link href={`/admin/verifications/${nurse.id}`}>Reject renewal</Link>
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
 
                   {!profileComplete ? (
                     <p className="text-xs text-slate-600">

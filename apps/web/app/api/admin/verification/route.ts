@@ -16,7 +16,7 @@ import {
 
 const bodySchema = z.object({
   nurseId: z.string().uuid(),
-  action: z.enum(["approve", "reject", "request_resubmission", "mark_under_review"]),
+  action: z.enum(["approve", "reject", "reject_renewal", "request_resubmission", "mark_under_review"]),
   rejectionReason: z.string().optional(),
   reviewNotes: z.string().optional(),
   prcLicenseExpiry: z.string().optional(),
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       parsed.data;
 
     if (
-      (action === "reject" || action === "request_resubmission") &&
+      (action === "reject" || action === "request_resubmission" || action === "reject_renewal") &&
       (!rejectionReason || rejectionReason.trim().length < 5)
     ) {
       return NextResponse.json(
@@ -98,8 +98,16 @@ export async function POST(request: Request) {
       }
     }
 
+    if (action === "reject_renewal" && nurse.verification_status !== "renewal_under_review") {
+      return NextResponse.json(
+        { error: "Renewal rejection is only available for renewal-under-review applicants." },
+        { status: 400 }
+      );
+    }
+
     const previousStatus = nurse.verification_status;
-    const newStatus = actionToStatus(action as VerificationAction);
+    const newStatus =
+      action === "reject_renewal" ? "verified" : actionToStatus(action as VerificationAction);
     const trimmedReason = rejectionReason?.trim() || null;
     const trimmedNotes = reviewNotes?.trim() || null;
 
@@ -122,6 +130,10 @@ export async function POST(request: Request) {
       updatePayload.verified_at = null;
       updatePayload.verified_by = null;
       updatePayload.verification_notes = null;
+    } else if (action === "reject_renewal") {
+      updatePayload.rejection_reason = null;
+      updatePayload.rejection_notes = null;
+      updatePayload.verification_notes = trimmedNotes;
     } else if (action === "mark_under_review") {
       updatePayload.rejection_reason = null;
       updatePayload.rejection_notes = null;
@@ -148,13 +160,22 @@ export async function POST(request: Request) {
     }
 
     const rejectionSummary =
-      action === "reject" && trimmedReason
+      (action === "reject" || action === "reject_renewal") && trimmedReason
         ? trimmedNotes
           ? `${trimmedReason}. ${trimmedNotes}`
           : trimmedReason
         : trimmedReason;
 
-    const notification = getVerificationNotificationContent(newStatus, rejectionSummary);
+    const notification =
+      action === "reject_renewal"
+        ? {
+            type: "verification_renewal_rejected",
+            title: "Document renewal not approved",
+            body: rejectionSummary
+              ? `Your renewal submission was not approved: ${rejectionSummary}. Your current verified status remains active.`
+              : "Your renewal submission was not approved. Your current verified status remains active."
+          }
+        : getVerificationNotificationContent(newStatus, rejectionSummary);
     const { error: notificationError } = await service.from("notifications").insert({
       user_id: nurseId,
       type: notification.type,
@@ -207,14 +228,25 @@ export async function POST(request: Request) {
         | undefined;
 
       try {
-        emailPayload = buildVerificationStatusEmailPayload({
-          status: newStatus,
-          firstName,
-          notificationTitle: notification.title,
-          notificationBody: notification.body,
-          reason: trimmedReason,
-          details: trimmedNotes
-        });
+        if (action === "reject_renewal") {
+          const reasonLine = rejectionSummary
+            ? `<p><strong>Reason:</strong> ${rejectionSummary}</p>`
+            : "";
+          emailPayload = {
+            subject: "Document renewal needs correction",
+            html: `<p>Hi ${firstName},</p><p>We reviewed your renewed document submission and found an issue.</p>${reasonLine}<p>Your current verified status remains active. Please upload a corrected renewal document from your profile.</p>`,
+            text: `Hi ${firstName},\n\nWe reviewed your renewed document submission and found an issue.\n${rejectionSummary ? `Reason: ${rejectionSummary}\n` : ""}\nYour current verified status remains active. Please upload a corrected renewal document from your profile.`
+          };
+        } else {
+          emailPayload = buildVerificationStatusEmailPayload({
+            status: newStatus,
+            firstName,
+            notificationTitle: notification.title,
+            notificationBody: notification.body,
+            reason: trimmedReason,
+            details: trimmedNotes
+          });
+        }
       } catch (templateError) {
         emailStage = "template";
         emailError =

@@ -1,4 +1,4 @@
-export type DocumentSlotState = "uploaded" | "missing" | "na" | "expired";
+export type DocumentSlotState = "uploaded" | "missing" | "na" | "expiring_soon" | "expired";
 
 export interface NurseDocumentFields {
   provider_type: string | null;
@@ -24,6 +24,15 @@ function isExpired(date: string | null | undefined): boolean {
   return date.slice(0, 10) < today;
 }
 
+function isExpiringSoon(date: string | null | undefined): boolean {
+  if (!date) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expiry = new Date(`${date}T00:00:00`);
+  const daysUntil = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  return daysUntil >= 0 && daysUntil <= 30;
+}
+
 function slotState(
   applicable: boolean,
   documentPath: string | null,
@@ -32,6 +41,7 @@ function slotState(
   if (!applicable) return "na";
   if (!documentPath?.trim()) return "missing";
   if (isExpired(expiryDate ?? null)) return "expired";
+  if (isExpiringSoon(expiryDate ?? null)) return "expiring_soon";
   return "uploaded";
 }
 

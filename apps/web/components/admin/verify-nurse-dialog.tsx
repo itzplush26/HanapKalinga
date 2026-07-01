@@ -45,7 +45,10 @@ export function VerifyNurseDialog({
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Documents reviewed</p>
           <ul className="mt-2 space-y-2">
             {reviewedDocuments
-              .filter((slot) => slot.state === "uploaded" || slot.state === "expired")
+              .filter(
+                (slot) =>
+                  slot.state === "uploaded" || slot.state === "expiring_soon" || slot.state === "expired"
+              )
               .map((slot) => (
                 <li key={slot.key} className="flex items-center gap-2 text-sm text-slate-800">
                   <Check className="h-4 w-4 text-emerald-600" />

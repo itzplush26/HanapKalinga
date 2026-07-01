@@ -121,7 +121,7 @@ function BookingForm() {
         .from("nurses")
         .select("id, provider_type, profile_photo_url, profiles!nurses_id_fkey(full_name, city)")
         .eq("id", defaultNurse)
-        .eq("verification_status", "verified")
+        .in("verification_status", ["verified", "renewal_under_review"])
         .maybeSingle();
 
       if (!data) {

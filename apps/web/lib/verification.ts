@@ -1,6 +1,7 @@
 export type VerificationStatus =
   | "pending"
   | "under_review"
+  | "renewal_under_review"
   | "verified"
   | "rejected"
   | "resubmission_required";
@@ -8,12 +9,14 @@ export type VerificationStatus =
 export type VerificationAction =
   | "approve"
   | "reject"
+  | "reject_renewal"
   | "request_resubmission"
   | "mark_under_review";
 
 export const VERIFICATION_STATUS_LABELS: Record<VerificationStatus, string> = {
   pending: "Pending Review",
   under_review: "Under Review",
+  renewal_under_review: "Renewal Under Review",
   verified: "Approved",
   rejected: "Rejected",
   resubmission_required: "Resubmission Required"
@@ -22,6 +25,7 @@ export const VERIFICATION_STATUS_LABELS: Record<VerificationStatus, string> = {
 export const VERIFICATION_STATUS_BADGE_CLASSES: Record<VerificationStatus, string> = {
   pending: "bg-warning-bg text-warning border-warning-border",
   under_review: "bg-info-bg text-info border-info-border",
+  renewal_under_review: "bg-info-bg text-info border-info-border",
   verified: "bg-success-bg text-success border-success-border",
   rejected: "bg-error-bg text-error border-error-border",
   resubmission_required: "bg-warning-bg text-warning border-warning-border"
@@ -38,6 +42,7 @@ export const VERIFICATION_PROGRESS_STEPS: {
 
 export function getVerificationProgressIndex(status: VerificationStatus): number {
   if (status === "verified") return 2;
+  if (status === "renewal_under_review") return 2;
   if (status === "under_review") return 1;
   if (status === "pending") return 0;
   if (status === "resubmission_required" || status === "rejected") return 0;
@@ -78,6 +83,12 @@ export function getVerificationNotificationContent(
         title: "Verification under review",
         body: "An administrator is now reviewing your verification documents. We will notify you once a decision has been made."
       };
+    case "renewal_under_review":
+      return {
+        type: "verification_renewal_under_review",
+        title: "Renewal under review",
+        body: "Your renewed documents are under review. Your verified status remains active while we review."
+      };
     default:
       return {
         type: "verification_pending",
@@ -93,6 +104,8 @@ export function actionToStatus(action: VerificationAction): VerificationStatus {
       return "verified";
     case "reject":
       return "rejected";
+    case "reject_renewal":
+      return "verified";
     case "request_resubmission":
       return "resubmission_required";
     case "mark_under_review":
@@ -103,5 +116,5 @@ export function actionToStatus(action: VerificationAction): VerificationStatus {
 export const ACTIVE_VERIFICATION_STATUSES: VerificationStatus[] = ["pending", "under_review"];
 
 export function isVerifiedProvider(status: VerificationStatus): boolean {
-  return status === "verified";
+  return status === "verified" || status === "renewal_under_review";
 }

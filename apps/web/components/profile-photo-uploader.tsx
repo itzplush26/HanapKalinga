@@ -66,6 +66,7 @@ export function ProfilePhotoUploader({
   }
 
   const buttonLabel = photoUrl ? "Change photo" : "Upload photo";
+  const headingLabel = displayName.trim() || "Your profile";
 
   return (
     <>
@@ -88,8 +89,8 @@ export function ProfilePhotoUploader({
 
         <div className="flex flex-col gap-2">
           <div>
-            <p className="text-sm font-medium text-slate-900">Profile photo</p>
-            <p className="text-xs text-slate-500">JPG, PNG, or WebP — cropped to a circle.</p>
+            <p className="text-sm font-medium text-slate-900">{headingLabel}</p>
+            <p className="text-xs text-slate-500">JPG, PNG, or WebP</p>
           </div>
           <Button type="button" variant="outline" size="sm" disabled={uploading} onClick={openFilePicker}>
             {uploading ? (
