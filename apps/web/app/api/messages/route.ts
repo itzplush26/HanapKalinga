@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { maskProfanity } from "@/lib/validation/sanitize";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkSharedRateLimit } from "@/lib/rate-limit-shared";
 
 const bodySchema = z.object({
   bookingId: z.string().uuid(),
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
   }
 
   const { bookingId, content } = parsed.data;
-  const messageRate = checkRateLimit(`messages:${auth.user.id}`, 20, 60_000);
+  const messageRate = await checkSharedRateLimit(`messages:${auth.user.id}`, 20, 60_000);
   if (!messageRate.allowed) {
     return NextResponse.json(
       { error: "Too many messages sent. Please wait before sending again." },

@@ -20,6 +20,9 @@ export const MAX_DOCUMENT_SIZE_BYTES = 5 * 1024 * 1024;
 
 export const MAX_DOCUMENT_SIZE_LABEL = "5 MB";
 
+/** Maximum upload size for profile photos before compression (8 MB). */
+export const MAX_PROFILE_PHOTO_SIZE_BYTES = 8 * 1024 * 1024;
+
 export const BOOKING_SKILLS = [
   "IV Therapy",
   "Wound Care",
