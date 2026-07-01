@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createAnonClient } from "@/lib/supabase/anon";
-import { checkSharedRateLimit } from "@/lib/rate-limit-shared";
 import {
   getSignupCapacity,
   getSignupLimitClient,
@@ -18,12 +17,6 @@ function parseCapacityKind(value: string | null): SignupCapacityKind | null {
   return value as SignupCapacityKind;
 }
 
-function clientIp(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0]?.trim() || "unknown";
-  return request.headers.get("x-real-ip") ?? "unknown";
-}
-
 export async function GET(request: Request) {
   const kind = parseCapacityKind(new URL(request.url).searchParams.get("kind"));
   if (!kind) {
@@ -31,15 +24,6 @@ export async function GET(request: Request) {
   }
 
   try {
-    const ip = clientIp(request);
-    const rate = await checkSharedRateLimit(`register:capacity:${ip}`, 60, 60_000);
-    if (!rate.allowed) {
-      return NextResponse.json(
-        { error: "Too many capacity checks. Please try again in a minute." },
-        { status: 429 }
-      );
-    }
-
     const anonClient = createAnonClient();
     if (!anonClient) {
       return NextResponse.json(
