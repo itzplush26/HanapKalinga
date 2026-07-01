@@ -361,11 +361,20 @@ export default function RegisterPage() {
 
     try {
       const response = await fetch(`/api/register/capacity?kind=${capacityKind}`);
-      const payload = (await response.json()) as {
-        available?: boolean;
-        error?: string;
-        message?: string;
-      };
+      const contentType = response.headers.get("content-type") ?? "";
+      let payload: { available?: boolean; error?: string; message?: string } = {};
+
+      if (contentType.includes("application/json")) {
+        payload = (await response.json()) as typeof payload;
+      } else if (response.status === 429) {
+        setStatus("Too many requests. Please wait a minute and try again.");
+        setIsSavingRole(false);
+        return;
+      } else {
+        setStatus("We could not verify signup capacity right now. Please try again shortly.");
+        setIsSavingRole(false);
+        return;
+      }
 
       if (!response.ok) {
         setStatus(payload.error ?? "We could not verify signup capacity right now. Please try again shortly.");
