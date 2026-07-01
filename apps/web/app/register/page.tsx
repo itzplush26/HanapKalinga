@@ -49,6 +49,7 @@ const SIGNUP_STAGE_KEYS = getSignupStageKeys();
 export default function RegisterPage() {
   const [step, setStep] = useState(1);
   const [role, setRole] = useState<"family" | "nurse" | null>(null);
+  const [signupProviderType, setSignupProviderType] = useState<"nurse" | "caregiver">("nurse");
   const [status, setStatus] = useState<string | null>(null);
   const [email, setEmail] = useState<string>("");
   const [signupUserId, setSignupUserId] = useState<string | null>(null);
@@ -134,12 +135,60 @@ export default function RegisterPage() {
     await supabase.auth.signOut({ scope: "local" });
   }
 
+  async function persistSignupRole(userId: string): Promise<boolean> {
+    if (!role) {
+      return false;
+    }
+
+    const acceptedAt = getTermsAcceptedAtForUser(userId) ?? new Date().toISOString();
+    const { error: profileError } = await supabase.from("profiles").upsert({
+      id: userId,
+      role,
+      terms_accepted_at: acceptedAt
+    });
+
+    if (profileError) {
+      console.error("signup.profiles_role.error", profileError);
+      if (profileError.code === "23503") {
+        await resetSignupAuthState();
+        setStep(1);
+        setStatus("Your session expired. Please sign up again from step 1.");
+      } else {
+        setStatus(mapSupabaseError(profileError, "generic"));
+      }
+      return false;
+    }
+
+    recordTermsAcceptanceForUser(userId, acceptedAt);
+    setTermsAccepted(true);
+
+    if (role === "nurse") {
+      const { error: nurseError } = await ensureNurseProfile(supabase, userId, signupProviderType);
+      if (nurseError) {
+        console.error("signup.nurses_stub.error", nurseError);
+        setStatus(mapSupabaseError(nurseError, "generic"));
+        return false;
+      }
+
+      nurseForm.setValue("providerType", signupProviderType);
+    }
+
+    return true;
+  }
+
   async function handleCredentialsSubmit(values: {
     email: string;
     password: string;
     confirmPassword: string;
   }) {
     setStatus(null);
+
+    if (!role) {
+      setStatus("Choose how you want to use HanapKalinga before creating your account.");
+      setStep(1);
+      return;
+    }
+
     const existingUserId = await resolveAuthUserId(supabase, signupUserId);
     if (existingUserId) {
       const { data: authData } = await supabase.auth.getUser();
@@ -159,7 +208,11 @@ export default function RegisterPage() {
           setShowTermsModal(true);
           return;
         }
-        setStep(2);
+        const savedRole = await persistSignupRole(existingUserId);
+        if (!savedRole) {
+          return;
+        }
+        setStep(3);
         return;
       }
 
@@ -257,9 +310,15 @@ export default function RegisterPage() {
         return;
       }
 
+      const savedRole = await persistSignupRole(userId);
+      if (!savedRole) {
+        setIsSubmitting(false);
+        return;
+      }
+
       setEmail(values.email);
       credentialsForm.setValue("email", values.email);
-      setStep(2);
+      setStep(3);
       setStatus(null);
     } catch (error) {
       console.error("signup.sign_up.exception", error);
@@ -294,50 +353,43 @@ export default function RegisterPage() {
   }
 
   async function handleRoleSubmit(values: { role: string }) {
-    const userId = await resolveTermsAcceptedUserId();
-    if (!userId) {
-      return;
-    }
-
     setIsSavingRole(true);
     setStatus(null);
 
     const nextRole = values.role as "family" | "nurse";
-    const acceptedAt = getTermsAcceptedAtForUser(userId) ?? new Date().toISOString();
-    const { error: profileError } = await supabase.from("profiles").upsert({
-      id: userId,
-      role: nextRole,
-      terms_accepted_at: acceptedAt
-    });
+    const capacityKind = nextRole === "family" ? "family" : signupProviderType;
 
-    if (profileError) {
-      console.error("signup.profiles_role.error", profileError);
-      if (profileError.code === "23503") {
-        await resetSignupAuthState();
-        setStep(1);
-        setStatus("Your session expired. Please sign up again from step 1.");
-      } else {
-        setStatus(mapSupabaseError(profileError, "generic"));
+    try {
+      const response = await fetch(`/api/register/capacity?kind=${capacityKind}`);
+      const payload = (await response.json()) as {
+        available?: boolean;
+        error?: string;
+        message?: string;
+      };
+
+      if (!response.ok) {
+        setStatus(payload.error ?? "We could not verify signup capacity right now. Please try again shortly.");
+        setIsSavingRole(false);
+        return;
       }
+
+      if (!payload.available) {
+        setStatus(payload.message ?? "Signup is currently full. Please contact support for waitlist options.");
+        setIsSavingRole(false);
+        return;
+      }
+    } catch (error) {
+      console.error("signup.capacity_check.error", error);
+      setStatus("We could not verify signup capacity right now. Please try again shortly.");
       setIsSavingRole(false);
       return;
     }
 
-    recordTermsAcceptanceForUser(userId, acceptedAt);
-    setTermsAccepted(true);
-
-    if (nextRole === "nurse") {
-      const { error: nurseError } = await ensureNurseProfile(supabase, userId, "nurse");
-      if (nurseError) {
-        console.error("signup.nurses_stub.error", nurseError);
-        setStatus(mapSupabaseError(nurseError, "generic"));
-        setIsSavingRole(false);
-        return;
-      }
-    }
-
     setRole(nextRole);
-    setStep(3);
+    if (nextRole === "nurse") {
+      nurseForm.setValue("providerType", signupProviderType);
+    }
+    setStep(2);
     setIsSavingRole(false);
   }
 
@@ -490,8 +542,11 @@ export default function RegisterPage() {
     saveSignupUserId(acceptedUserId);
     setShowTermsModal(false);
     setTermsPendingUserId(null);
-    if (step === 1) {
-      setStep(2);
+    if (step === 2) {
+      const savedRole = await persistSignupRole(acceptedUserId);
+      if (savedRole) {
+        setStep(3);
+      }
     }
   }
 
@@ -636,12 +691,22 @@ export default function RegisterPage() {
     }
     if (storedNurse) {
       try {
-        nurseForm.reset(JSON.parse(storedNurse));
+        const parsed = JSON.parse(storedNurse) as { providerType?: "nurse" | "caregiver" };
+        nurseForm.reset(parsed);
+        if (parsed.providerType === "nurse" || parsed.providerType === "caregiver") {
+          setSignupProviderType(parsed.providerType);
+        }
       } catch {
         // Ignore bad data
       }
     }
   }, [familyForm, nurseForm]);
+
+  useEffect(() => {
+    if (step === 2 && !role) {
+      setStep(1);
+    }
+  }, [role, step]);
 
   return (
     <main className="px-5 py-8">
@@ -652,6 +717,54 @@ export default function RegisterPage() {
         </div>
 
         {step === 1 ? (
+          <form onSubmit={roleForm.handleSubmit(handleRoleSubmit)} className="space-y-4">
+            <div className="grid gap-3">
+              <button
+                type="button"
+                onClick={() => roleForm.setValue("role", "family")}
+                className={
+                  roleForm.watch("role") === "family"
+                    ? "rounded-2xl border border-brand-300 bg-brand-50 p-4 text-left"
+                    : "rounded-2xl border border-slate-200 bg-white p-4 text-left"
+                }
+              >
+                <p className="text-base font-semibold">🏠 I need a nurse or caregiver</p>
+                <p className="text-sm text-slate-600">For families and patients</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => roleForm.setValue("role", "nurse")}
+                className={
+                  roleForm.watch("role") === "nurse"
+                    ? "rounded-2xl border border-brand-300 bg-brand-50 p-4 text-left"
+                    : "rounded-2xl border border-slate-200 bg-white p-4 text-left"
+                }
+              >
+                <p className="text-base font-semibold">👩‍⚕️ I am a nurse or caregiver</p>
+                <p className="text-sm text-slate-600">RN, PDN, or TESDA NC II caregiver</p>
+              </button>
+            </div>
+            {roleForm.watch("role") === "nurse" ? (
+              <div className="space-y-1">
+                {requiredLabel("Provider type")}
+                <Select
+                  value={signupProviderType}
+                  onChange={(event) =>
+                    setSignupProviderType(event.target.value as "nurse" | "caregiver")
+                  }
+                >
+                  <option value="nurse">Nurse (PRC)</option>
+                  <option value="caregiver">Caregiver (TESDA NC II)</option>
+                </Select>
+              </div>
+            ) : null}
+            <LoadingButton type="submit" loading={isSavingRole} loadingText="Checking availability..." className="w-full">
+              Continue
+            </LoadingButton>
+          </form>
+        ) : null}
+
+        {step === 2 ? (
           <form onSubmit={credentialsForm.handleSubmit(handleCredentialsSubmit)} className="space-y-4">
             <div className="space-y-2">
               {requiredLabel("Email", !!credentialsForm.formState.errors.email)}
@@ -708,40 +821,6 @@ export default function RegisterPage() {
               className="w-full"
               disabled={turnstileRequired && !captchaToken}
             >
-              Continue
-            </LoadingButton>
-          </form>
-        ) : null}
-
-        {step === 2 ? (
-          <form onSubmit={roleForm.handleSubmit(handleRoleSubmit)} className="space-y-4">
-            <div className="grid gap-3">
-              <button
-                type="button"
-                onClick={() => roleForm.setValue("role", "family")}
-                className={
-                  roleForm.watch("role") === "family"
-                    ? "rounded-2xl border border-brand-300 bg-brand-50 p-4 text-left"
-                    : "rounded-2xl border border-slate-200 bg-white p-4 text-left"
-                }
-              >
-                <p className="text-base font-semibold">🏠 I need a nurse or caregiver</p>
-                <p className="text-sm text-slate-600">For families and patients</p>
-              </button>
-              <button
-                type="button"
-                onClick={() => roleForm.setValue("role", "nurse")}
-                className={
-                  roleForm.watch("role") === "nurse"
-                    ? "rounded-2xl border border-brand-300 bg-brand-50 p-4 text-left"
-                    : "rounded-2xl border border-slate-200 bg-white p-4 text-left"
-                }
-              >
-                <p className="text-base font-semibold">👩‍⚕️ I am a nurse or caregiver</p>
-                <p className="text-sm text-slate-600">RN, PDN, or TESDA NC II caregiver</p>
-              </button>
-            </div>
-            <LoadingButton type="submit" loading={isSavingRole} loadingText="Saving..." className="w-full">
               Continue
             </LoadingButton>
           </form>

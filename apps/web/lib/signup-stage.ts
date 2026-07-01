@@ -17,7 +17,7 @@ const LEGACY_SIGNUP_KEYS = [
   "nurselink.signup.auth"
 ] as const;
 
-export const SIGNUP_TOTAL_STEPS = 4;
+export const SIGNUP_TOTAL_STEPS = 3;
 
 export function getSignupStageKeys() {
   return SIGNUP_STAGE_KEYS;
