@@ -58,6 +58,14 @@ export function buildVerificationStatusEmailPayload(
     };
   }
 
+  if (params.status === "renewal_under_review") {
+    return {
+      subject: "Renewal documents under review",
+      html: `<p>Hi ${firstName},</p><p>We received your renewed document submission and it is now under review.</p><p>Your verified status remains active while we review your renewal.</p>`,
+      text: `Hi ${firstName},\n\nWe received your renewed document submission and it is now under review.\n\nYour verified status remains active while we review your renewal.`
+    };
+  }
+
   if (params.status === "resubmission_required") {
     if (reason.length < 5) {
       throw new Error("Resubmission emails require a reason with at least 5 characters.");

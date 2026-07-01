@@ -115,7 +115,16 @@ export default async function AdminDashboardPage() {
       <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
         <h2 className="text-sm font-semibold text-slate-900">Verification status legend</h2>
         <div className="mt-3 flex flex-wrap gap-2">
-          {(["pending", "under_review", "verified", "rejected", "resubmission_required"] as VerificationStatus[]).map(
+          {(
+            [
+              "pending",
+              "under_review",
+              "renewal_under_review",
+              "verified",
+              "rejected",
+              "resubmission_required"
+            ] as VerificationStatus[]
+          ).map(
             (status) => (
               <VerificationStatusBadge key={status} status={status} />
             )

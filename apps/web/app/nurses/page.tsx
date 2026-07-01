@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { getCachedVerifiedNurses } from "@/lib/nurses/cached-browse";
+import { BottomNav } from "@/components/bottom-nav";
 import { NurseCard } from "@/components/nurse-card";
 import { NursesBrowseHeader } from "@/components/nurses-browse-header";
 import { FamilyBrowseOnboarding } from "@/components/family-browse-onboarding";
@@ -72,7 +73,7 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
           .select(
             "id, provider_type, specializations, years_experience, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry, profiles!nurses_id_fkey(full_name, first_name, last_name, city, region, barangay)"
           )
-          .eq("verification_status", "verified")
+          .in("verification_status", ["verified", "renewal_under_review"])
           .textSearch("search_vector", searchQuery, {
             type: "websearch",
             config: "english"
@@ -176,55 +177,60 @@ export default async function NursesPage({ searchParams }: NursesPageProps) {
       return (a.nurse.daily_rate_12hr ?? 0) - (b.nurse.daily_rate_12hr ?? 0);
     });
 
+  const isFamilyViewer = viewerRole === "family";
+
   return (
-    <main className="px-5 py-8">
-      <div className="mx-auto flex w-full max-w-md flex-col gap-5">
-        <NursesBrowseHeader viewerRole={viewerRole} />
-        <FamilyBrowseOnboarding
-          isFamilyViewer={viewerRole === "family"}
-          showBrowseTooltip={showBrowseTooltip}
-          hasBrowsed={hasBrowsed}
-        />
-        {showWelcome ? <NursesWelcomeBanner /> : null}
-        <div className="space-y-4">
-          {filteredNurses.map(({ nurse, profile, availabilityStatus }) => {
-            const ratings = ratingsMap.get(nurse.id);
-            return (
-              <NurseCard
-                key={nurse.id}
-                id={nurse.id}
-                name={resolveProfileDisplayName(profile)}
-                city={resolveProfileCity(profile?.city)}
-                specializations={nurse.specializations ?? []}
-                experienceLabel={formatYearsExperience(nurse.years_experience)}
-                dailyRateLabel={formatDailyRateBandLabel(
-                  nurse.daily_rate_range,
-                  nurse.daily_rate_12hr,
-                  nurse.daily_rate_12hr_max
-                )}
-                averageRating={ratings?.averageRating ?? null}
-                reviewCount={ratings?.reviewCount ?? 0}
-                verified
-                availabilityStatus={availabilityStatus}
-                imageUrl={resolveProfilePhotoUrl(nurse.profile_photo_url) ?? undefined}
-                providerType={nurse.provider_type ?? "nurse"}
+    <>
+      <main className={`px-5 py-8 ${isFamilyViewer ? "pb-24" : ""}`}>
+        <div className="mx-auto flex w-full max-w-md flex-col gap-5">
+          <NursesBrowseHeader viewerRole={viewerRole} />
+          <FamilyBrowseOnboarding
+            isFamilyViewer={isFamilyViewer}
+            showBrowseTooltip={showBrowseTooltip}
+            hasBrowsed={hasBrowsed}
+          />
+          {showWelcome ? <NursesWelcomeBanner /> : null}
+          <div className="space-y-4">
+            {filteredNurses.map(({ nurse, profile, availabilityStatus }) => {
+              const ratings = ratingsMap.get(nurse.id);
+              return (
+                <NurseCard
+                  key={nurse.id}
+                  id={nurse.id}
+                  name={resolveProfileDisplayName(profile)}
+                  city={resolveProfileCity(profile?.city)}
+                  specializations={nurse.specializations ?? []}
+                  experienceLabel={formatYearsExperience(nurse.years_experience)}
+                  dailyRateLabel={formatDailyRateBandLabel(
+                    nurse.daily_rate_range,
+                    nurse.daily_rate_12hr,
+                    nurse.daily_rate_12hr_max
+                  )}
+                  averageRating={ratings?.averageRating ?? null}
+                  reviewCount={ratings?.reviewCount ?? 0}
+                  verified
+                  availabilityStatus={availabilityStatus}
+                  imageUrl={resolveProfilePhotoUrl(nurse.profile_photo_url) ?? undefined}
+                  providerType={nurse.provider_type ?? "nurse"}
+                />
+              );
+            })}
+            {filteredNurses.length === 0 ? (
+              <EmptyState
+                icon={Search}
+                title="No results found"
+                description="Try adjusting your filters or search in a different region."
+                action={
+                  <Button asChild variant="outline" size="sm">
+                    <Link href="/nurses">Clear filters</Link>
+                  </Button>
+                }
               />
-            );
-          })}
-          {filteredNurses.length === 0 ? (
-            <EmptyState
-              icon={Search}
-              title="No results found"
-              description="Try adjusting your filters or search in a different region."
-              action={
-                <Button asChild variant="outline" size="sm">
-                  <Link href="/nurses">Clear filters</Link>
-                </Button>
-              }
-            />
-          ) : null}
+            ) : null}
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+      {isFamilyViewer ? <BottomNav role="family" /> : null}
+    </>
   );
 }

@@ -58,7 +58,7 @@ async function notifyMatchingNurses(
   const { data: nurses } = await service
     .from("nurses")
     .select("id, specializations, profiles!nurses_id_fkey(full_name, region)")
-    .eq("verification_status", "verified");
+    .in("verification_status", ["verified", "renewal_under_review"]);
   const budgetLabel = getDailyRateBand(data.budgetBand)?.label ?? "Open to discuss";
 
   for (const nurse of nurses ?? []) {

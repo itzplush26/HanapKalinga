@@ -68,7 +68,13 @@ interface ActionErrorState {
   heading: string;
   message: string;
   timestamp: string;
-  action: "approve" | "reject" | "request_resubmission" | "mark_under_review" | "resend_status_email";
+  action:
+    | "approve"
+    | "reject"
+    | "reject_renewal"
+    | "request_resubmission"
+    | "mark_under_review"
+    | "resend_status_email";
 }
 
 export function VerificationReviewPanel({
@@ -107,7 +113,7 @@ export function VerificationReviewPanel({
   const [reviewNotes, setReviewNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState<
-    "approve" | "reject" | "request_resubmission" | "mark_under_review" | null
+    "approve" | "reject" | "reject_renewal" | "request_resubmission" | "mark_under_review" | null
   >(null);
   const [prcLicenseExpiry, setPrcLicenseExpiry] = useState(initialPrcExpiry?.slice(0, 10) ?? "");
   const [tesdaCertExpiry, setTesdaCertExpiry] = useState(initialTesdaExpiry?.slice(0, 10) ?? "");
@@ -232,7 +238,7 @@ export function VerificationReviewPanel({
   }
 
   async function submitAction(
-    action: "approve" | "reject" | "request_resubmission" | "mark_under_review"
+    action: "approve" | "reject" | "reject_renewal" | "request_resubmission" | "mark_under_review"
   ) {
     setLoading(true);
     setActionError(null);
@@ -245,7 +251,7 @@ export function VerificationReviewPanel({
           nurseId,
           action,
           rejectionReason:
-            action === "reject" || action === "request_resubmission"
+            action === "reject" || action === "request_resubmission" || action === "reject_renewal"
               ? rejectionReason.trim() || undefined
               : undefined,
           reviewNotes:
@@ -293,6 +299,8 @@ export function VerificationReviewPanel({
         showToast("Verification rejected. Nurse has been notified.", "success");
       } else if (action === "mark_under_review") {
         showToast("Nurse marked under review. Email notification sent.", "success");
+      } else if (action === "reject_renewal") {
+        showToast("Renewal rejected. Current verified status remains active.", "success");
       } else {
         showToast("Resubmission requested. Nurse has been notified.", "success");
       }
@@ -316,11 +324,13 @@ export function VerificationReviewPanel({
 
   const isCaregiver = providerType === "caregiver";
   const canReview = ["pending", "under_review", "resubmission_required"].includes(status);
+  const canReviewRenewal = status === "renewal_under_review";
   const canVerify =
     documentsReady &&
     Boolean(nbiExpiry) &&
     (isCaregiver ? Boolean(tesdaCertExpiry) : Boolean(prcLicenseExpiry));
-  const canResendStatusEmail = status === "verified" || status === "under_review";
+  const canResendStatusEmail =
+    status === "verified" || status === "under_review" || status === "renewal_under_review";
 
   return (
     <>
@@ -370,7 +380,7 @@ export function VerificationReviewPanel({
             </dl>
           </div>
 
-          {canReview ? (
+          {canReview || canReviewRenewal ? (
             <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
               <h3 className="text-sm font-semibold text-slate-900">Review actions</h3>
               <div className="space-y-2">
@@ -396,15 +406,23 @@ export function VerificationReviewPanel({
                     disabled={!canVerify}
                     className={!canVerify ? "pointer-events-auto" : undefined}
                   >
-                    Verify
+                    {canReviewRenewal ? "Approve renewal" : "Verify"}
                   </Button>
                 </span>
-                <Button type="button" variant="outline" onClick={() => setConfirmAction("request_resubmission")}>
-                  Request resubmission
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setConfirmAction("reject")}>
-                  Reject
-                </Button>
+                {canReviewRenewal ? (
+                  <Button type="button" variant="outline" onClick={() => setConfirmAction("reject_renewal")}>
+                    Reject renewal
+                  </Button>
+                ) : (
+                  <>
+                    <Button type="button" variant="outline" onClick={() => setConfirmAction("request_resubmission")}>
+                      Request resubmission
+                    </Button>
+                    <Button type="button" variant="outline" onClick={() => setConfirmAction("reject")}>
+                      Reject
+                    </Button>
+                  </>
+                )}
               </div>
               {!documentsReady && verifyTooltip ? (
                 <p className="text-xs text-rose-700">{verifyTooltip}</p>
@@ -640,7 +658,7 @@ export function VerificationReviewPanel({
       />
 
       <RejectNurseDialog
-        open={confirmAction === "reject"}
+        open={confirmAction === "reject" || confirmAction === "reject_renewal"}
         fullName={fullName}
         reason={rejectionReason}
         details={rejectionDetails}
@@ -650,7 +668,7 @@ export function VerificationReviewPanel({
         onConfirm={() => {
           if (!rejectionReason) return;
           if (rejectionReason === "Other" && rejectionDetails.trim().length < 5) return;
-          void submitAction("reject");
+          void submitAction(confirmAction === "reject_renewal" ? "reject_renewal" : "reject");
         }}
         onCancel={() => setConfirmAction(null)}
       />

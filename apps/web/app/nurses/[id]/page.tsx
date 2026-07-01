@@ -46,7 +46,7 @@ export async function generateStaticParams() {
   const { data } = await supabase
     .from("nurses")
     .select("id, profile_slug")
-    .eq("verification_status", "verified");
+    .in("verification_status", ["verified", "renewal_under_review"]);
 
   return (data ?? []).map((nurse) => ({
     id: nurse.profile_slug ?? nurse.id
@@ -141,7 +141,11 @@ export default async function NurseProfilePage({ params }: NurseProfilePageProps
     console.error("nurse.profile.load", nurseError);
   }
 
-  if (!nurse || nurse.verification_status !== "verified") {
+  if (
+    !nurse ||
+    (nurse.verification_status !== "verified" &&
+      nurse.verification_status !== "renewal_under_review")
+  ) {
     notFound();
   }
 

@@ -47,9 +47,12 @@ export async function POST(request: Request) {
     }
 
     const status = nurse.verification_status as VerificationStatus;
-    if (status !== "verified" && status !== "under_review") {
+    if (status !== "verified" && status !== "under_review" && status !== "renewal_under_review") {
       return NextResponse.json(
-        { error: "Status email resend is only available for verified or under review applicants." },
+        {
+          error:
+            "Status email resend is only available for verified, under review, or renewal-under-review applicants."
+        },
         { status: 400 }
       );
     }

@@ -33,7 +33,7 @@ import {
 import { DocumentPendingRow } from "@/components/document-pending-row";
 import { isVerifiedProvider, type VerificationStatus } from "@/lib/verification";
 import { DocumentExpiryCard } from "@/components/document-expiry-card";
-import { getDocumentExpiryItems, hasExpiredDocuments, type DocumentExpiryItem } from "@/lib/license-expiry";
+import { getDocumentExpiryItems, type DocumentExpiryItem } from "@/lib/license-expiry";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ensureNurseProfile } from "@/lib/nurse/ensure-profile";
 import { mapSupabaseError } from "@/lib/user-errors";
@@ -44,6 +44,15 @@ import {
   SpecializationsPicker,
   splitStoredSpecializations
 } from "@/components/specializations-picker";
+
+function formatExpiryDate(date: string | null | undefined): string {
+  if (!date) return "an upcoming date";
+  return new Date(`${date}T00:00:00`).toLocaleDateString("en-PH", {
+    month: "long",
+    day: "numeric",
+    year: "numeric"
+  });
+}
 
 export default function NurseProfilePage() {
   const supabase = createClient();
@@ -224,20 +233,32 @@ export default function NurseProfilePage() {
 
     const credentialUrl =
       providerType === "caregiver" ? values.tesda_document_url : values.prc_document_url;
-    const documentsChanged =
-      (credentialUrl && credentialUrl !== initialCredentialUrl) ||
-      (values.nbi_document_url && values.nbi_document_url !== initialNbiUrl);
-    const docsExpired = hasExpiredDocuments({
-      provider_type: providerType,
-      prc_license_expiry: documentExpiry.find((d) => d.key === "prc")?.date,
-      tesda_cert_expiry: documentExpiry.find((d) => d.key === "tesda")?.date,
-      nbi_expiry: documentExpiry.find((d) => d.key === "nbi")?.date
-    });
-    const shouldResubmit =
+    const credentialKey = providerType === "caregiver" ? "tesda" : "prc";
+    const credentialExpiryStatus =
+      documentExpiry.find((document) => document.key === credentialKey)?.status ?? "missing";
+    const nbiExpiryStatus =
+      documentExpiry.find((document) => document.key === "nbi")?.status ?? "missing";
+
+    const credentialChanged = Boolean(credentialUrl && credentialUrl !== initialCredentialUrl);
+    const nbiChanged = Boolean(values.nbi_document_url && values.nbi_document_url !== initialNbiUrl);
+    const documentsChanged = credentialChanged || nbiChanged;
+    const changedHasExpired =
+      (credentialChanged && credentialExpiryStatus === "expired") ||
+      (nbiChanged && nbiExpiryStatus === "expired");
+    const changedHasExpiringSoon =
+      (credentialChanged && credentialExpiryStatus === "expiring_soon") ||
+      (nbiChanged && nbiExpiryStatus === "expiring_soon");
+
+    const shouldResubmitToPending =
       documentsChanged &&
-      (docsExpired ||
+      (changedHasExpired ||
         verificationStatus === "rejected" ||
         verificationStatus === "resubmission_required");
+    const shouldSetRenewalUnderReview =
+      documentsChanged &&
+      !changedHasExpired &&
+      changedHasExpiringSoon &&
+      isVerifiedProvider(verificationStatus);
 
     const specializations = mergeSpecializations(
       values.selectedSpecializations,
@@ -263,13 +284,19 @@ export default function NurseProfilePage() {
         prc_document_url: providerType === "nurse" ? values.prc_document_url || null : null,
         tesda_document_url: providerType === "caregiver" ? values.tesda_document_url || null : null,
         nbi_document_url: values.nbi_document_url || null,
-        ...(shouldResubmit
+        ...(shouldResubmitToPending
           ? {
               verification_status: "pending",
               rejection_reason: null,
               verified_at: null,
               submitted_at: new Date().toISOString()
             }
+          : shouldSetRenewalUnderReview
+            ? {
+                verification_status: "renewal_under_review",
+                rejection_reason: null,
+                submitted_at: new Date().toISOString()
+              }
           : {})
       },
       { onConflict: "id" }
@@ -281,8 +308,13 @@ export default function NurseProfilePage() {
       return;
     }
 
-    if (shouldResubmit) {
+    if (shouldResubmitToPending) {
       setVerificationStatus("pending");
+      setRejectionReason(null);
+      setInitialCredentialUrl(credentialUrl ?? "");
+      setInitialNbiUrl(values.nbi_document_url ?? "");
+    } else if (shouldSetRenewalUnderReview) {
+      setVerificationStatus("renewal_under_review");
       setRejectionReason(null);
       setInitialCredentialUrl(credentialUrl ?? "");
       setInitialNbiUrl(values.nbi_document_url ?? "");
@@ -290,31 +322,32 @@ export default function NurseProfilePage() {
 
     setProfilePhotoUrl(resolveProfilePhotoUrl(values.profile_photo_url || null));
 
-    if (verificationStatus === "verified") {
+    if (isVerifiedProvider(verificationStatus) || shouldSetRenewalUnderReview) {
       void fetch("/api/revalidate/nurse", { method: "POST" });
     }
 
     setSaved(true);
   }
 
-  const documentsExpired = hasExpiredDocuments({
-    provider_type: providerType,
-    prc_license_expiry: documentExpiry.find((d) => d.key === "prc")?.date,
-    tesda_cert_expiry: documentExpiry.find((d) => d.key === "tesda")?.date,
-    nbi_expiry: documentExpiry.find((d) => d.key === "nbi")?.date
-  });
-  const canReuploadDocuments =
-    documentsExpired ||
-    verificationStatus === "rejected" ||
-    verificationStatus === "resubmission_required";
+  const isStatusResubmissionFlow =
+    verificationStatus === "rejected" || verificationStatus === "resubmission_required";
+  const credentialExpiryItem = documentExpiry.find((d) =>
+    providerType === "caregiver" ? d.key === "tesda" : d.key === "prc"
+  );
+  const nbiExpiryItem = documentExpiry.find((d) => d.key === "nbi");
+  const credentialNeedsRenewal =
+    credentialExpiryItem?.status === "expired" || credentialExpiryItem?.status === "expiring_soon";
+  const nbiNeedsRenewal = nbiExpiryItem?.status === "expired" || nbiExpiryItem?.status === "expiring_soon";
+  const canReuploadCredential = isStatusResubmissionFlow || credentialNeedsRenewal;
+  const canReuploadNbi = isStatusResubmissionFlow || nbiNeedsRenewal;
   const credentialPath =
     (providerType === "caregiver"
       ? form.watch("tesda_document_url")
       : form.watch("prc_document_url")) || initialCredentialUrl;
   const nbiPath = form.watch("nbi_document_url") || initialNbiUrl;
   const isVerified = isVerifiedProvider(verificationStatus);
-  const showCredentialStatus = !!credentialPath && !canReuploadDocuments;
-  const showNbiStatus = !!nbiPath && !canReuploadDocuments;
+  const showCredentialStatus = !!credentialPath && !canReuploadCredential;
+  const showNbiStatus = !!nbiPath && !canReuploadNbi;
   const credentialLabel =
     providerType === "caregiver" ? "TESDA NC II Certificate" : "PRC License";
   const displayName = resolveProfileDisplayName({
@@ -566,32 +599,66 @@ export default function NurseProfilePage() {
 
             {showCredentialStatus ? (
               <DocumentStatusRow label={credentialLabel} path={credentialPath} submittedAt={submittedAt} />
-            ) : canReuploadDocuments ? (
-              providerType === "caregiver" ? (
-                <DocumentUploader
-                  label="TESDA NC II Certificate"
-                  pathPrefix="tesda"
-                  onUploaded={(url) => form.setValue("tesda_document_url", url)}
-                />
-              ) : (
-                <DocumentUploader
-                  label="PRC License"
-                  pathPrefix="prc"
-                  onUploaded={(url) => form.setValue("prc_document_url", url)}
-                />
-              )
+            ) : canReuploadCredential ? (
+              <>
+                {!isStatusResubmissionFlow && credentialExpiryItem?.status === "expiring_soon" ? (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                    <strong>Renew early:</strong> Your {credentialLabel} expires on{" "}
+                    {formatExpiryDate(credentialExpiryItem.date)}. Upload your renewed document now to
+                    maintain uninterrupted access. Your verified status stays active while we review the
+                    new document.
+                  </div>
+                ) : null}
+                {!isStatusResubmissionFlow && credentialExpiryItem?.status === "expired" ? (
+                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-900">
+                    <strong>Action required:</strong> Your {credentialLabel} expired on{" "}
+                    {formatExpiryDate(credentialExpiryItem.date)}. Upload your renewed document to restore
+                    your verified status. Your profile will be under review until approved.
+                  </div>
+                ) : null}
+                {providerType === "caregiver" ? (
+                  <DocumentUploader
+                    label="TESDA NC II Certificate"
+                    pathPrefix="tesda"
+                    onUploaded={(url) => form.setValue("tesda_document_url", url)}
+                  />
+                ) : (
+                  <DocumentUploader
+                    label="PRC License"
+                    pathPrefix="prc"
+                    onUploaded={(url) => form.setValue("prc_document_url", url)}
+                  />
+                )}
+              </>
             ) : (
               <DocumentPendingRow label={credentialLabel} />
             )}
 
             {showNbiStatus ? (
               <DocumentStatusRow label="NBI Clearance" path={nbiPath} submittedAt={submittedAt} />
-            ) : canReuploadDocuments ? (
-              <DocumentUploader
-                label="NBI Clearance"
-                pathPrefix="nbi"
-                onUploaded={(url) => form.setValue("nbi_document_url", url)}
-              />
+            ) : canReuploadNbi ? (
+              <>
+                {!isStatusResubmissionFlow && nbiExpiryItem?.status === "expiring_soon" ? (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                    <strong>Renew early:</strong> Your NBI Clearance expires on{" "}
+                    {formatExpiryDate(nbiExpiryItem.date)}. Upload your renewed document now to maintain
+                    uninterrupted access. Your verified status stays active while we review the new
+                    document.
+                  </div>
+                ) : null}
+                {!isStatusResubmissionFlow && nbiExpiryItem?.status === "expired" ? (
+                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-900">
+                    <strong>Action required:</strong> Your NBI Clearance expired on{" "}
+                    {formatExpiryDate(nbiExpiryItem.date)}. Upload your renewed document to restore your
+                    verified status. Your profile will be under review until approved.
+                  </div>
+                ) : null}
+                <DocumentUploader
+                  label="NBI Clearance"
+                  pathPrefix="nbi"
+                  onUploaded={(url) => form.setValue("nbi_document_url", url)}
+                />
+              </>
             ) : (
               <DocumentPendingRow label="NBI Clearance" />
             )}
