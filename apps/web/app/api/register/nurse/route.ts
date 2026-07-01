@@ -13,6 +13,11 @@ import {
 import { isProviderRole, profileRoleForProviderType } from "@/lib/provider-role";
 import { hasRequiredDocuments } from "@/lib/admin/verification-documents";
 import { buildFormattedFullName, toTitleCase } from "@/lib/validation/format-name";
+import {
+  getSignupCapacity,
+  getSignupLimitClient,
+  signupCapacityMessage
+} from "@/lib/register/signup-limits";
 
 export async function POST(request: Request) {
   try {
@@ -43,6 +48,33 @@ export async function POST(request: Request) {
     const values = parsed.data;
     const userId = auth.user.id;
     const termsAcceptedAt = values.termsAcceptedAt ?? new Date().toISOString();
+    const limitClient = getSignupLimitClient(supabase);
+
+    const { data: existingNurseRow, error: existingNurseError } = await supabase
+      .from("nurses")
+      .select("provider_type")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (existingNurseError) {
+      console.error("register.nurse.existing.error", existingNurseError);
+      return NextResponse.json({ error: "Could not verify your registration state." }, { status: 500 });
+    }
+
+    if (existingNurseRow?.provider_type !== values.providerType) {
+      try {
+        const capacity = await getSignupCapacity(limitClient, values.providerType);
+        if (!capacity.available) {
+          return NextResponse.json({ error: signupCapacityMessage(values.providerType) }, { status: 409 });
+        }
+      } catch (providerCountError) {
+        console.error("register.nurse.limit_count.error", providerCountError);
+        return NextResponse.json(
+          { error: "We could not verify signup capacity right now. Please try again shortly." },
+          { status: 500 }
+        );
+      }
+    }
 
     const pathError = validateDocumentPathsForUser(userId, {
       prc: values.prcDocumentPath,

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { validateServerRegistrationNames } from "@/lib/validation/name";
 import { buildFormattedFullName, toTitleCase } from "@/lib/validation/format-name";
 import { completeFamilyRegistrationSchema } from "@/lib/validations/register-family";
+import { getSignupCapacity, getSignupLimitClient, signupCapacityMessage } from "@/lib/register/signup-limits";
 
 export async function POST(request: Request) {
   try {
@@ -34,6 +35,34 @@ export async function POST(request: Request) {
     const values = parsed.data;
     const userId = auth.user.id;
     const termsAcceptedAt = values.termsAcceptedAt ?? new Date().toISOString();
+    const limitClient = getSignupLimitClient(supabase);
+
+    const { data: existingProfile, error: existingProfileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (existingProfileError) {
+      console.error("register.family.existing.error", existingProfileError);
+      return NextResponse.json({ error: "Could not verify your registration state." }, { status: 500 });
+    }
+
+    if (existingProfile?.role !== "family") {
+      try {
+        const capacity = await getSignupCapacity(limitClient, "family");
+        if (!capacity.available) {
+          return NextResponse.json({ error: signupCapacityMessage("family") }, { status: 409 });
+        }
+      } catch (familyCountError) {
+        console.error("register.family.limit_count.error", familyCountError);
+        return NextResponse.json(
+          { error: "We could not verify signup capacity right now. Please try again shortly." },
+          { status: 500 }
+        );
+      }
+    }
+
     const normalizedFirstName = toTitleCase(values.firstName);
     const normalizedMiddleName = toTitleCase(values.middleName);
     const normalizedLastName = toTitleCase(values.lastName);
