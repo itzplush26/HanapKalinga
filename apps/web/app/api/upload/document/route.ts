@@ -4,7 +4,7 @@ import { getDocsBucket, uploadToR2 } from "@/lib/storage/r2";
 import { getR2ConfigError } from "@/lib/storage/r2-config";
 import { MAX_DOCUMENT_SIZE_BYTES } from "@/lib/constants";
 import { isProviderRole } from "@/lib/provider-role";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkSharedRateLimit } from "@/lib/rate-limit-shared";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
 const ALLOWED_DOCUMENT_TYPES = new Set(["prc", "tesda", "nbi"]);
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     if (!auth) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
-    const uploadRate = checkRateLimit(`upload:document:${auth.userId}`, 8, 60_000);
+    const uploadRate = await checkSharedRateLimit(`upload:document:${auth.userId}`, 8, 60_000);
     if (!uploadRate.allowed) {
       return NextResponse.json(
         { error: "Too many upload attempts. Please wait before trying again." },

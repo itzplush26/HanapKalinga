@@ -3,6 +3,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { isProviderRole } from "@/lib/provider-role";
 import { getUploadAuthContext } from "@/lib/storage/upload-auth";
 import { compressProfilePhoto } from "@/lib/storage/compress-image";
+import { checkSharedRateLimit } from "@/lib/rate-limit-shared";
+import { MAX_PROFILE_PHOTO_SIZE_BYTES } from "@/lib/constants";
 
 const AVATARS_BUCKET = "avatars";
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -12,6 +14,13 @@ export async function POST(request: Request) {
     const auth = await getUploadAuthContext();
     if (!auth) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+    const uploadRate = await checkSharedRateLimit(`upload:photo:${auth.userId}`, 5, 60_000);
+    if (!uploadRate.allowed) {
+      return NextResponse.json(
+        { error: "Too many upload attempts. Please wait before trying again." },
+        { status: 429 }
+      );
     }
 
     const formData = await request.formData();
@@ -23,6 +32,10 @@ export async function POST(request: Request) {
 
     if (!ALLOWED_TYPES.has(file.type)) {
       return NextResponse.json({ error: "Use a JPG, PNG, or WebP image." }, { status: 400 });
+    }
+
+    if (file.size > MAX_PROFILE_PHOTO_SIZE_BYTES) {
+      return NextResponse.json({ error: "File is too large. Maximum size is 8 MB." }, { status: 400 });
     }
 
     const input = Buffer.from(await file.arrayBuffer());

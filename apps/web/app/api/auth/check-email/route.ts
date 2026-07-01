@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/service";
-import { checkEmailLookupRateLimit } from "@/lib/auth/email-check-rate-limit";
+import { checkSharedRateLimit } from "@/lib/rate-limit-shared";
 
 const bodySchema = z.object({
   email: z.string().email()
@@ -16,7 +16,7 @@ function clientIp(request: Request): string {
 export async function POST(request: Request) {
   try {
     const ip = clientIp(request);
-    const rate = checkEmailLookupRateLimit(ip);
+    const rate = await checkSharedRateLimit(`auth:check-email:${ip}`, 10, 5 * 60_000);
 
     if (!rate.allowed) {
       return NextResponse.json(
