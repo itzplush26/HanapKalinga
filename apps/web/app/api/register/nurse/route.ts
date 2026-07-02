@@ -13,6 +13,7 @@ import {
 import { isProviderRole, profileRoleForProviderType } from "@/lib/provider-role";
 import { hasRequiredDocuments } from "@/lib/admin/verification-documents";
 import { buildFormattedFullName, toTitleCase } from "@/lib/validation/format-name";
+import { normalizeTesdaCertificateInput } from "@/lib/validation/prc-license";
 import {
   getSignupCapacity,
   getSignupLimitClient,
@@ -134,6 +135,7 @@ export async function POST(request: Request) {
       city: values.city,
       barangay: values.barangay,
       address: null,
+      date_of_birth: values.dateOfBirth,
       terms_accepted_at: termsAcceptedAt
     });
 
@@ -158,7 +160,7 @@ export async function POST(request: Request) {
         prc_license_no: values.providerType === "nurse" ? values.prcLicenseNo?.trim() || null : null,
         prc_document_url: documentPayload.prc_document_url,
         tesda_document_url: documentPayload.tesda_document_url,
-        tesda_certificate_no: values.tesdaCertificateNo?.trim() || null,
+        tesda_certificate_no: normalizeTesdaCertificateInput(values.tesdaCertificateNo ?? "") || null,
         nbi_document_url: documentPayload.nbi_document_url,
         verification_status: "pending",
         submitted_at: submittedAt

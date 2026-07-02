@@ -10,6 +10,11 @@ import {
   PRC_LICENSE_ERROR,
   TESDA_CERTIFICATE_ERROR
 } from "@/lib/validation/prc-license";
+import {
+  DOB_MIN_AGE,
+  getDateOfBirthBounds,
+  isValidDateOnly
+} from "@/lib/validation/date-of-birth";
 import { FAMILY_NAME_SUFFIXES, PROVIDER_NAME_SUFFIXES } from "@/lib/validation/name-suffix";
 
 const APPROPRIATE_MESSAGE = "Please keep your content appropriate.";
@@ -30,12 +35,25 @@ const optionalText = () =>
 
 const hourlyRateRangeField = z.union([z.enum(HOURLY_RATE_BAND_IDS), z.literal("")]);
 const dailyRateRangeField = z.union([z.enum(DAILY_RATE_BAND_IDS), z.literal("")]);
+const dateOfBirthBounds = getDateOfBirthBounds();
+
+const dateOfBirthRequiredSchema = z
+  .string()
+  .trim()
+  .min(1, "Date of birth is required.")
+  .refine((value) => isValidDateOnly(value), "Date of birth is required.")
+  .refine((value) => value <= dateOfBirthBounds.max, {
+    message: `You must be at least ${DOB_MIN_AGE} years old to register.`
+  })
+  .refine((value) => value >= dateOfBirthBounds.min, "Please enter a valid date of birth.");
 
 function validateCityInRegion(
-  values: { region?: string; city?: string },
+  values: { region?: unknown; city?: unknown },
   context: z.RefinementCtx
 ) {
-  if (values.region && values.city && !isCityInRegion(values.city, values.region)) {
+  const region = typeof values.region === "string" ? values.region : "";
+  const city = typeof values.city === "string" ? values.city : "";
+  if (region && city && !isCityInRegion(city, region)) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
       message: "Select a city in the chosen region.",
@@ -64,6 +82,7 @@ export const nurseProfileFieldsSchema = z.object({
   middleName: middleNameSchema,
   lastName: lastNameSchema,
   nameSuffix: z.union([z.literal(""), z.enum(PROVIDER_NAME_SUFFIXES)]).optional(),
+  dateOfBirth: dateOfBirthRequiredSchema,
   providerType: z.enum(["nurse", "caregiver"]),
   region: z.string().min(2, "Region is required."),
   city: z.string().min(2, "City is required."),
@@ -80,7 +99,7 @@ export const nurseProfileFormSchema = nurseProfileFieldsSchema
   .superRefine(validateCityInRegion)
   .superRefine((values, ctx) => {
     if (values.providerType === "nurse") {
-      const prcNo = values.prcLicenseNo?.trim() ?? "";
+      const prcNo = typeof values.prcLicenseNo === "string" ? values.prcLicenseNo.trim() : "";
       if (!prcNo) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -95,17 +114,15 @@ export const nurseProfileFormSchema = nurseProfileFieldsSchema
         });
       }
     }
-    if (values.providerType === "caregiver" && !values.tesdaCertificateNo?.trim()) {
+    const tesdaNo =
+      typeof values.tesdaCertificateNo === "string" ? values.tesdaCertificateNo.trim() : "";
+    if (values.providerType === "caregiver" && !tesdaNo) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "TESDA certificate number is required.",
         path: ["tesdaCertificateNo"]
       });
-    } else if (
-      values.providerType === "caregiver" &&
-      values.tesdaCertificateNo?.trim() &&
-      !isValidTesdaCertificateNo(values.tesdaCertificateNo)
-    ) {
+    } else if (values.providerType === "caregiver" && tesdaNo && !isValidTesdaCertificateNo(tesdaNo)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: TESDA_CERTIFICATE_ERROR,
@@ -146,6 +163,7 @@ export const nurseProfileEditSchema = z
     middleName: middleNameSchema,
     lastName: lastNameSchema,
     nameSuffix: z.union([z.literal(""), z.enum(PROVIDER_NAME_SUFFIXES)]).optional(),
+    dateOfBirth: dateOfBirthRequiredSchema,
     phone: philippineMobileSchema.optional(),
     region: z.string().min(2, "Region is required."),
     city: z.string().min(2, "City is required."),
@@ -166,7 +184,7 @@ export const nurseProfileEditSchema = z
   })
   .superRefine((values, context) => {
     validateCityInRegion(values, context);
-    const prcNo = values.prcLicenseNo?.trim() ?? "";
+    const prcNo = typeof values.prcLicenseNo === "string" ? values.prcLicenseNo.trim() : "";
     if (prcNo && !isValidPrcLicenseNo(prcNo)) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
@@ -174,7 +192,8 @@ export const nurseProfileEditSchema = z
         path: ["prcLicenseNo"]
       });
     }
-    const tesdaNo = values.tesdaCertificateNo?.trim() ?? "";
+    const tesdaNo =
+      typeof values.tesdaCertificateNo === "string" ? values.tesdaCertificateNo.trim() : "";
     if (tesdaNo && !isValidTesdaCertificateNo(tesdaNo)) {
       context.addIssue({
         code: z.ZodIssueCode.custom,

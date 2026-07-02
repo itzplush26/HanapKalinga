@@ -560,6 +560,7 @@ export type Database = {
           barangay: string | null
           city: string | null
           created_at: string | null
+          date_of_birth: string | null
           first_name: string | null
           full_name: string | null
           id: string
@@ -577,6 +578,7 @@ export type Database = {
           barangay?: string | null
           city?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
           first_name?: string | null
           full_name?: string | null
           id: string
@@ -594,6 +596,7 @@ export type Database = {
           barangay?: string | null
           city?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
           first_name?: string | null
           full_name?: string | null
           id?: string
@@ -817,6 +820,11 @@ export type Database = {
       generate_nurse_profile_slug: {
         Args: { p_full_name: string; p_nurse_id: string }
         Returns: string
+      }
+      get_my_date_of_birth: { Args: never; Returns: string | null }
+      get_profile_date_of_birth_for_admin: {
+        Args: { p_user_id: string }
+        Returns: string | null
       }
       is_admin: { Args: never; Returns: boolean }
       refresh_nurse_search_vector: {

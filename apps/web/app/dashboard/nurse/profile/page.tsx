@@ -38,7 +38,15 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { ensureNurseProfile } from "@/lib/nurse/ensure-profile";
 import { mapSupabaseError } from "@/lib/user-errors";
 import { buildFormattedFullName, toTitleCase } from "@/lib/validation/format-name";
+import { DatePickerField } from "@/components/date-picker-field";
 import { NAME_SUFFIX_OPTION_GROUPS } from "@/lib/validation/name-suffix";
+import {
+  getTesdaCertificateSegments,
+  normalizeTesdaCertificateInput,
+  TESDA_CERTIFICATE_MAX_LENGTH,
+  TESDA_CERTIFICATE_MIN_LENGTH
+} from "@/lib/validation/prc-license";
+import { formatDateOfBirth, getDateOfBirthBounds } from "@/lib/validation/date-of-birth";
 import {
   mergeSpecializations,
   SpecializationsPicker,
@@ -67,6 +75,7 @@ export default function NurseProfilePage() {
   const [initialPrcLicenseNo, setInitialPrcLicenseNo] = useState("");
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
   const [documentExpiry, setDocumentExpiry] = useState<DocumentExpiryItem[]>([]);
+  const dateOfBirthBounds = getDateOfBirthBounds();
 
   const form = useForm<NurseProfileEditValues>({
     resolver: zodResolver(nurseProfileEditSchema),
@@ -75,6 +84,7 @@ export default function NurseProfilePage() {
       middleName: "",
       lastName: "",
       nameSuffix: "",
+      dateOfBirth: "",
       phone: "",
       region: "",
       city: "",
@@ -101,7 +111,11 @@ export default function NurseProfilePage() {
       const user = auth.user;
       if (!user) return;
 
-      const [{ data: profile, error: profileError }, { data: nurse, error: nurseError }] =
+      const [
+        { data: profile, error: profileError },
+        { data: nurse, error: nurseError },
+        { data: dateOfBirth, error: dateOfBirthError }
+      ] =
         await Promise.all([
           supabase
             .from("profiles")
@@ -116,7 +130,8 @@ export default function NurseProfilePage() {
               "provider_type, verification_status, rejection_reason, submitted_at, prc_license_no, tesda_certificate_no, specializations, years_experience, bio, hourly_rate, hourly_rate_max, hourly_rate_range, daily_rate_12hr, daily_rate_12hr_max, daily_rate_range, profile_photo_url, prc_document_url, tesda_document_url, nbi_document_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry"
             )
             .eq("id", user.id)
-            .maybeSingle()
+            .maybeSingle(),
+          supabase.rpc("get_my_date_of_birth")
         ]);
 
       if (profileError) {
@@ -124,6 +139,9 @@ export default function NurseProfilePage() {
       }
       if (nurseError) {
         console.error("nurse_profile.nurses.load", nurseError);
+      }
+      if (dateOfBirthError) {
+        console.error("nurse_profile.dob.load", dateOfBirthError);
       }
 
       if (profile || nurse) {
@@ -146,6 +164,7 @@ export default function NurseProfilePage() {
           middleName: profile?.middle_name ?? "",
           lastName: profile?.last_name ?? nameParts.slice(1).join(" ") ?? "",
           nameSuffix: profile?.name_suffix ?? "",
+          dateOfBirth: dateOfBirth ?? "",
           phone: profile?.phone ?? "",
           region: profile?.region ?? "",
           city: profile?.city ?? "",
@@ -189,6 +208,7 @@ export default function NurseProfilePage() {
     const normalizedMiddleName = toTitleCase(values.middleName);
     const normalizedLastName = toTitleCase(values.lastName);
     const normalizedNameSuffix = values.nameSuffix?.trim() || null;
+    const normalizedTesdaCertificateNo = normalizeTesdaCertificateInput(values.tesdaCertificateNo ?? "");
     const fullName = buildFormattedFullName({
       firstName: normalizedFirstName,
       middleName: normalizedMiddleName,
@@ -210,6 +230,7 @@ export default function NurseProfilePage() {
       middle_name: normalizedMiddleName || null,
       last_name: normalizedLastName,
       name_suffix: normalizedNameSuffix,
+      date_of_birth: values.dateOfBirth || null,
       phone: values.phone || null,
       region: values.region,
       city: values.city,
@@ -270,7 +291,7 @@ export default function NurseProfilePage() {
         id: user.id,
         provider_type: providerType,
         prc_license_no: providerType === "nurse" ? initialPrcLicenseNo || null : null,
-        tesda_certificate_no: providerType === "caregiver" ? values.tesdaCertificateNo || null : null,
+        tesda_certificate_no: providerType === "caregiver" ? normalizedTesdaCertificateNo || null : null,
         specializations,
         years_experience: values.yearsExperience,
         bio: values.bio || null,
@@ -448,6 +469,30 @@ export default function NurseProfilePage() {
               </Select>
             </div>
             <div className="space-y-1">
+              <Label htmlFor="dateOfBirth">
+                Date of birth <span className="text-rose-600">*</span>
+              </Label>
+              <DatePickerField
+                value={form.watch("dateOfBirth") ?? ""}
+                onChange={(value) => form.setValue("dateOfBirth", value, { shouldValidate: true })}
+                min={dateOfBirthBounds.min}
+                max={dateOfBirthBounds.max}
+                placeholder="Select date of birth"
+              />
+              {form.watch("dateOfBirth") ? (
+                <p className="text-xs text-slate-500">
+                  Selected: {formatDateOfBirth(form.watch("dateOfBirth"))}
+                </p>
+              ) : null}
+              <p className="text-xs text-slate-500">
+                Required for PRC license verification. Your date of birth is kept confidential and is
+                only accessible to platform administrators.
+              </p>
+              {form.formState.errors.dateOfBirth ? (
+                <p className="text-xs text-rose-600">{form.formState.errors.dateOfBirth.message}</p>
+              ) : null}
+            </div>
+            <div className="space-y-1">
               <Label htmlFor="phone">Phone</Label>
               <Input
                 id="phone"
@@ -522,15 +567,50 @@ export default function NurseProfilePage() {
                 </>
               ) : (
                 <>
-                  <Label htmlFor="tesdaCertificateNo">TESDA certificate number</Label>
+                  <Label htmlFor="tesdaCertificateNo">TESDA NC II Certificate Number</Label>
                   <Input
                     id="tesdaCertificateNo"
-                    placeholder="TESDA NC II certificate number"
+                    placeholder="Enter full certificate number"
+                    maxLength={TESDA_CERTIFICATE_MAX_LENGTH}
                     {...form.register("tesdaCertificateNo")}
                   />
+                  <p className="text-xs text-slate-500">
+                    Enter your full TESDA certificate number. You can find this on your Certificate of
+                    Competency or Certificate of NC II Qualification. Usually starts with a region code and
+                    contains both letters and numbers.
+                  </p>
+                  {(() => {
+                    const currentTesda = normalizeTesdaCertificateInput(
+                      form.watch("tesdaCertificateNo") ?? ""
+                    );
+                    const segments = getTesdaCertificateSegments(currentTesda);
+                    if (!segments && currentTesda.length > 0 && currentTesda.length < TESDA_CERTIFICATE_MIN_LENGTH) {
+                      return (
+                        <p className="text-xs text-rose-600">
+                          TESDA certificate number must be at least {TESDA_CERTIFICATE_MIN_LENGTH} characters.
+                        </p>
+                      );
+                    }
+                    if (!segments) return null;
+                    return (
+                      <div className="space-y-1 text-xs text-slate-600">
+                        <p>
+                          First Four of Certificate No.:{" "}
+                          <span className="font-medium font-mono">{segments.firstFour}</span>
+                        </p>
+                        <p>
+                          Last Four of Certificate No.:{" "}
+                          <span className="font-medium font-mono">{segments.lastFour}</span>
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </>
               )}
             </div>
+            {providerType === "caregiver" && form.formState.errors.tesdaCertificateNo ? (
+              <p className="text-xs text-rose-600">{form.formState.errors.tesdaCertificateNo.message}</p>
+            ) : null}
             <SpecializationsPicker
               selected={form.watch("selectedSpecializations")}
               customValue={form.watch("customSpecialization") ?? ""}

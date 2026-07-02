@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Copy, X } from "lucide-react";
+import { AlertCircle, Copy, ExternalLink, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,6 +23,12 @@ import {
   isProfileComplete
 } from "@/lib/admin/nurse-profile-completeness";
 import type { VerificationStatus } from "@/lib/verification";
+import {
+  getTesdaCertificateSegments,
+  normalizeTesdaCertificateInput,
+  tesdaCertificateHasInvalidSeparators
+} from "@/lib/validation/prc-license";
+import { formatDateOfBirth } from "@/lib/validation/date-of-birth";
 
 interface AuditLogEntry {
   id: string;
@@ -58,6 +64,9 @@ interface VerificationReviewPanelProps {
   profilePhotoUrl: string | null;
   prcLicenseNo?: string | null;
   tesdaCertificateNo?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  dateOfBirth?: string | null;
   prcLicenseExpiry?: string | null;
   tesdaCertExpiry?: string | null;
   nbiExpiry?: string | null;
@@ -100,6 +109,9 @@ export function VerificationReviewPanel({
   profilePhotoUrl,
   prcLicenseNo,
   tesdaCertificateNo,
+  firstName,
+  lastName,
+  dateOfBirth,
   prcLicenseExpiry: initialPrcExpiry,
   tesdaCertExpiry: initialTesdaExpiry,
   nbiExpiry: initialNbiExpiry,
@@ -121,6 +133,7 @@ export function VerificationReviewPanel({
   const [actionError, setActionError] = useState<ActionErrorState | null>(null);
   const [resendingStatusEmail, setResendingStatusEmail] = useState(false);
   const [resendStatusMessage, setResendStatusMessage] = useState<string | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const nurseDocuments = useMemo(
     () => ({
@@ -237,6 +250,24 @@ export function VerificationReviewPanel({
     }
   }
 
+  async function copyFieldValue(key: string, label: string, value: string | null | undefined) {
+    const text = value?.trim() ?? "";
+    if (!text) {
+      showToast(`${label} is not available to copy.`, "error");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(key);
+      showToast(`${label} copied.`, "success");
+      window.setTimeout(() => {
+        setCopiedField((current) => (current === key ? null : current));
+      }, 1500);
+    } catch {
+      showToast(`Could not copy ${label.toLowerCase()}.`, "error");
+    }
+  }
+
   async function submitAction(
     action: "approve" | "reject" | "reject_renewal" | "request_resubmission" | "mark_under_review"
   ) {
@@ -331,6 +362,9 @@ export function VerificationReviewPanel({
     (isCaregiver ? Boolean(tesdaCertExpiry) : Boolean(prcLicenseExpiry));
   const canResendStatusEmail =
     status === "verified" || status === "under_review" || status === "renewal_under_review";
+  const normalizedTesdaCertificateNo = normalizeTesdaCertificateInput(tesdaCertificateNo ?? "");
+  const tesdaSegments = getTesdaCertificateSegments(normalizedTesdaCertificateNo);
+  const formattedDateOfBirth = formatDateOfBirth(dateOfBirth);
 
   return (
     <>
@@ -556,6 +590,222 @@ export function VerificationReviewPanel({
                 </li>
               ))}
             </ul>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+            {isCaregiver ? (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-slate-900">TESDA Certificate Verification</h3>
+                <div className="grid gap-2 text-sm sm:grid-cols-2">
+                  <div className="rounded-xl border border-slate-200 p-3">
+                    <p className="text-xs text-slate-500">Last Name</p>
+                    <p className="mt-1 font-mono font-medium text-slate-900">{lastName?.trim() || "—"}</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => void copyFieldValue("tesda-last-name", "Last name", lastName)}
+                    >
+                      <Copy className="mr-1 h-4 w-4" />
+                      {copiedField === "tesda-last-name" ? "Copied" : "Copy"}
+                    </Button>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 p-3">
+                    <p className="text-xs text-slate-500">First Name</p>
+                    <p className="mt-1 font-mono font-medium text-slate-900">{firstName?.trim() || "—"}</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => void copyFieldValue("tesda-first-name", "First name", firstName)}
+                    >
+                      <Copy className="mr-1 h-4 w-4" />
+                      {copiedField === "tesda-first-name" ? "Copied" : "Copy"}
+                    </Button>
+                  </div>
+                </div>
+                {normalizedTesdaCertificateNo ? (
+                  <div className="space-y-2 rounded-xl border border-slate-200 p-3">
+                    <p className="text-xs text-slate-500">Full Certificate Number</p>
+                    <p className="font-mono text-sm font-medium text-slate-900">{normalizedTesdaCertificateNo}</p>
+                    <p className="text-xs text-slate-500">
+                      Format: [Qualification Code][Region][Year][Sequence] — no hyphens or spaces. If the
+                      number contains hyphens or spaces it was entered incorrectly and should be re-requested.
+                    </p>
+                    {tesdaCertificateHasInvalidSeparators(tesdaCertificateNo) ? (
+                      <p className="text-xs text-rose-700">
+                        This certificate number contains hyphens or spaces — re-request the correct value from
+                        the caregiver.
+                      </p>
+                    ) : null}
+                    {tesdaSegments ? (
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-xs text-slate-500">
+                            TESDA Portal Field — &quot;First Four of Certificate Number&quot;:
+                          </p>
+                          <div className="mt-1 flex items-center gap-2">
+                            <span className="font-mono text-sm font-semibold text-slate-900">
+                              {tesdaSegments.firstFour}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                void copyFieldValue(
+                                  "tesda-first-four",
+                                  "First Four of Certificate Number",
+                                  tesdaSegments.firstFour
+                                )
+                              }
+                            >
+                              <Copy className="mr-1 h-4 w-4" />
+                              {copiedField === "tesda-first-four" ? "Copied" : "Copy"}
+                            </Button>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-500">
+                            TESDA Portal Field — &quot;Last Four of Certificate Number&quot;:
+                          </p>
+                          <div className="mt-1 flex items-center gap-2">
+                            <span className="font-mono text-sm font-semibold text-slate-900">
+                              {tesdaSegments.lastFour}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                void copyFieldValue(
+                                  "tesda-last-four",
+                                  "Last Four of Certificate Number",
+                                  tesdaSegments.lastFour
+                                )
+                              }
+                            >
+                              <Copy className="mr-1 h-4 w-4" />
+                              {copiedField === "tesda-last-four" ? "Copied" : "Copy"}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-rose-700">
+                        Certificate number appears incomplete — verify with caregiver before proceeding.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
+                    Certificate number not provided — request from caregiver before verifying.
+                  </p>
+                )}
+                <div className="rounded-xl border border-slate-200 p-3">
+                  <a
+                    href="https://www.tesda.gov.ph/Verifications"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-brand-700"
+                  >
+                    Verify on TESDA Registry Portal
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                  <p className="mt-2 text-xs text-slate-600">
+                    Enter the name and certificate digits above on the TESDA portal under Registry of
+                    Certified Workers to confirm this caregiver&apos;s NC II certification.
+                  </p>
+                  <ol className="mt-3 list-decimal space-y-1 pl-4 text-xs text-slate-700">
+                    <li>Check that the name on the uploaded TESDA certificate matches the profile name exactly.</li>
+                    <li>
+                      Verify on the TESDA portal using the name and certificate digits above that the
+                      certification is active.
+                    </li>
+                    <li>Confirm the qualification shown on the portal matches Caregiving NC II or equivalent.</li>
+                    <li>
+                      Note the certificate number from the physical scan and confirm it matches what was
+                      entered during registration.
+                    </li>
+                  </ol>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-slate-900">PRC License Verification</h3>
+                {prcLicenseNo?.trim() ? (
+                  <div className="rounded-xl border border-slate-200 p-3">
+                    <p className="text-xs text-slate-500">PRC License Number</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-sm font-semibold text-slate-900">{prcLicenseNo}</span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => void copyFieldValue("prc-license", "PRC license number", prcLicenseNo)}
+                      >
+                        <Copy className="mr-1 h-4 w-4" />
+                        {copiedField === "prc-license" ? "Copied" : "Copy"}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
+                    License number not provided — request from nurse before verifying.
+                  </p>
+                )}
+                {dateOfBirth ? (
+                  <div className="rounded-xl border border-slate-200 p-3">
+                    <p className="text-xs text-slate-500">Date of Birth</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-sm font-semibold text-slate-900">{formattedDateOfBirth}</span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => void copyFieldValue("prc-dob", "Date of birth", dateOfBirth)}
+                      >
+                        <Copy className="mr-1 h-4 w-4" />
+                        {copiedField === "prc-dob" ? "Copied" : "Copy"}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
+                    Date of birth not on file — request from nurse before verifying.
+                  </p>
+                )}
+                <div className="rounded-xl border border-slate-200 p-3">
+                  <a
+                    href="https://verification.prc.gov.ph"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-brand-700"
+                  >
+                    Verify on PRC LERIS Portal
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                  <p className="mt-2 text-xs text-slate-600">
+                    Enter the license number and date of birth above on the PRC portal to confirm this
+                    nurse&apos;s credentials.
+                  </p>
+                  <ol className="mt-3 list-decimal space-y-1 pl-4 text-xs text-slate-700">
+                    <li>Check that the name on the uploaded PRC scan matches the profile name exactly.</li>
+                    <li>Check that the license number on the scan matches the number above.</li>
+                    <li>
+                      Verify the license is active on the PRC portal using the number and date of birth
+                      above.
+                    </li>
+                    <li>
+                      Check that the license has not expired or that the expiry date has been entered
+                      correctly.
+                    </li>
+                  </ol>
+                </div>
+              </div>
+            )}
           </div>
 
           <div>

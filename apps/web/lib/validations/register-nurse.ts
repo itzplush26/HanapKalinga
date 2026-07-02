@@ -19,7 +19,9 @@ export const completeNurseRegistrationSchema = nurseProfileFieldsSchema
     nameSuffix: z.union([z.literal(""), z.enum(PROVIDER_NAME_SUFFIXES)]).optional()
   })
   .superRefine((values, ctx) => {
-    if (values.region && values.city && !isCityInRegion(values.city, values.region)) {
+    const region = typeof values.region === "string" ? values.region : "";
+    const city = typeof values.city === "string" ? values.city : "";
+    if (region && city && !isCityInRegion(city, region)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Select a city in the chosen region.",
@@ -27,11 +29,15 @@ export const completeNurseRegistrationSchema = nurseProfileFieldsSchema
       });
     }
 
-    const hasPrc = Boolean(values.prcDocumentPath?.trim());
-    const hasTesda = Boolean(values.tesdaDocumentPath?.trim());
+    const prcDocumentPath =
+      typeof values.prcDocumentPath === "string" ? values.prcDocumentPath.trim() : "";
+    const tesdaDocumentPath =
+      typeof values.tesdaDocumentPath === "string" ? values.tesdaDocumentPath.trim() : "";
+    const hasPrc = Boolean(prcDocumentPath);
+    const hasTesda = Boolean(tesdaDocumentPath);
 
     if (values.providerType === "nurse") {
-      const prcNo = values.prcLicenseNo?.trim() ?? "";
+      const prcNo = typeof values.prcLicenseNo === "string" ? values.prcLicenseNo.trim() : "";
       if (!prcNo) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -62,7 +68,8 @@ export const completeNurseRegistrationSchema = nurseProfileFieldsSchema
     }
 
     if (values.providerType === "caregiver") {
-      const tesdaNo = values.tesdaCertificateNo?.trim() ?? "";
+      const tesdaNo =
+        typeof values.tesdaCertificateNo === "string" ? values.tesdaCertificateNo.trim() : "";
       if (!tesdaNo) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,

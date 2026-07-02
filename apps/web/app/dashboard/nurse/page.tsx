@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/page-header";
 import { Calendar } from "lucide-react";
 import { isVerifiedProvider, type VerificationStatus } from "@/lib/verification";
 import { appUrl } from "@/lib/email/templates/layout";
+import { TESDA_CERTIFICATE_MIN_LENGTH } from "@/lib/validation/prc-license";
 
 export default async function NurseDashboardPage() {
   const supabase = createClient();
@@ -46,6 +47,9 @@ export default async function NurseDashboardPage() {
     providerType === "caregiver"
       ? Boolean(nurse?.tesda_certificate_no?.trim())
       : Boolean(nurse?.prc_license_no?.trim());
+  const needsTesdaCertificatePrompt =
+    providerType === "caregiver" &&
+    (nurse?.tesda_certificate_no?.trim().length ?? 0) < TESDA_CERTIFICATE_MIN_LENGTH;
 
   const profileUrl = nurse?.profile_slug
     ? appUrl(`/nurses/${nurse.profile_slug}`)
@@ -72,6 +76,15 @@ export default async function NurseDashboardPage() {
               rejectionReason: nurse?.rejection_reason
             }}
           />
+          {needsTesdaCertificatePrompt ? (
+            <div className="rounded-2xl border border-warning-border bg-warning-bg p-4 text-sm text-warning">
+              Complete your profile — add your TESDA certificate number so admin can verify your
+              credentials.{" "}
+              <Link href="/dashboard/nurse/profile" className="font-medium underline">
+                Update profile
+              </Link>
+            </div>
+          ) : null}
           {isVerified && (nurse?.profile_slug || profile?.full_name) ? (
             <ShareProfileButton profileUrl={profileUrl} nurseName={profile?.full_name ?? "Nurse"} variant="card" />
           ) : null}
