@@ -32,6 +32,7 @@ import { RegionCitySelects } from "@/components/region-city-selects";
 import { RateRangeSelect } from "@/components/rate-range-select";
 import type { DailyRateBandId, HourlyRateBandId } from "@/lib/rate-ranges";
 import { PROVIDER_SPECIALIZATIONS } from "@/lib/constants";
+import { DatePickerField } from "@/components/date-picker-field";
 import { ensureNurseProfile } from "@/lib/nurse/ensure-profile";
 import {
   clearSignupStage,
@@ -42,6 +43,13 @@ import {
   SIGNUP_TOTAL_STEPS
 } from "@/lib/signup-stage";
 import { normalizePrcLicenseInput } from "@/lib/validation/prc-license";
+import {
+  getTesdaCertificateSegments,
+  normalizeTesdaCertificateInput,
+  TESDA_CERTIFICATE_MAX_LENGTH,
+  TESDA_CERTIFICATE_MIN_LENGTH
+} from "@/lib/validation/prc-license";
+import { formatDateOfBirth, getDateOfBirthBounds } from "@/lib/validation/date-of-birth";
 import { NAME_SUFFIX_OPTION_GROUPS } from "@/lib/validation/name-suffix";
 
 const SIGNUP_STAGE_KEYS = getSignupStageKeys();
@@ -66,6 +74,7 @@ export default function RegisterPage() {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const supabase = createClient();
   const turnstileRequired = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  const dateOfBirthBounds = getDateOfBirthBounds();
 
   const requiredLabel = (label: string, hasError?: boolean) => (
     <span className={hasError ? "text-sm font-medium text-rose-600" : "text-sm font-medium text-slate-700"}>
@@ -110,6 +119,7 @@ export default function RegisterPage() {
       middleName: "",
       lastName: "",
       nameSuffix: "",
+      dateOfBirth: "",
       providerType: "nurse" as NurseProfileFormValues["providerType"],
       region: "",
       city: "",
@@ -450,6 +460,10 @@ export default function RegisterPage() {
     }
 
     const nurseValues = values as NurseProfileFormValues;
+    const normalizedTesdaCertificateNo =
+      nurseValues.providerType === "caregiver"
+        ? normalizeTesdaCertificateInput(nurseValues.tesdaCertificateNo ?? "")
+        : undefined;
     const nextDocErrors: { credential?: string; nbi?: string } = {};
     if (!pendingCredentialFile) {
       nextDocErrors.credential =
@@ -511,6 +525,7 @@ export default function RegisterPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...nurseValues,
+        tesdaCertificateNo: normalizedTesdaCertificateNo,
         prcDocumentPath: nurseValues.providerType === "nurse" ? credentialUpload.path : undefined,
         tesdaDocumentPath: nurseValues.providerType === "caregiver" ? credentialUpload.path : undefined,
         nbiDocumentPath: nbiUpload.path,
@@ -620,6 +635,7 @@ export default function RegisterPage() {
         clearSignupStageLocal();
         setStep(1);
         setRole(null);
+        setSignupProviderType("nurse");
         return;
       }
 
@@ -997,6 +1013,27 @@ export default function RegisterPage() {
                 ))}
               </Select>
             </div>
+            <div className="space-y-1">
+              {requiredLabel("Date of birth", !!nurseForm.formState.errors.dateOfBirth)}
+              <DatePickerField
+                value={nurseForm.watch("dateOfBirth") ?? ""}
+                onChange={(value) => nurseForm.setValue("dateOfBirth", value, { shouldValidate: true })}
+                min={dateOfBirthBounds.min}
+                max={dateOfBirthBounds.max}
+                placeholder="Select date of birth"
+              />
+              {nurseForm.watch("dateOfBirth") ? (
+                <p className="text-xs text-slate-500">
+                  Selected: {formatDateOfBirth(nurseForm.watch("dateOfBirth"))}
+                </p>
+              ) : null}
+              <p className="text-xs text-slate-500">
+                This is used for professional license verification and is kept confidential.
+              </p>
+              {nurseForm.formState.errors.dateOfBirth ? (
+                <p className="text-xs text-rose-600">{nurseForm.formState.errors.dateOfBirth.message}</p>
+              ) : null}
+            </div>
             {requiredLabel("Provider type", !!nurseForm.formState.errors.providerType)}
             <Select
               {...nurseForm.register("providerType")}
@@ -1129,10 +1166,11 @@ export default function RegisterPage() {
               </div>
             ) : (
               <div className="space-y-1">
-                {requiredLabel("TESDA Certificate Number", !!nurseForm.formState.errors.tesdaCertificateNo)}
+                {requiredLabel("TESDA NC II Certificate Number", !!nurseForm.formState.errors.tesdaCertificateNo)}
                 <Input
                   placeholder="Certificate number"
                   autoComplete="off"
+                  maxLength={TESDA_CERTIFICATE_MAX_LENGTH}
                   {...nurseForm.register("tesdaCertificateNo")}
                   className={
                     nurseForm.formState.errors.tesdaCertificateNo
@@ -1141,8 +1179,34 @@ export default function RegisterPage() {
                   }
                 />
                 <p className="text-xs text-slate-500">
-                  You can find this on your TESDA NC II certificate.
+                  Enter your full TESDA certificate number. You can find this on your Certificate of
+                  Competency or Certificate of NC II Qualification. Usually starts with a region code and
+                  contains both letters and numbers.
                 </p>
+                {(() => {
+                  const currentTesda = normalizeTesdaCertificateInput(nurseForm.watch("tesdaCertificateNo") ?? "");
+                  const segments = getTesdaCertificateSegments(currentTesda);
+                  if (!segments && currentTesda.length > 0 && currentTesda.length < TESDA_CERTIFICATE_MIN_LENGTH) {
+                    return (
+                      <p className="text-xs text-rose-600">
+                        TESDA certificate number must be at least {TESDA_CERTIFICATE_MIN_LENGTH} characters.
+                      </p>
+                    );
+                  }
+                  if (!segments) return null;
+                  return (
+                    <div className="space-y-1 text-xs text-slate-600">
+                      <p>
+                        First Four of Certificate No.:{" "}
+                        <span className="font-medium font-mono">{segments.firstFour}</span>
+                      </p>
+                      <p>
+                        Last Four of Certificate No.:{" "}
+                        <span className="font-medium font-mono">{segments.lastFour}</span>
+                      </p>
+                    </div>
+                  );
+                })()}
                 {nurseForm.formState.errors.tesdaCertificateNo ? (
                   <p className="text-xs text-rose-600">
                     {nurseForm.formState.errors.tesdaCertificateNo.message}

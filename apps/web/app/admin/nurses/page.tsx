@@ -29,7 +29,7 @@ export default async function AdminNursesPage() {
           return (
             <Link
               key={nurse.id}
-              href={`/admin/verifications/${nurse.id}`}
+              href={`/admin/nurses/${nurse.id}`}
               className="block rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-brand-200"
             >
               <div className="flex flex-wrap items-center gap-2">

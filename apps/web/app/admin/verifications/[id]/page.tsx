@@ -17,7 +17,7 @@ export default async function AdminVerificationDetailPage({ params }: AdminVerif
   const { data: nurse } = await supabase
     .from("nurses")
     .select(
-        "id, provider_type, verification_status, submitted_at, prc_license_no, tesda_certificate_no, prc_document_url, tesda_document_url, nbi_document_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry, bio, specializations, daily_rate_range, hourly_rate_range, profile_photo_url, profiles!nurses_id_fkey(full_name, city, region, barangay, phone, profile_photo_url, suspended, suspension_reason)"
+        "id, provider_type, verification_status, submitted_at, prc_license_no, tesda_certificate_no, prc_document_url, tesda_document_url, nbi_document_url, prc_license_expiry, tesda_cert_expiry, nbi_expiry, bio, specializations, daily_rate_range, hourly_rate_range, profile_photo_url, profiles!nurses_id_fkey(full_name, first_name, last_name, city, region, barangay, phone, profile_photo_url, suspended, suspension_reason)"
     )
     .eq("id", params.id)
     .maybeSingle();
@@ -28,7 +28,7 @@ export default async function AdminVerificationDetailPage({ params }: AdminVerif
 
   const profile = Array.isArray(nurse.profiles) ? nurse.profiles[0] : nurse.profiles;
 
-  const [prcSignedUrl, tesdaSignedUrl, nbiSignedUrl, auditResult] = await Promise.all([
+  const [prcSignedUrl, tesdaSignedUrl, nbiSignedUrl, auditResult, dateOfBirthResult] = await Promise.all([
     resolveDocumentViewUrl(nurse.prc_document_url),
     resolveDocumentViewUrl(nurse.tesda_document_url),
     resolveDocumentViewUrl(nurse.nbi_document_url),
@@ -36,7 +36,8 @@ export default async function AdminVerificationDetailPage({ params }: AdminVerif
       .from("verification_audit_logs")
       .select("id, action, previous_status, new_status, rejection_reason, review_notes, created_at, admin_id")
       .eq("nurse_id", params.id)
-      .order("created_at", { ascending: false })
+      .order("created_at", { ascending: false }),
+    supabase.rpc("get_profile_date_of_birth_for_admin", { p_user_id: params.id })
   ]);
 
   const adminIds = [...new Set((auditResult.data ?? []).map((entry) => entry.admin_id))];
@@ -91,6 +92,9 @@ export default async function AdminVerificationDetailPage({ params }: AdminVerif
         profilePhotoUrl={nurse.profile_photo_url ?? profile?.profile_photo_url ?? null}
         prcLicenseNo={nurse.prc_license_no}
         tesdaCertificateNo={nurse.tesda_certificate_no}
+        firstName={profile?.first_name ?? null}
+        lastName={profile?.last_name ?? null}
+        dateOfBirth={dateOfBirthResult.data ?? null}
         prcLicenseExpiry={nurse.prc_license_expiry}
         tesdaCertExpiry={nurse.tesda_cert_expiry}
         nbiExpiry={nurse.nbi_expiry}
